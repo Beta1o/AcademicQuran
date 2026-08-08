@@ -191,11 +191,13 @@ var curAudio=null, curBtn=null, curDet=null;
 function clearReading(){
   if(curDet) curDet.querySelectorAll('.sheet .verse .aya-seg.reading').forEach(function(el){ el.classList.remove('reading'); });
 }
-function stopAudio(){
+function stopAudio(onlyIfDet){
+  if(onlyIfDet && curDet!==onlyIfDet) return; /* أغلقت ورقة أخرى غير التي تُقرأ حاليًا */
   if(curAudio){ curAudio.pause(); curAudio=null; }
   if(curBtn){ curBtn.textContent='🔊 استماع للتلاوة'; curBtn.classList.remove('playing'); curBtn=null; }
   clearReading(); curDet=null;
 }
+window.stopAudio=stopAudio;
 function markReading(ayaNo){
   if(!curDet) return;
   clearReading();
@@ -323,6 +325,7 @@ function bindToggles(root){
     setGoLabel();
     d.addEventListener('toggle',function(){
       setGoLabel();
+      if(!d.open && window.stopAudio) window.stopAudio(d);
       if(d.open && !noAutoScroll){
         document.querySelectorAll('.grid .ws-item[open]').forEach(function(o){
           if(o!==d) o.removeAttribute('open');
