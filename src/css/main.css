@@ -198,4 +198,7 @@ input,textarea{font-family:inherit;color:var(--ink)}
   .q{break-inside:avoid;padding:4px 2px}
   .sec{break-inside:auto}
   .verse{box-shadow:none}
+  /* لا تُطبع نصوص التلميح داخل الحقول (مثل «اكتب الحروف — تُفصَل بـ + تلقائيًا») —
+     هي إرشاد للاستخدام على الشاشة فقط، وتُترك الحقول فارغة على الورق ليكتب فيها الطفل */
+  input::placeholder,textarea::placeholder{color:transparent!important;opacity:0!important}
 }
