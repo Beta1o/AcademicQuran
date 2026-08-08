@@ -18,7 +18,7 @@ const PROD = process.env.NODE_ENV==='production' || process.argv.includes('--pro
    المكتوبة في المصدر (مقروءة من أي شخص يفتح كود الصفحة، وهذا متوقّع ومذكور في الوثائق):
      ADMIN_PASS=كلمة-سر-قوية npm run build -- --prod
    ================================================================================= */
-const DEFAULT_ADMIN_PASS='mijhar1447';
+const DEFAULT_ADMIN_PASS='change-me-set-ADMIN_PASS-env-var';
 const ADMIN_PASS = process.env.ADMIN_PASS || DEFAULT_ADMIN_PASS;
 if(PROD && ADMIN_PASS===DEFAULT_ADMIN_PASS){
   console.warn('⚠️  تحذير: بناء إنتاجي بكلمة مرور المدير الافتراضية. مرّر ADMIN_PASS=... لتغييرها.');
