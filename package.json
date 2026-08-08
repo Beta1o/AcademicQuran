@@ -1,0 +1,19 @@
+{
+  "name": "tahleel-lughawi-mijhari",
+  "version": "1.1.0",
+  "description": "التحليل اللغوي المجهري — منصة أوراق عمل تفاعلية لتحليل سور وآيات القرآن الكريم لغويًا، مع تصحيح تلقائي وصفحة مدير لإضافة الأسئلة",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "build:prod": "node build.js --prod",
+    "start": "node build.js && node tools/serve.js --open",
+    "serve": "node tools/serve.js",
+    "test": "node test/smoke.js"
+  },
+  "devDependencies": {
+    "clean-css": "^5.3.3",
+    "html-minifier-terser": "^7.2.0",
+    "jsdom": "^30.0.0",
+    "terser": "^5.49.2"
+  }
+}

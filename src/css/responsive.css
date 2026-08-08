@@ -1,0 +1,168 @@
+/* =======================================================================
+   responsive.css — ملاءمة العرض للحاسب واللوحي والجوال
+   يُحمَّل آخر الملفات، فقواعده تتقدّم على main/ui/admin عند تساوي الأولوية.
+   ======================================================================= */
+
+:root{
+  --maxw:1140px;      /* أقصى عرض للحاويات */
+  --gutter:20px;      /* الهامش الجانبي للصفحة */
+  --pad-sheet:26px;   /* الهامش الداخلي لورقة العمل */
+  --topbar-h:58px;    /* يُحدَّث من app.js حسب ارتفاع الشريط الفعلي */
+}
+
+/* ---------- حاويات موحّدة العرض والهوامش ---------- */
+.topbar-in,.hero,.controls,.grid{
+  max-width:var(--maxw);
+  padding-left:max(var(--gutter),env(safe-area-inset-left));
+  padding-right:max(var(--gutter),env(safe-area-inset-right));
+}
+.ws{padding-left:var(--gutter);padding-right:var(--gutter)}
+.sheet-head,.verse-wrap,.sec,.sheet-foot{padding-left:var(--pad-sheet);padding-right:var(--pad-sheet)}
+.progress{margin-left:var(--pad-sheet);margin-right:var(--pad-sheet)}
+
+/* ---------- الشريط العلوي ---------- */
+.topbar{padding-top:env(safe-area-inset-top)}
+.brand{user-select:none;-webkit-user-select:none}
+.brand .bt{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.topbar .brand small{display:block;font-size:.62rem;font-weight:500;color:#8a7742;letter-spacing:.02em}
+.site-foot .ver{opacity:.55;font-size:.72rem;display:block;margin-top:6px}
+.site-foot{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+
+/* ---------- الورقة المفتوحة تشغل عرض الشبكة كاملًا ---------- */
+.ws-item{scroll-margin-top:calc(var(--topbar-h) + 10px)}
+.ws-item[open]{grid-column:1/-1}
+.ws-item[open] .card{transform:none;box-shadow:none;cursor:default}
+
+/* شريط أدوات الورقة يبقى ظاهرًا أثناء التمرير */
+.ws-top{
+  position:sticky;top:var(--topbar-h);z-index:20;
+  background:var(--paper);border-radius:12px;padding:8px 10px;
+  box-shadow:0 8px 14px -10px rgba(38,49,58,.45);
+}
+.ws-top .act.close{background:#fff;border:1.5px solid var(--line);color:var(--ink-soft)}
+
+/* عدّاد التقدّم كسر عددي: يُعرض دائمًا من اليسار (٠ / ٦٠) لا معكوسًا */
+.progress b[data-ptxt]{direction:ltr;unicode-bidi:isolate}
+
+/* زر إغلاق الورقة السفلي (كان بلا تنسيق) */
+.ws-close{display:flex;justify-content:center;margin-top:18px}
+.ws-close .act{
+  border:1.5px solid var(--line);background:#fff;color:var(--ink-soft);
+  border-radius:999px;padding:10px 24px;font-weight:700;font-size:.88rem;
+}
+
+/* ---------- شاشات كبيرة ---------- */
+@media (min-width:1500px){
+  :root{--maxw:1340px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px}
+  .ws{max-width:1040px}
+}
+
+/* ---------- لوحي ---------- */
+@media (max-width:900px){
+  :root{--pad-sheet:20px}
+  .hero{padding-top:40px}
+  .stat{padding:11px 20px}
+}
+
+/* ---------- جوال ---------- */
+@media (max-width:640px){
+  :root{--gutter:14px;--pad-sheet:14px}
+  body{background-position:0 0, calc(100% - 26px) 0}
+
+  .brand{font-size:1.02rem;gap:8px}
+  .brand .lens{width:28px;height:28px;border-width:2.5px}
+
+  .hero{padding-top:24px;padding-bottom:16px}
+  .hero .bismillah{font-size:1.2rem;margin-bottom:10px}
+  .hero p.sub{font-size:.93rem;margin-top:10px}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+  .stat{min-width:0;padding:10px 8px;text-align:center}
+  .stat b{font-size:1.35rem}
+
+  .controls{margin-top:18px;gap:10px}
+  .tabs{width:100%;justify-content:stretch}
+  .tabs button{flex:1;padding:9px 6px;font-size:.82rem;white-space:nowrap}
+  .search{flex:1 1 100%}
+  .search input{width:100%}
+
+  .grid{margin-top:20px;margin-bottom:40px;gap:14px;grid-template-columns:1fr}
+  .card{padding:16px 14px 14px}
+  .card h3{font-size:1.12rem}
+
+  .ws{padding-left:0;padding-right:0;padding-top:16px;padding-bottom:34px}
+  .ws-top{border-radius:10px;flex-wrap:wrap}
+  .ws-top .spacer{display:none}
+  .ws-top .act,.ws-top .back{flex:1 1 auto;text-align:center;padding-inline:12px;font-size:.83rem}
+  .sheet{border-radius:12px}
+  .sheet-head{padding-top:18px;padding-bottom:14px}
+  .sheet-head .lab-line{font-size:.82rem;gap:8px}
+  .sheet-head .info{font-size:.8rem}
+  .meta-fields{grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+
+  .verse-wrap{padding-top:16px}
+  .verse{padding:18px 12px;border-radius:10px;box-shadow:inset 0 0 0 4px #fff, inset 0 0 0 5.5px var(--gold-soft)}
+  .verse::before{right:14px}
+  .verse::after{left:14px}
+  .verse p{line-height:2.25}
+
+  .progress{margin-top:16px;flex-wrap:wrap;gap:8px}
+  .progress .pbar{flex:1 1 100%;order:-1}
+  .progress b{min-width:0;font-size:.86rem;text-align:start}
+
+  .sec-head{margin:16px 0 10px;gap:10px}
+  .sec-head .lens-badge{width:38px;height:38px;font-size:1rem;border-width:2.5px}
+  .sec-head h3{font-size:1.08rem}
+  .qlist{gap:4px 0}
+  .q .drawbox{height:88px}
+  .sheet-foot{margin-top:20px;padding-top:18px;padding-bottom:18px}
+  .sheet-foot .fv{font-size:1.1rem;line-height:2}
+}
+
+@media (max-width:380px){
+  :root{--gutter:10px;--pad-sheet:11px}
+  .topbar .brand small{display:none}
+  .meta-fields{grid-template-columns:1fr}
+  .stats{gap:8px}
+}
+
+/* ---------- الجوال أفقيًا: توفير المساحة الرأسية ---------- */
+@media (max-height:520px) and (orientation:landscape){
+  .topbar{position:static}
+  .ws-top{top:0}
+  .hero{padding-top:16px;padding-bottom:10px}
+  .hero .bismillah{margin-bottom:6px}
+  .stats{margin-top:14px}
+}
+
+/* ---------- شاشات اللمس: أهداف لمس أكبر وبلا تأثيرات تحويم ---------- */
+@media (hover:none){
+  .card:hover{transform:none;box-shadow:none}
+  .q:hover{background:transparent}
+  .ws-nav a:hover{transform:none}
+  .tabs button,.chip-btn,.ws-top .act,.ws-top .back,.ws-close .act,
+  .admin-panel .act,.admin-list .del,.adm-gate .act{min-height:44px}
+  .q{padding:10px}
+  .q input[type=checkbox]{width:22px;height:22px}
+  .q .checkrow label{padding:4px 0}
+  .q .ansbtn{min-height:36px;padding-inline:14px}
+  .card{padding-bottom:16px}
+}
+
+/* منع تكبير الصفحة تلقائيًا عند التركيز على حقل في iOS (يحتاج 16px) */
+@media (max-width:820px){
+  .q input[type=text],.mf input,.search input,input.seg,
+  .admin-grid input,.admin-grid select,.admin-grid textarea,.adm-gate input{font-size:16px}
+}
+
+/* ---------- الطباعة (تعمل من الحاسب والجوال) ---------- */
+@media print{
+  @page{margin:12mm}
+  .grid{display:block!important;max-width:100%;padding:0;margin:0;gap:0}
+  .ws-item[open]{grid-column:auto}
+  .ws-item[open] summary{display:none!important}
+  .ws{max-width:100%;padding:0}
+  .ws-top,.ws-close,.adm-gate{display:none!important}
+  .sheet{break-inside:auto}
+  .sheet-head,.verse-wrap,.sec,.sheet-foot{padding-left:0;padding-right:0}
+}

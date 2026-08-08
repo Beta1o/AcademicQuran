@@ -1,0 +1,97 @@
+<div id="admGate" class="adm-gate" hidden>
+  <form class="adm-gate-box" id="admGateForm" autocomplete="off">
+    <h3>🔒 صفحة المدير</h3>
+    <p>هذه الصفحة للمعلّم — أدخل كلمة المرور للمتابعة</p>
+    <input id="admPass" type="password" inputmode="text" autocomplete="current-password" placeholder="كلمة المرور" aria-label="كلمة المرور">
+    <div class="adm-gate-msg" id="admGateMsg" role="alert"></div>
+    <div class="adm-gate-actions">
+      <button type="submit" class="act print">دخول</button>
+      <button type="button" class="act" id="admGateCancel">إلغاء</button>
+    </div>
+  </form>
+</div>
+<div id="adminPanel" class="admin-panel" hidden>
+  <div class="admin-box">
+    <div class="admin-head">
+      <h2>🛠️ صفحة المدير</h2>
+      <button id="admClose" class="act" type="button">✕ إغلاق</button>
+    </div>
+
+    <div class="admin-steps">
+      <button type="button" class="step on" data-step="ws"><b>١</b> إضافة سورة أو آية</button>
+      <button type="button" class="step" data-step="q"><b>٢</b> إضافة الأسئلة</button>
+    </div>
+
+    <!-- ========== الخطوة ١: ورقة عمل جديدة ========== -->
+    <section id="admStepWs" class="admin-step">
+      <p class="admin-hint">أضف سورة كاملة أو آية مختارة، ثم انتقل للخطوة الثانية لإضافة أسئلتها في الأقسام الثلاثة.</p>
+      <div class="admin-grid">
+        <label>اختر سورة من القائمة (تعبئة تلقائية للاسم والرقم وعدد الآيات)
+          <select id="nwSuraPick"><option value="">— اختر سورة —</option></select>
+        </label>
+        <label>النوع
+          <select id="nwCat"><option value="surah">سورة كاملة</option><option value="ayah">آية مختارة</option></select>
+        </label>
+        <label>اسم الورقة <input type="text" id="nwName" placeholder="مثال: سورة الضحى"></label>
+        <label>رقم السورة في المصحف <input type="text" id="nwNum" inputmode="numeric" placeholder="١ - ١١٤"></label>
+        <label>عدد آيات السورة <input type="text" id="nwAyat" inputmode="numeric" placeholder="مثال: ١١"></label>
+        <label id="nwAyaWrap">رقم الآية (للآية المختارة) <input type="text" id="nwAya" inputmode="numeric" placeholder="مثال: ٩٠"></label>
+        <label>لون الورقة
+          <select id="nwHue">
+            <option value="--teal">أخضر</option><option value="--gold">ذهبي</option>
+            <option value="--indigo">أزرق</option><option value="--plum">أرجواني</option>
+            <option value="--olive">زيتوني</option><option value="--amber">برتقالي</option>
+          </select>
+        </label>
+      </div>
+      <label class="admin-full">نص السورة أو الآية (افصل بين الآيات بعلامة ۝)
+        <textarea id="nwVerse" rows="4" placeholder="مثال: وَالضُّحَىٰ ۝ وَاللَّيْلِ إِذَا سَجَىٰ ۝ مَا وَدَّعَكَ رَبُّكَ وَمَا قَلَىٰ"></textarea>
+      </label>
+      <div class="admin-actions"><button type="button" class="act" id="nwAyaMark">۝ إدراج علامة آية</button></div>
+      <div class="admin-grid">
+        <label>عنوان القسم الأول <input type="text" id="nwSec0" value="أولًا: لغة الأرقام"></label>
+        <label>عنوان القسم الثاني <input type="text" id="nwSec1" value="ثانيًا: مهارات الاستخراج"></label>
+        <label>عنوان القسم الثالث <input type="text" id="nwSec2" value="ثالثًا: التدبر والنسخ"></label>
+      </div>
+      <div class="admin-grid">
+        <label>وصف مختصر <input type="text" id="nwInfo" placeholder="سورة كاملة · ١١ آية · النزول: مكية"></label>
+        <label>آية الختام <input type="text" id="nwFootV" placeholder="﴿ ... ﴾"></label>
+        <label>عبارة تشجيع <input type="text" id="nwFootM" placeholder="أحسنت يا باحث صغير"></label>
+      </div>
+      <div class="admin-actions">
+        <button class="act print" id="nwSave" type="button">💾 حفظ الورقة والانتقال للأسئلة</button>
+        <button class="act" id="nwClear" type="button">مسح الحقول</button>
+        <button class="act" id="nwCancelEdit" type="button" hidden>✕ إلغاء التعديل</button>
+      </div>
+      <div id="nwMsg" class="admin-msg"></div>
+      <h3 class="admin-sub">الأوراق المضافة</h3>
+      <div id="nwList" class="admin-list"></div>
+    </section>
+
+    <!-- ========== الخطوة ٢: الأسئلة ========== -->
+    <section id="admStepQ" class="admin-step" hidden>
+      <div class="admin-grid">
+        <label>الورقة <select id="admWs"></select></label>
+        <label>القسم <select id="admSec"></select></label>
+        <label>نوع السؤال <select id="admType"></select></label>
+      </div>
+      <div id="admFields" class="admin-grid"></div>
+      <div class="admin-preview" id="admPrev" hidden></div>
+      <div class="admin-actions">
+        <button class="act" id="admPreview" type="button">👁️ معاينة</button>
+        <button class="act print" id="admAdd" type="button">➕ إضافة السؤال</button>
+        <button class="act" id="admExport" type="button">💾 تنزيل نسخة محفوظة (HTML)</button>
+      </div>
+      <div id="admMsg" class="admin-msg"></div>
+      <p class="admin-hint">أو أضف مجموعة أسئلة جاهزة (قالب) لقسم الورقة المختار أعلاه دفعة واحدة، ثم عدّلها أو احذف ما لا يلزم من القائمة تحت:</p>
+      <div class="admin-actions">
+        <button class="act" id="admTpl0" type="button">🧩 قالب «أولًا: لغة الأرقام»</button>
+        <button class="act" id="admTpl1" type="button">🧩 قالب «ثانيًا: مهارات الاستخراج»</button>
+        <button class="act" id="admTpl2" type="button">🧩 قالب «ثالثًا: التدبر والنسخ»</button>
+        <button class="act print" id="admTplAll" type="button">✨ توليد أسئلة الأقسام الثلاثة كلها دفعة واحدة</button>
+      </div>
+      <h3 class="admin-sub">الأسئلة المضافة <button class="act" id="admToggleAns" type="button">👁️ إظهار/إخفاء كل الإجابات</button></h3>
+      <div id="admList" class="admin-list"></div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,99 @@
+
+/* ================= admin ================= */
+.admin-panel{position:fixed;inset:0;background:rgba(30,25,15,.55);z-index:60;overflow:auto;padding:24px 12px;-webkit-overflow-scrolling:touch}
+.admin-box{max-width:860px;margin:0 auto;background:#FBF8F0;border:1px solid #e4d9bd;border-radius:16px;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.admin-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.admin-head h2{margin:0;font-size:1.25rem;color:#5a4a1a}
+.admin-head button{margin-inline-start:auto}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
+.admin-grid label{display:flex;flex-direction:column;gap:5px;font-size:.85rem;color:#6b5a28;font-weight:600}
+.admin-grid input,.admin-grid select,.admin-grid textarea{border:1px solid #d8cba6;border-radius:9px;padding:8px 10px;font-family:inherit;font-size:.95rem;background:#fff;max-width:100%}
+.admin-actions{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.admin-preview{background:#fff;border:1px dashed #c9b877;border-radius:10px;padding:10px 14px;margin:10px 0;font-weight:600;color:#4a3d15;overflow-wrap:anywhere}
+.admin-msg{min-height:22px;font-weight:700;margin:6px 0}
+.admin-msg.ok{color:#1E6E63}.admin-msg.err{color:#c0392b}
+.admin-list{display:flex;flex-direction:column;gap:8px}
+.admin-list .row{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #eadfc2;border-radius:10px;padding:8px 12px;font-size:.9rem;overflow-wrap:anywhere}
+.admin-list .row .del{margin-inline-start:auto;background:none;border:1px solid #c0392b;color:#c0392b;border-radius:8px;padding:3px 10px;cursor:pointer;font-family:inherit}
+.admin-list .row .edit{background:none;border:1px solid #3E5A9B;color:#3E5A9B;border-radius:8px;padding:3px 10px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.admin-list .row .txt-cell{flex:1}
+.admin-list .row .edit-field{display:flex;flex-direction:column;gap:3px;font-size:.78rem;color:#6b5a28;font-weight:600;flex:1;min-width:160px}
+.admin-list .row .edit-field input{border:1px solid #d8cba6;border-radius:8px;padding:6px 8px;font-family:inherit;font-size:.88rem;background:#fff}
+.admin-list .row .ans-wrap{display:flex;align-items:center;gap:6px;font-size:.85rem}
+.admin-list .row .ans-hidden{letter-spacing:2px;color:#9a8a55}
+.admin-list .row .ans-val{color:#1E6E63;font-weight:700}
+.admin-list .row .reveal{background:none;border:1px solid #B9902F;color:#8a6d1f;border-radius:8px;padding:3px 10px;cursor:pointer;font-family:inherit;font-size:.8rem;white-space:nowrap}
+.admin-sub #admToggleAns{margin-inline-start:10px;font-size:.75rem;background:none;border:1px solid #d8cba6;color:#6b5a28;border-radius:8px;padding:2px 8px;cursor:pointer;font-family:inherit}
+.q.custom{position:relative}
+.q.custom::before{content:'مُضاف';position:absolute;top:-8px;inset-inline-end:8px;background:var(--gold,#B9902F);color:#fff;font-size:.62rem;border-radius:6px;padding:1px 7px}
+.mcqopts{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.mcqopts label{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #e2d7b8;border-radius:9px;padding:6px 10px;cursor:pointer}
+.q.ok .mcqopts label{border-color:#1E6E63}
+.q.bad .mcqopts label{border-color:#c0392b}
+
+/* أزرار لوحة المدير (تعمل خارج سياق --ac) */
+.admin-panel .act,.adm-gate .act{
+  border:1.5px solid #d8cba6;background:#fff;color:#5a4a1a;border-radius:999px;
+  padding:9px 18px;font-weight:700;font-size:.88rem;font-family:inherit;cursor:pointer;
+}
+.admin-panel .act.print,.adm-gate .act.print{background:#1E6E63;border-color:#1E6E63;color:#fff}
+
+/* ---------- بوابة كلمة المرور ---------- */
+.adm-gate{position:fixed;inset:0;z-index:70;background:rgba(30,25,15,.6);display:grid;place-items:center;padding:20px}
+.adm-gate[hidden]{display:none}
+.adm-gate-box{
+  width:100%;max-width:340px;background:#FBF8F0;border:1px solid #e4d9bd;border-radius:16px;
+  padding:20px 18px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center;
+}
+.adm-gate-box h3{font-size:1.1rem;color:#5a4a1a;margin-bottom:4px}
+.adm-gate-box p{font-size:.85rem;color:#6b5a28;margin-bottom:12px}
+.adm-gate-box input{
+  width:100%;border:1px solid #d8cba6;border-radius:10px;padding:11px 12px;
+  font-family:inherit;font-size:1rem;background:#fff;text-align:center;letter-spacing:2px;
+}
+.adm-gate-box input:focus{outline:2px solid #1E6E63;outline-offset:1px}
+.adm-gate-msg{min-height:20px;font-size:.82rem;font-weight:700;color:#c0392b;margin:8px 0 2px}
+.adm-gate-actions{display:flex;gap:8px;margin-top:8px}
+.adm-gate-actions .act{flex:1}
+.adm-gate-box.shake{animation:admShake .3s}
+@keyframes admShake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+@media (max-width:640px){
+  .admin-panel{padding:0}
+  .admin-box{
+    margin:0;min-height:100%;border:none;border-radius:0;
+    padding:12px 12px calc(20px + env(safe-area-inset-bottom));
+  }
+  .admin-head{
+    position:sticky;top:0;z-index:2;background:#FBF8F0;border-bottom:1px solid #eadfc2;
+    margin:-12px -12px 12px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;
+  }
+  .admin-head h2{font-size:1rem}
+  .admin-grid{grid-template-columns:1fr}
+  .admin-actions{gap:8px}
+  .admin-actions .act{flex:1 1 100%}
+  .admin-list .row{flex-wrap:wrap}
+}
+
+@media print{.admin-panel,.adm-gate{display:none!important}}
+
+/* ---------- خطوتا صفحة المدير ---------- */
+.admin-steps{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.admin-steps .step{
+  flex:1 1 160px;display:flex;align-items:center;justify-content:center;gap:8px;
+  border:1.5px solid #e0d5b4;background:#fff;color:#7a6a35;border-radius:12px;
+  padding:10px 12px;font-family:inherit;font-weight:700;font-size:.9rem;cursor:pointer;
+}
+.admin-steps .step b{
+  width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  background:#eee3c4;color:#7a5e14;font-size:.75rem
+}
+.admin-steps .step.on{background:#1E6E63;border-color:#1E6E63;color:#fff}
+.admin-steps .step.on b{background:rgba(255,255,255,.25);color:#fff}
+.admin-hint{font-size:.83rem;color:#6b5a28;margin-bottom:10px}
+.admin-sub{margin:16px 0 8px;font-size:1rem;color:#5a4a1a}
+.admin-full{display:flex;flex-direction:column;gap:5px;font-size:.85rem;color:#6b5a28;font-weight:600;margin-bottom:10px}
+.admin-full textarea{
+  border:1px solid #d8cba6;border-radius:9px;padding:9px 11px;font-family:var(--f-quran,inherit);
+  font-size:1.05rem;line-height:2;background:#fff;resize:vertical;width:100%;
+}

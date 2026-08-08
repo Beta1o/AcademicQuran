@@ -1,0 +1,51 @@
+.ws-item{display:block}
+.ws-item summary{list-style:none;cursor:pointer;display:block}
+.ws-item summary::-webkit-details-marker{display:none}
+.ws-item summary::marker{content:''}
+.ws-item[open] summary{border-radius:14px 14px 0 0}
+.js-only{display:none}
+body.js .js-only{display:flex}
+.q .hint{margin-top:6px;font-size:.85rem;color:#8a6d1f;background:#fdf6e3;border:1px dashed #d9b44a;border-radius:8px;padding:6px 10px}
+.q.ok input[data-k]{border-color:#1E6E63;background:#eefaf5}
+.q.ok .num{background:#1E6E63;color:#fff}
+.q.ok .num::after{content:' ✓'}
+.q.bad input[data-k]{border-color:#c0392b;background:#fdf0ee}
+.q.bad .num{background:#c0392b;color:#fff}
+.q.bad .num::after{content:' ✗'}
+.q .ansbtn{margin-top:6px;background:none;border:1px solid #d9b44a;color:#8a6d1f;border-radius:8px;padding:3px 10px;font-size:.8rem;cursor:pointer;font-family:inherit}
+.progress .score{margin-inline-start:auto;color:#1E6E63}
+input.seg{letter-spacing:1px;font-weight:600}
+@media print{
+  .hero,.controls,.topbar,.site-foot,.ws-top,.ws-close,.q .ansbtn,.q .hint{display:none!important}
+  .ws-item:not([open]){display:none!important}
+}
+
+/* ---------- مستوى صعوبة السؤال ---------- */
+.lvl{
+  display:inline-block;font-size:.62rem;font-weight:700;line-height:1.6;
+  border-radius:999px;padding:0 8px;margin-inline-start:6px;vertical-align:middle;
+  border:1px solid currentColor;white-space:nowrap;
+}
+.lvl-1{color:#2f7d63;background:#eaf7f1}
+.lvl-2{color:#3E5A9B;background:#eef2fb}
+.lvl-3{color:#9a7414;background:#fdf6e3}
+.lvl-4{color:#b0561a;background:#fdf0e6}
+.lvl-5{color:#a32b3f;background:#fdecef}
+.lvl-legend{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;
+  margin-top:10px;font-size:.72rem;color:var(--ink-soft)
+}
+.lvl-legend .lvl{margin-inline-start:0}
+@media print{ .lvl{border-color:#999;color:#444;background:none} }
+
+/* ---------- وسم موقع السورة على البطاقة ---------- */
+.card .tagrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.card .loc-tag{
+  font-size:.68rem;font-weight:700;color:var(--ink-soft);
+  background:var(--paper2);border-radius:999px;padding:2.5px 10px;
+}
+.card .loc-tag.new{color:#7a5e14;background:#f6ecc9}
+.sheet-head .loc{
+  text-align:center;font-size:.78rem;color:var(--ink-soft);
+  margin-top:6px;font-weight:600
+}
