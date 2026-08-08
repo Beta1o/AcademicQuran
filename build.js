@@ -821,7 +821,7 @@ ${responsiveCss}</style>
     </div>
   </section>
   <div class="controls js-only">
-    <div class="tabs"><button class="on" data-f="all">الكل</button><button data-f="surah">السور الكاملة</button><button data-f="ayah">الآيات المختارة</button><button data-f="story">قصص الأنبياء</button></div>
+    <div class="tabs"><button class="on" data-f="all">الكل</button><button data-f="surah">السور الكاملة</button><button data-f="ayah">الآيات المختارة</button><button data-f="story">القصص</button></div>
     <div class="tabs lvl-tabs"><button class="on" data-lf="all">كل المستويات</button>${LEVELS.map((L,i)=>`<button data-lf="${i+1}" class="lvl-tab lvl-${i+1}">${L}</button>`).join('')}</div>
     <div class="search"><input id="q" type="text" placeholder="ابحث عن سورة أو آية..."></div>
   </div>

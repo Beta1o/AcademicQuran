@@ -1055,6 +1055,90 @@ if(panel){
       msg('✅ تم تنزيل نسخة تحتوي كل الأسئلة المضافة — استخدمها بدل الملف القديم.',true);
     }catch(e){ msg('تعذر التنزيل في هذا المتصفح: '+e.message,false); }
   });
+
+  /* ---------- تصدير/استيراد كل الأسئلة بالجملة (للمدير فقط) ---------- */
+  function importMsg(s,ok){ if($('admImportMsg')){ $('admImportMsg').textContent=s||''; $('admImportMsg').className='admin-msg '+(s?(ok?'ok':'err'):''); } }
+  function collectAllQuestions(){
+    var out=[];
+    document.querySelectorAll('.ws-item').forEach(function(d){
+      var wsId=d.id.slice(2);
+      var secs=d.querySelectorAll('.sec');
+      d.querySelectorAll('.q').forEach(function(q){
+        var el=q.querySelector('[data-k]'); if(!el) return;
+        var txtEl=q.querySelector('.txt');
+        var secIdx=0;
+        for(var i=0;i<secs.length;i++){ if(secs[i].contains(q)){ secIdx=i; break; } }
+        out.push({
+          ws: wsId,
+          name: d.dataset.name,
+          key: el.dataset.k,
+          sec: secIdx,
+          t: txtEl?txtEl.firstChild.textContent.replace(/\s+$/,''):'',
+          show: el.dataset.show||'',
+          ans: el.dataset.ans!==undefined?el.dataset.ans:null,
+          lvl: q.dataset.lvl||''
+        });
+      });
+    });
+    return out;
+  }
+  if($('admExportAll')) $('admExportAll').addEventListener('click',function(){
+    try{
+      var data=collectAllQuestions();
+      var blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json;charset=utf-8'});
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='tahleel-all-questions.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      importMsg('✅ صُدِّر '+toArD2(data.length)+' سؤالًا من كل الأوراق.',true);
+    }catch(e){ importMsg('تعذر التصدير: '+e.message,false); }
+  });
+  var pendingImportRows=null;
+  if($('admImportFile')) $('admImportFile').addEventListener('change',function(){
+    var f=$('admImportFile').files[0];
+    pendingImportRows=null; $('admImportApply').disabled=true;
+    if(!f) return;
+    var reader=new FileReader();
+    reader.onload=function(){
+      try{
+        var rows=JSON.parse(reader.result);
+        if(!Array.isArray(rows)) throw new Error('الملف ليس قائمة أسئلة صالحة');
+        pendingImportRows=rows;
+        $('admImportApply').disabled=false;
+        importMsg('📄 جاهز للتطبيق: '+toArD2(rows.length)+' سؤالًا من الملف. اضغط «تطبيق التحديثات» للمتابعة.',true);
+      }catch(e){ importMsg('تعذرت قراءة الملف: '+e.message,false); }
+    };
+    reader.readAsText(f);
+  });
+  if($('admImportApply')) $('admImportApply').addEventListener('click',function(){
+    if(!pendingImportRows) return;
+    if(!confirm('سيُطبَّق تحديث نص/إجابة '+pendingImportRows.length+' سؤالًا من الملف على هذا المتصفح. متابعة؟')) return;
+    var applied=0, skipped=0;
+    pendingImportRows.forEach(function(row){
+      var d=document.getElementById('w-'+row.ws); if(!d||!row.key){ skipped++; return; }
+      var el=d.querySelector('[data-k="'+row.key+'"]'); if(!el){ skipped++; return; }
+      var edit={t:row.t};
+      if(row.show){ edit.show=row.show; if(row.ans!==undefined&&row.ans!==null) edit.ans=row.ans; }
+      else { edit.show=''; }
+      applyQuestionEdit(d, row.key, edit);
+      if(d.classList.contains('ws-custom')){
+        var m=row.key.match(/^.+-c-(\d+)$/);
+        if(m && CUSTOM[row.ws] && CUSTOM[row.ws][+m[1]]){
+          CUSTOM[row.ws][+m[1]].t=row.t;
+          if(row.show){ CUSTOM[row.ws][+m[1]].show=row.show; if(row.ans!==undefined&&row.ans!==null) CUSTOM[row.ws][+m[1]].ans=norm(row.ans); }
+        }
+      } else {
+        WS_OVERRIDES[row.ws]=WS_OVERRIDES[row.ws]||{};
+        WS_OVERRIDES[row.ws].questions=WS_OVERRIDES[row.ws].questions||{};
+        WS_OVERRIDES[row.ws].questions[row.key]=edit;
+      }
+      applied++;
+    });
+    saveOverrides(); saveCustom();
+    pendingImportRows=null; $('admImportApply').disabled=true; $('admImportFile').value='';
+    renderBwList(); renderAdmList();
+    importMsg('✅ طُبِّق التحديث على '+toArD2(applied)+' سؤالًا'+(skipped?(' — تخطّي '+toArD2(skipped)+' لم يُعثر لها على مطابقة'):''),true);
+  });
 } else { window.renderAdmList=function(){}; }
 renderCustomWs();
 renderCustomAll();

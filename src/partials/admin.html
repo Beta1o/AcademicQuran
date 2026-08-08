@@ -100,6 +100,17 @@
         <button class="act" id="admExport" type="button">💾 تنزيل نسخة محفوظة (HTML)</button>
       </div>
       <div id="admMsg" class="admin-msg"></div>
+      <h3 class="admin-sub">تصدير/استيراد كل الأسئلة بالجملة (للمدير فقط)</h3>
+      <p class="admin-hint">صدّر كل أسئلة كل الأوراق كملف JSON واحد لمراجعتها أو تعديلها خارجيًا، ثم ارفع الملف بعد التعديل لتطبيق كل التغييرات دفعة واحدة. التحديث يطبَّق على نص السؤال وإجابته فقط (لا يضيف أو يحذف أسئلة، ولا يغيّر نص الآيات).</p>
+      <div class="admin-actions">
+        <button class="act print" id="admExportAll" type="button">⬇️ تصدير كل الأسئلة (JSON)</button>
+        <label class="act" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+          📤 اختر ملف JSON للاستيراد
+          <input type="file" id="admImportFile" accept="application/json" style="display:none">
+        </label>
+        <button class="act" id="admImportApply" type="button" disabled>✅ تطبيق التحديثات</button>
+      </div>
+      <div id="admImportMsg" class="admin-msg"></div>
       <p class="admin-hint">أو أضف مجموعة أسئلة جاهزة (قالب) لقسم الورقة المختار أعلاه دفعة واحدة، ثم عدّلها أو احذف ما لا يلزم من القائمة تحت:</p>
       <div class="admin-actions">
         <button class="act" id="admTpl0" type="button">🧩 قالب «أولًا: لغة الأرقام»</button>
