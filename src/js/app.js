@@ -205,16 +205,10 @@ function markReading(ayaNo){
   var seg=curDet.querySelector('.sheet .verse .aya-seg[data-aya="'+ayaNo+'"]');
   if(seg){ seg.classList.add('reading'); try{ seg.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} }
 }
-/* البسملة: «بسم الله الرحمن الرحيم» — تُقرأ في مطلع كل سورة (ما عدا التوبة رقم ٩)،
-   وكذلك عند بدء آية مختارة من أول السورة. تُستخرج من صوت الفاتحة آية ١ نفسها
-   (وهي البسملة ذاتها) بنفس صوت القارئ المختار — عبر نفس الواجهة. */
-function needsBasmala(det){
-  var sura=parseInt(det.dataset.surano,10);
-  if(!sura||sura===9) return false;
-  if(det.dataset.cat==='surah') return true;
-  var start=det.dataset.ayalist?parseInt(det.dataset.ayalist.split(',')[0],10):parseInt(det.dataset.ayano,10);
-  return start===1;
-}
+/* البسملة: ملف صوت الآية الأولى من أي سورة (ما عدا التوبة رقم ٩) يتضمّن أصلًا
+   البسملة منطوقة في مطلعه بصوت القارئ نفسه — وكذلك آية ١ من الفاتحة هي البسملة
+   ذاتها. لذلك لا حاجة لإلحاق مقطع بسملة منفصل: إلحاقه كان يكرّرها مرتين متتاليتين
+   (مرة من مقطع منفصل ومرة داخل تسجيل الآية نفسه) فيبدو الصوت كأنه تغيّر القارئ. */
 /* تُشغَّل الآيات كملفات منفصلة بالتتابع (لا كصوت سورة كاملة واحد) كي يمكن تمييز الآية الحالية أثناء الاستماع لمساعدة الحفظ */
 function playAyaList(items,btn,det){
   if(!items.length){ btn.textContent='🔊 لا يوجد صوت'; setTimeout(function(){ btn.textContent='🔊 استماع للتلاوة'; },1500); return; }
@@ -256,22 +250,12 @@ function bindAudio(root){
       } else {
         list=(det.dataset.ayalist?det.dataset.ayalist.split(','):[det.dataset.ayano]).filter(Boolean);
       }
-      var pre=[];
-      var basmalaP = needsBasmala(det)
-        ? fetchJson('https://quranapi.pages.dev/api/audio/1/1.json').then(function(d){
-            var u=d&&d[s.reciter]&&d[s.reciter].url; return u?[{aya:null, url:u}]:[];
-          })
-        : Promise.resolve([]);
-      Promise.all([
-        basmalaP,
-        Promise.all(list.map(function(a){
-          return fetchJson('https://quranapi.pages.dev/api/audio/'+sura+'/'+a+'.json').then(function(d){
-            return {aya:a, url:d&&d[s.reciter]&&d[s.reciter].url};
-          });
-        }))
-      ]).then(function(res){
-        var basmala=res[0], items=res[1];
-        playAyaList(pre.concat(basmala, items.filter(function(it){ return it.url; })), b, det);
+      Promise.all(list.map(function(a){
+        return fetchJson('https://quranapi.pages.dev/api/audio/'+sura+'/'+a+'.json').then(function(d){
+          return {aya:a, url:d&&d[s.reciter]&&d[s.reciter].url};
+        });
+      })).then(function(items){
+        playAyaList(items.filter(function(it){ return it.url; }), b, det);
       });
     });
   });
