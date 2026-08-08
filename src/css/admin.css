@@ -1,15 +1,19 @@
 
-/* ================= admin ================= */
-.admin-panel{position:fixed;inset:0;background:rgba(30,25,15,.55);z-index:60;overflow:auto;padding:24px 12px;-webkit-overflow-scrolling:touch}
-.admin-box{max-width:860px;margin:0 auto;background:#FBF8F0;border:1px solid #e4d9bd;border-radius:16px;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-.admin-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.admin-head h2{margin:0;font-size:1.25rem;color:#5a4a1a}
+/* ================= admin: صفحة كاملة احترافية، لا نافذة منبثقة صغيرة ================= */
+.admin-panel{position:fixed;inset:0;background:#FBF8F0;z-index:60;overflow:auto;-webkit-overflow-scrolling:touch}
+.admin-box{max-width:1180px;margin:0 auto;background:#FBF8F0;padding:0 20px 40px}
+.admin-head{
+  display:flex;align-items:center;gap:12px;margin-bottom:18px;position:sticky;top:0;z-index:5;
+  background:#FBF8F0;border-bottom:1.5px solid #e4d9bd;padding:16px 0;
+}
+.admin-head h2{margin:0;font-size:1.35rem;color:#5a4a1a}
 .admin-head button{margin-inline-start:auto}
 .admin-settings{background:#fff;border:1px solid #eadfc2;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:4px}
 .admin-settings .switch-row{display:flex;align-items:center;gap:8px;font-weight:700;color:#5a4a1a;font-size:.92rem;cursor:pointer}
 .admin-settings .switch-row input{width:18px;height:18px}
 .admin-list .row .hide-toggle{background:none;border:1px solid #9a7414;color:#8a6d1f;border-radius:8px;padding:3px 10px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .admin-list .row .builtin-tag{background:#eef2fb;color:#3E5A9B;border-radius:6px;padding:1px 8px;font-size:.72rem;font-weight:700}
+.admin-list .row .bw-lvls{display:flex;gap:4px;flex-wrap:wrap}
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
 .admin-grid label{display:flex;flex-direction:column;gap:5px;font-size:.85rem;color:#6b5a28;font-weight:600}
 .admin-grid input,.admin-grid select,.admin-grid textarea{border:1px solid #d8cba6;border-radius:9px;padding:8px 10px;font-family:inherit;font-size:.95rem;background:#fff;max-width:100%}
@@ -30,8 +34,6 @@
 .admin-list .row .ans-val{color:#1E6E63;font-weight:700}
 .admin-list .row .reveal{background:none;border:1px solid #B9902F;color:#8a6d1f;border-radius:8px;padding:3px 10px;cursor:pointer;font-family:inherit;font-size:.8rem;white-space:nowrap}
 .admin-sub #admToggleAns{margin-inline-start:10px;font-size:.75rem;background:none;border:1px solid #d8cba6;color:#6b5a28;border-radius:8px;padding:2px 8px;cursor:pointer;font-family:inherit}
-.q.custom{position:relative}
-.q.custom::before{content:'مُضاف';position:absolute;top:-8px;inset-inline-end:8px;background:var(--gold,#B9902F);color:#fff;font-size:.62rem;border-radius:6px;padding:1px 7px}
 .mcqopts{display:flex;flex-direction:column;gap:6px;margin-top:6px}
 .mcqopts label{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #e2d7b8;border-radius:9px;padding:6px 10px;cursor:pointer}
 .q.ok .mcqopts label{border-color:#1E6E63}
@@ -65,15 +67,8 @@
 @keyframes admShake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
 @media (max-width:640px){
-  .admin-panel{padding:0}
-  .admin-box{
-    margin:0;min-height:100%;border:none;border-radius:0;
-    padding:12px 12px calc(20px + env(safe-area-inset-bottom));
-  }
-  .admin-head{
-    position:sticky;top:0;z-index:2;background:#FBF8F0;border-bottom:1px solid #eadfc2;
-    margin:-12px -12px 12px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;
-  }
+  .admin-box{padding:0 12px calc(20px + env(safe-area-inset-bottom))}
+  .admin-head{padding-top:calc(16px + env(safe-area-inset-top))}
   .admin-head h2{font-size:1rem}
   .admin-grid{grid-template-columns:1fr}
   .admin-actions{gap:8px}

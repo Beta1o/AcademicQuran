@@ -332,17 +332,28 @@ function bindQ(root){
     });
   });
 }
+/* يعيد ترقيم كل أسئلة الورقة (١، ٢، ٣...) حسب ترتيبها الفعلي في الصفحة،
+   بدل ترقيمها حسب وقت الإضافة — فلا تظهر أسئلة مضافة بأرقام قافزة كـ ٦١. */
+function renumberQuestions(det){
+  var n=0;
+  det.querySelectorAll('.q').forEach(function(q){
+    n++;
+    var numEl=q.querySelector('.num');
+    if(numEl) numEl.textContent=n;
+  });
+}
+window.renumberQuestions=renumberQuestions;
 function renderCustomAll(){
   document.querySelectorAll('.q.custom').forEach(function(el){el.remove();});
   Object.keys(CUSTOM).forEach(function(ws){
     var det=document.getElementById('w-'+ws); if(!det) return;
     var secs=det.querySelectorAll('.sec .qlist');
-    var base=det.querySelectorAll('.q').length;
     (CUSTOM[ws]||[]).forEach(function(item,idx){
       var target=secs[Math.min(item.sec||0,secs.length-1)];
       var key=ws+'-c-'+idx;
-      target.insertAdjacentHTML('beforeend', qHTML(item,key,base+idx+1));
+      target.insertAdjacentHTML('beforeend', qHTML(item,key,0));
     });
+    renumberQuestions(det);
     bindQ(det); updateProg(ws);
     var pm=det.querySelector('.prog-mini'); if(pm) pm.textContent=det.querySelectorAll('.q').length+' سؤالًا';
   });
@@ -693,8 +704,13 @@ if(panel){
     var out=[];
     document.querySelectorAll('.ws-item:not(.ws-custom)').forEach(function(d){
       var id=d.id.slice(2), hidden=HIDDEN_WS.indexOf(id)>-1;
+      var qs=d.querySelectorAll('.q'), nq=qs.length;
+      var lvlCount=[0,0,0,0,0];
+      qs.forEach(function(q){ var l=+q.dataset.lvl; if(l>=1&&l<=5) lvlCount[l-1]++; });
+      var lvlSummary=lvlCount.map(function(c,i){ return c?('<span class="lvl lvl-'+(i+1)+'">'+toArD2(c)+'</span>'):''; }).join('');
       out.push('<div class="row"><b>'+escA(d.dataset.name)+'</b><span class="builtin-tag">أصلية</span>'+
-        '<span>'+(d.dataset.cat==='surah'?'سورة':'آية')+(hidden?' · مخفية':'')+'</span>'+
+        '<span>'+(d.dataset.cat==='surah'?'سورة':'آية')+(hidden?' · مخفية':'')+' · '+toArD2(nq)+' سؤالًا</span>'+
+        '<span class="bw-lvls">'+lvlSummary+'</span>'+
         '<button class="edit" data-bwedit="'+id+'">تعديل العنوان</button>'+
         '<button class="edit" data-bwq="'+id+'">أسئلة الورقة</button>'+
         '<button class="hide-toggle" data-hideid="'+id+'">'+(hidden?'استعادة':'حذف')+'</button></div>');
