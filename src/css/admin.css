@@ -13,6 +13,7 @@
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
 .admin-grid label{display:flex;flex-direction:column;gap:5px;font-size:.85rem;color:#6b5a28;font-weight:600}
 .admin-grid input,.admin-grid select,.admin-grid textarea{border:1px solid #d8cba6;border-radius:9px;padding:8px 10px;font-family:inherit;font-size:.95rem;background:#fff;max-width:100%}
+.admin-grid input[readonly]{background:#f3ede0;color:#5a4a1a;font-weight:700}
 .admin-actions{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
 .admin-preview{background:#fff;border:1px dashed #c9b877;border-radius:10px;padding:10px 14px;margin:10px 0;font-weight:600;color:#4a3d15;overflow-wrap:anywhere}
 .admin-msg{min-height:22px;font-weight:700;margin:6px 0}

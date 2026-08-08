@@ -142,9 +142,25 @@ function applyOverrides(){
       var heads=d.querySelectorAll('.sec .sec-head h3');
       o.secs.forEach(function(t,i){ if(t && heads[i]) heads[i].textContent=t; });
     }
+    if(o.questions){
+      Object.keys(o.questions).forEach(function(key){ applyQuestionEdit(d, key, o.questions[key]); });
+    }
   });
 }
 window.applyOverrides=applyOverrides;
+/* يطبّق تعديل سؤال واحد (نصّه وإجابته) على عنصره في DOM دون المساس بنوع الحقل */
+function applyQuestionEdit(wsEl, key, edit){
+  var el=wsEl.querySelector('[data-k="'+key+'"]'); if(!el) return null;
+  var q=el.closest('.q'); if(!q) return null;
+  var txtEl=q.querySelector('.txt');
+  var before={ t: txtEl?txtEl.firstChild.textContent:'', ans: el.dataset.ans, show: el.dataset.show, mode: el.dataset.mode };
+  if(edit.t!==undefined && txtEl && txtEl.firstChild) txtEl.firstChild.textContent=edit.t+' ';
+  if(edit.show!==undefined){
+    if(edit.show){ el.dataset.show=edit.show; if(edit.ans!==undefined) el.dataset.ans=edit.ans; else delete el.dataset.ans; el.dataset.mode='contains'; }
+    else { delete el.dataset.show; delete el.dataset.ans; delete el.dataset.mode; }
+  }
+  return before;
+}
 
 /* ---------- question types catalog ---------- */
 var F_WORD=[{k:'word',label:'الكلمة'}];
@@ -486,24 +502,45 @@ if(panel){
     if(to>ayahs.length) to=ayahs.length;
     $('nwVerse').value=ayahs.slice(from-1,to).join(' ۝ ');
   }
+  /* ---------- اسم الورقة يُبنى تلقائيًا من السورة ورقم الآية — يمنع تعارض الأسماء ---------- */
+  function computeNwName(){
+    var opt=$('nwSuraPick').selectedOptions[0];
+    var suraName = (opt&&opt.value) ? opt.dataset.name : (function(){
+      var n=toInt($('nwNum').value), row=n?SURA_TABLE.filter(function(r){return r[0]===n;})[0]:null;
+      return row?row[1]:'';
+    })();
+    if(!suraName){ return; }
+    var base='سورة '+suraName;
+    if($('nwCat').value==='ayah'){
+      var from=toInt($('nwAya').value), to=toInt($('nwAyaTo').value);
+      if(from && to && to>from) base+=' — الآيات '+toArD2(from)+'-'+toArD2(to);
+      else if(from) base+=' — الآية '+toArD2(from);
+      else base+=' — الآية';
+    }
+    var extra=($('nwNameExtra').value||'').trim();
+    if(extra) base+=' ('+extra+')';
+    $('nwName').value=base;
+  }
+  window.computeNwName=computeNwName;
+  /* ---------- لون الورقة: يُشتق من رقم السورة (بترتيب المصحف) بدل اختيار حر عشوائي ----------
+     السور المكية والمدنية تتوزع دوريًا على الألوان الستة حسب رقم السورة، فيكون لكل سورة
+     لونٌ ثابتٌ ومتوقَّع دائمًا (نفس السورة = نفس اللون)، بدل اختيار المدير لونًا عشوائيًا. */
+  var HUE_CYCLE=['--teal','--gold','--indigo','--plum','--olive','--amber'];
+  function computeHueForSura(n){ return HUE_CYCLE[(n-1)%HUE_CYCLE.length]; }
   $('nwSuraPick').addEventListener('change',function(){
     var opt=$('nwSuraPick').selectedOptions[0]; if(!opt||!opt.value) return;
     $('nwNum').value=opt.value;
-    if($('nwCat').value==='surah'){
-      $('nwName').value='سورة '+opt.dataset.name;
-      $('nwAyat').value=opt.dataset.ayat;
-      fillVerseFromQuran();
-    } else {
-      $('nwName').value='سورة '+opt.dataset.name+' — الآية';
-      $('nwAyat').value=opt.dataset.ayat;
-      try{ $('nwAya').focus(); }catch(e){}
-    }
+    $('nwAyat').value=opt.dataset.ayat;
+    $('nwHue').value=computeHueForSura(+opt.value);
+    computeNwName();
+    if($('nwCat').value==='surah'){ fillVerseFromQuran(); }
+    else { try{ $('nwAya').focus(); }catch(e){} }
   });
-  $('nwAya').addEventListener('change',function(){
-    $('nwName').value='سورة '+((($('nwSuraPick').selectedOptions[0]||{}).dataset||{}).name||'')+' — الآية '+toArD2(toInt($('nwAya').value)||'');
-    fillVerseFromQuran();
-  });
-  $('nwAyaTo').addEventListener('change',fillVerseFromQuran);
+  $('nwCat').addEventListener('change',computeNwName);
+  $('nwAya').addEventListener('change',function(){ computeNwName(); fillVerseFromQuran(); });
+  $('nwAyaTo').addEventListener('change',function(){ computeNwName(); fillVerseFromQuran(); });
+  $('nwNameExtra').addEventListener('input',computeNwName);
+  $('nwNum').addEventListener('change',computeNwName);
 
   /* ---------- نموذج إضافة/تعديل سورة أو آية ---------- */
   function nwMsg(s,ok){ $('nwMsg').textContent=s||''; $('nwMsg').className='admin-msg '+(s?(ok?'ok':'err'):''); }
@@ -532,7 +569,7 @@ if(panel){
   });
   var editingWsIdx=-1;
   function resetWsForm(){
-    ['nwName','nwNum','nwAyat','nwAya','nwAyaTo','nwVerse','nwInfo','nwFootV','nwFootM'].forEach(function(id){ $(id).value=''; });
+    ['nwName','nwNum','nwAyat','nwAya','nwAyaTo','nwNameExtra','nwVerse','nwInfo','nwFootV','nwFootM'].forEach(function(id){ $(id).value=''; });
     $('nwSec0').value='أولًا: لغة الأرقام'; $('nwSec1').value='ثانيًا: مهارات الاستخراج'; $('nwSec2').value='ثالثًا: التدبر والنسخ';
     $('nwCat').value='surah'; toggleAyaField();
     $('nwSuraPick').value='';
@@ -658,12 +695,16 @@ if(panel){
       var id=d.id.slice(2), hidden=HIDDEN_WS.indexOf(id)>-1;
       out.push('<div class="row"><b>'+escA(d.dataset.name)+'</b><span class="builtin-tag">أصلية</span>'+
         '<span>'+(d.dataset.cat==='surah'?'سورة':'آية')+(hidden?' · مخفية':'')+'</span>'+
-        '<button class="edit" data-bwedit="'+id+'">تعديل</button>'+
+        '<button class="edit" data-bwedit="'+id+'">تعديل العنوان</button>'+
+        '<button class="edit" data-bwq="'+id+'">أسئلة الورقة</button>'+
         '<button class="hide-toggle" data-hideid="'+id+'">'+(hidden?'استعادة':'حذف')+'</button></div>');
     });
     $('bwList').innerHTML=out.join('')||'<div class="row">لا توجد أوراق أصلية.</div>';
     $('bwList').querySelectorAll('[data-bwedit]').forEach(function(b){
       b.addEventListener('click',function(){ startEditBuiltin(b.dataset.bwedit); });
+    });
+    $('bwList').querySelectorAll('[data-bwq]').forEach(function(b){
+      b.addEventListener('click',function(){ openBwQuestionList(b.dataset.bwq); });
     });
     $('bwList').querySelectorAll('[data-hideid]').forEach(function(b){
       b.addEventListener('click',function(){
@@ -677,6 +718,93 @@ if(panel){
     });
   }
   window.renderBwList=renderBwList;
+  /* ---------- قائمة أسئلة ورقة أصلية: تعديل نصّ/إجابة أي سؤال، مع إمكان التراجع عن الجلسة كاملة ---------- */
+  var bwQSession=null; // {wsId, snapshot: [{key,t,ans,show,mode}]}
+  function openBwQuestionList(wsId){
+    var d=document.getElementById('w-'+wsId); if(!d) return;
+    var snapshot=[];
+    d.querySelectorAll('.q').forEach(function(q){
+      var el=q.querySelector('[data-k]'); if(!el) return;
+      var txtEl=q.querySelector('.txt');
+      snapshot.push({key:el.dataset.k, t:txtEl?txtEl.firstChild.textContent.replace(/\s+$/,''):'', ans:el.dataset.ans, show:el.dataset.show, mode:el.dataset.mode});
+    });
+    bwQSession={wsId:wsId, snapshot:snapshot};
+    renderBwQuestionList();
+  }
+  function renderBwQuestionList(){
+    var s=bwQSession; if(!s) return;
+    var d=document.getElementById('w-'+s.wsId);
+    var out='<div class="row"><b>أسئلة «'+escA(d?d.dataset.name:s.wsId)+'»</b>'+
+      '<button class="act print" id="bwqBack" type="button">✅ تم — رجوع لقائمة الأوراق</button>'+
+      '<button class="act" id="bwqCancelAll" type="button">✕ التراجع عن كل تعديلات هذه الجلسة</button></div>';
+    d.querySelectorAll('.q').forEach(function(q){
+      var el=q.querySelector('[data-k]'); if(!el) return;
+      var key=el.dataset.k;
+      var txtEl=q.querySelector('.txt');
+      var t=txtEl?txtEl.firstChild.textContent.replace(/\s+$/,''):'';
+      var ans=el.dataset.show||el.dataset.ans||'—';
+      out+='<div class="row" data-bwqrow="'+key+'"><span class="txt-cell">'+escA(t)+'</span>'+
+        '<span class="ans-wrap"><span class="ans-hidden">••••</span><span class="ans-val" hidden>'+escA(ans)+'</span>'+
+        '<button class="reveal" type="button">👁️ الإجابة</button></span>'+
+        '<button class="edit" data-bwqedit="'+key+'">تعديل</button></div>';
+    });
+    $('bwList').innerHTML=out;
+    $('bwqBack').addEventListener('click',function(){ bwQSession=null; renderBwList(); });
+    $('bwqCancelAll').addEventListener('click',function(){
+      if(!confirm('التراجع عن كل التعديلات التي أجريتها على أسئلة هذه الورقة في هذه الجلسة؟')) return;
+      var wsId=s.wsId, d2=document.getElementById('w-'+wsId);
+      s.snapshot.forEach(function(row){
+        var el=d2.querySelector('[data-k="'+row.key+'"]'); if(!el) return;
+        var q=el.closest('.q'), txtEl=q.querySelector('.txt');
+        if(txtEl&&txtEl.firstChild) txtEl.firstChild.textContent=row.t+' ';
+        if(row.ans!==undefined) el.dataset.ans=row.ans; else delete el.dataset.ans;
+        if(row.show!==undefined) el.dataset.show=row.show; else delete el.dataset.show;
+        if(row.mode!==undefined) el.dataset.mode=row.mode; else delete el.dataset.mode;
+      });
+      if(WS_OVERRIDES[wsId]) delete WS_OVERRIDES[wsId].questions;
+      saveOverrides();
+      bwQSession=null; renderBwList();
+      msg('↩️ أُلغيت كل تعديلات أسئلة هذه الجلسة',true);
+    });
+    $('bwList').querySelectorAll('.reveal').forEach(function(b){
+      b.addEventListener('click',function(){
+        var wrap=b.closest('.ans-wrap'), h=wrap.querySelector('.ans-hidden'), v=wrap.querySelector('.ans-val');
+        var show=v.hidden; v.hidden=!show; h.hidden=show; b.textContent=show?'🙈 إخفاء':'👁️ الإجابة';
+      });
+    });
+    $('bwList').querySelectorAll('[data-bwqedit]').forEach(function(b){
+      b.addEventListener('click',function(){ startEditBwQuestion(b.dataset.bwqedit); });
+    });
+  }
+  function startEditBwQuestion(key){
+    var s=bwQSession; if(!s) return;
+    var d=document.getElementById('w-'+s.wsId);
+    var el=d.querySelector('[data-k="'+key+'"]'); if(!el) return;
+    var q=el.closest('.q'), txtEl=q.querySelector('.txt');
+    var curT=txtEl?txtEl.firstChild.textContent.replace(/\s+$/,''):'';
+    var curAns=el.dataset.show||el.dataset.ans||'';
+    var row=$('bwList').querySelector('[data-bwqrow="'+key+'"]');
+    row.innerHTML='<label class="edit-field">نص السؤال <input type="text" class="ed-t" value="'+escA(curT)+'"></label>'+
+      '<label class="edit-field">الإجابة/الإجابة النموذجية <input type="text" class="ed-a" value="'+escA(curAns)+'"></label>'+
+      '<button class="act print ed-save" type="button">💾 حفظ</button>'+
+      '<button class="act ed-cancel" type="button">إلغاء</button>';
+    row.querySelector('.ed-cancel').addEventListener('click',renderBwQuestionList);
+    row.querySelector('.ed-save').addEventListener('click',function(){
+      var t=row.querySelector('.ed-t').value.trim();
+      var a=row.querySelector('.ed-a').value.trim();
+      if(!t) return;
+      var edit={t:t};
+      if(a){ edit.show=a; edit.ans=(a.length<=16)?norm(a):undefined; }
+      else { edit.show=''; }
+      applyQuestionEdit(d, key, edit);
+      WS_OVERRIDES[s.wsId]=WS_OVERRIDES[s.wsId]||{};
+      WS_OVERRIDES[s.wsId].questions=WS_OVERRIDES[s.wsId].questions||{};
+      WS_OVERRIDES[s.wsId].questions[key]=edit;
+      saveOverrides();
+      renderBwQuestionList();
+      msg('✅ حُفظ تعديل السؤال',true);
+    });
+  }
   renderBwList();
   applyHidden();
   applyOverrides();
@@ -685,11 +813,13 @@ if(panel){
     editingBuiltinId=id; editingWsIdx=-1;
     $('nwSuraPick').value='';
     $('nwCat').value=d.dataset.cat; toggleAyaField();
-    $('nwName').value=d.dataset.name;
     $('nwNum').value=d.dataset.surano||'';
     $('nwAyat').value=d.dataset.ayat||'';
     $('nwAya').value=d.dataset.ayano||'';
     $('nwAyaTo').value='';
+    var extraMatch=(d.dataset.name||'').match(/\(([^)]+)\)\s*$/);
+    $('nwNameExtra').value=extraMatch?extraMatch[1]:'';
+    computeNwName();
     $('nwVerse').value='(نص الورقة الأصلية — غير قابل للتعديل هنا)';
     $('nwVerse').disabled=true; $('nwAyaMark').disabled=true;
     var inf=d.querySelector('.sheet-head .info'); $('nwInfo').value=inf?inf.textContent:'';

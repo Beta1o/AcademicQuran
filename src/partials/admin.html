@@ -40,12 +40,17 @@
         <label>النوع
           <select id="nwCat"><option value="surah">سورة كاملة</option><option value="ayah">آية مختارة</option></select>
         </label>
-        <label>اسم الورقة <input type="text" id="nwName" placeholder="مثال: سورة الضحى"></label>
-        <label>رقم السورة في المصحف <input type="text" id="nwNum" inputmode="numeric" placeholder="١ - ١١٤"></label>
-        <label>عدد آيات السورة <input type="text" id="nwAyat" inputmode="numeric" placeholder="مثال: ١١"></label>
+        <label>اسم الورقة (يُبنى تلقائيًا من السورة ورقم الآية لمنع التعارض)
+          <input type="text" id="nwName" placeholder="اختر سورة أعلاه أولًا" readonly></label>
+        <label>وصف إضافي بين قوسين (اختياري، مثل: قصة يونس عليه السلام)
+          <input type="text" id="nwNameExtra" placeholder="اختياري"></label>
+        <label>رقم السورة في المصحف (تلقائي حسب السورة المختارة)
+          <input type="text" id="nwNum" inputmode="numeric" placeholder="اختر سورة أعلاه" readonly></label>
+        <label>عدد آيات السورة (تلقائي حسب السورة المختارة)
+          <input type="text" id="nwAyat" inputmode="numeric" placeholder="اختر سورة أعلاه" readonly></label>
         <label id="nwAyaWrap">من الآية <input type="text" id="nwAya" inputmode="numeric" placeholder="مثال: ٩٠"></label>
         <label id="nwAyaToWrap">إلى الآية (اختياري — لتحديد مقطع من عدة آيات)<input type="text" id="nwAyaTo" inputmode="numeric" placeholder="اتركه فارغًا لآية واحدة"></label>
-        <label>لون الورقة
+        <label>لون الورقة (يُختار تلقائيًا حسب رقم السورة — نفس السورة دائمًا بنفس اللون؛ يمكن تغييره يدويًا إن أردت)
           <select id="nwHue">
             <option value="--teal">أخضر</option><option value="--gold">ذهبي</option>
             <option value="--indigo">أزرق</option><option value="--plum">أرجواني</option>
