@@ -240,7 +240,8 @@ var filter='all';
 function applyFilter(){
   var q=(document.getElementById('q')||{}).value||'';
   document.querySelectorAll('.grid .ws-item').forEach(function(c){
-    var ok=(filter==='all'||c.dataset.cat===filter)&&(!q||c.dataset.name.indexOf(q.trim())>-1);
+    var catOk = filter==='all' || (filter==='story' ? c.dataset.story==='1' : c.dataset.cat===filter);
+    var ok=catOk&&(!q||c.dataset.name.indexOf(q.trim())>-1);
     c.style.display=ok?'':'none';
   });
 }

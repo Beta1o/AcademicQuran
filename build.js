@@ -703,7 +703,7 @@ const blocks=W.map((w,wi)=>{
   const lvlLegend=LEVELS.map((L,i)=>lvlCount[i]?`<span class="lvl lvl-${i+1}">${L} ${toAr(lvlCount[i])}</span>`:'').filter(Boolean).join('');
   const total=w.secs.reduce((a,s)=>a+s.q.length,0);
   const loc=locText(w), ltag=locTag(w);
-  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}>
+  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}>
   <summary class="card">
     <div class="tagrow">
       <span class="tag">${w.cat==='surah'?'سورة كاملة':'آية مختارة'}</span>
@@ -814,7 +814,7 @@ ${responsiveCss}</style>
     </div>
   </section>
   <div class="controls js-only">
-    <div class="tabs"><button class="on" data-f="all">الكل</button><button data-f="surah">السور الكاملة</button><button data-f="ayah">الآيات المختارة</button></div>
+    <div class="tabs"><button class="on" data-f="all">الكل</button><button data-f="surah">السور الكاملة</button><button data-f="ayah">الآيات المختارة</button><button data-f="story">قصص الأنبياء</button></div>
     <div class="tabs lvl-tabs"><button class="on" data-lf="all">كل المستويات</button>${LEVELS.map((L,i)=>`<button data-lf="${i+1}" class="lvl-tab lvl-${i+1}">${L}</button>`).join('')}</div>
     <div class="search"><input id="q" type="text" placeholder="ابحث عن سورة أو آية..."></div>
   </div>
