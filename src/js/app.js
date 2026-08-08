@@ -272,3 +272,19 @@ document.querySelectorAll('.lvl-tabs button').forEach(function(b){
   });
 });
 window.applyLvlFilter=applyLvlFilter;
+/* ---------- إخفاء نصوص التلميح داخل الحقول عند الطباعة/التصدير PDF ----------
+   الاعتماد على CSS وحده (::placeholder{color:transparent}) غير موثوق في كل
+   المتصفحات عند الطباعة أو التصدير PDF (كروم أحيانًا يتجاهله) — فنزيل خاصية
+   placeholder فعليًا قبل الطباعة ونعيدها بعدها، ليبقى الحقل فارغًا تمامًا على الورق. */
+window.addEventListener('beforeprint',function(){
+  document.querySelectorAll('input[placeholder],textarea[placeholder]').forEach(function(el){
+    el.dataset.phSaved=el.getAttribute('placeholder');
+    el.removeAttribute('placeholder');
+  });
+});
+window.addEventListener('afterprint',function(){
+  document.querySelectorAll('[data-ph-saved]').forEach(function(el){
+    el.setAttribute('placeholder',el.dataset.phSaved);
+    delete el.dataset.phSaved;
+  });
+});
