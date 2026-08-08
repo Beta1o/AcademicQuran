@@ -97,6 +97,8 @@ input,textarea{font-family:inherit;color:var(--ink)}
 .ws-top .act{border:none;border-radius:999px;padding:8px 20px;font-weight:700;font-size:.88rem}
 .ws-top .print{background:var(--ac);color:#fff}
 .ws-top .reset{background:#fff;border:1.5px solid var(--line);color:var(--ink-soft)}
+.ws-top .audio-play{background:#fff;border:1.5px solid var(--ac);color:var(--ac)}
+.ws-top .audio-play.playing{background:var(--ac);color:#fff}
 
 .sheet{background:#fff;border:1.5px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 6px 30px rgba(38,49,58,.06)}
 .sheet-head{padding:26px 26px 20px;border-bottom:2px solid var(--line);background:

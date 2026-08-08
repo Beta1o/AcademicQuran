@@ -711,7 +711,8 @@ const blocks=W.map((w,wi)=>{
   const lvlLegend=LEVELS.map((L,i)=>lvlCount[i]?`<span class="lvl lvl-${i+1}">${L} ${toAr(lvlCount[i])}</span>`:'').filter(Boolean).join('');
   const total=w.secs.reduce((a,s)=>a+s.q.length,0);
   const loc=locText(w), ltag=locTag(w);
-  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}>
+  const ayaListAttr = w.cat==='ayah' ? ` data-ayalist="${ayaNumbers(w, w.verse.split('۝').length).join(',')}"` : '';
+  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${ayaListAttr}>
   <summary class="card">
     <div class="tagrow">
       <span class="tag">${w.cat==='surah'?'سورة كاملة':'آية مختارة'}</span>
@@ -725,6 +726,7 @@ const blocks=W.map((w,wi)=>{
     <div class="ws-top">
       <button class="act close" data-close="${w.id}">▲ إغلاق</button>
       <div class="spacer"></div>
+      <button class="act audio-play js-only" data-audio="${w.id}" hidden>🔊 استماع للتلاوة</button>
       <button class="act reset" data-reset="${w.id}">تفريغ الإجابات</button>
       <button class="act print" data-print="${w.id}">🖨️ طباعة الورقة</button>
     </div>

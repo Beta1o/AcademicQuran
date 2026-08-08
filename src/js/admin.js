@@ -53,7 +53,9 @@ function wsHTML(ws){
       '<h3>'+escA(t)+'</h3><span class="rule"></span></div><div class="qlist"></div></section>';
   }).join('');
   var mf=function(lbl,k){ return '<div class="mf"><label>'+lbl+'</label><input type="text" data-mf="'+k+'" title="يُطبَّق على جميع الأوراق"></div>'; };
-  return '<details class="ws-item ws-custom" id="w-'+ws.id+'" style="--ac:var('+(ws.hue||'--teal')+')" data-cat="'+ws.cat+'" data-name="'+escA(ws.name)+'" data-words="'+words+'">'+
+  var ayaListAttr = ws.cat==='ayah' ? ' data-ayalist="'+segs.map(function(s,i){return start+i;}).join(',')+'"' : '';
+  return '<details class="ws-item ws-custom" id="w-'+ws.id+'" style="--ac:var('+(ws.hue||'--teal')+')" data-cat="'+ws.cat+'" data-name="'+escA(ws.name)+'" data-words="'+words+'"'+
+    (ws.num?' data-surano="'+ws.num+'"':'')+(ws.cat==='ayah'&&ws.aya?' data-ayano="'+start+'"':'')+ayaListAttr+'>'+
     '<summary class="card">'+
       '<div class="tagrow"><span class="tag">'+(ws.cat==='surah'?'سورة كاملة':'آية مختارة')+'</span>'+
       (ltag?'<span class="loc-tag">📍 '+escA(ltag)+'</span>':'')+'<span class="loc-tag new">جديدة</span></div>'+
@@ -64,6 +66,7 @@ function wsHTML(ws){
     '<div class="ws">'+
       '<div class="ws-top">'+
         '<button class="act close" data-close="'+ws.id+'">▲ إغلاق</button><div class="spacer"></div>'+
+        '<button class="act audio-play js-only" data-audio="'+ws.id+'" hidden>🔊 استماع للتلاوة</button>'+
         '<button class="act reset" data-reset="'+ws.id+'">تفريغ الإجابات</button>'+
         '<button class="act print" data-print="'+ws.id+'">🖨️ طباعة الورقة</button>'+
       '</div>'+
@@ -93,6 +96,8 @@ function renderCustomWs(){
     var det=document.getElementById('w-'+ws.id);
     try{ WORDS[ws.id]=JSON.parse(det.dataset.words); }catch(e){ WORDS[ws.id]=[]; }
     if(window.bindSheet) window.bindSheet(det);
+    if(window.bindAudio) window.bindAudio(det);
+    if(window.refreshAudioButtons) window.refreshAudioButtons();
   });
   refreshStats();
 }
@@ -859,6 +864,20 @@ if(panel){
       s.showAnswerOnMistake=box.checked;
       try{ localStorage.setItem('tahleel-settings', JSON.stringify(s)); }catch(e){}
     });
+  })();
+  /* ---------- إعدادات التلاوة: تفعيل الاستماع واختيار القارئ ---------- */
+  (function(){
+    var box=$('setAudioEnabled'), sel=$('setReciter'); if(!box||!sel) return;
+    var cur; try{ cur=JSON.parse(localStorage.getItem('tahleel-audio')||'{}'); }catch(e){ cur={}; }
+    box.checked = cur.enabled!==false;
+    sel.value = cur.reciter||1;
+    var save=function(){
+      var s={enabled:box.checked, reciter:+sel.value||1};
+      try{ localStorage.setItem('tahleel-audio', JSON.stringify(s)); }catch(e){}
+      if(window.refreshAudioButtons) window.refreshAudioButtons();
+    };
+    box.addEventListener('change',save);
+    sel.addEventListener('change',save);
   })();
   renderNwList();
   function fillTypeOptions(){

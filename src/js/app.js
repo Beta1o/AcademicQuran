@@ -174,6 +174,75 @@ function bindControls(root){
 }
 bindControls(document);
 window.bindControls=bindControls;
+/* ---------- تلاوة القرآن (حفظ) — عبر واجهة quranapi.pages.dev، تُربط تلقائيًا بكل ورقة سورة أو آية بناءً على أرقامها ---------- */
+var AUDIO_KEY='tahleel-audio';
+function audioSettings(){
+  try{ var s=JSON.parse(localStorage.getItem(AUDIO_KEY)||'{}'); return {enabled:s.enabled!==false, reciter:s.reciter||1}; }
+  catch(e){ return {enabled:true, reciter:1}; }
+}
+window.audioSettings=audioSettings;
+var audioCache={};
+function fetchJson(url){
+  if(audioCache[url]) return audioCache[url];
+  audioCache[url]=fetch(url).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; });
+  return audioCache[url];
+}
+var curAudio=null, curBtn=null;
+function stopAudio(){
+  if(curAudio){ curAudio.pause(); curAudio=null; }
+  if(curBtn){ curBtn.textContent='🔊 استماع للتلاوة'; curBtn.classList.remove('playing'); curBtn=null; }
+}
+function playList(urls,btn){
+  if(!urls.length){ btn.textContent='🔊 لا يوجد صوت'; setTimeout(function(){ btn.textContent='🔊 استماع للتلاوة'; },1500); return; }
+  var i=0;
+  curAudio=new Audio(); curBtn=btn; btn.textContent='⏸️ إيقاف التلاوة'; btn.classList.add('playing');
+  function next(){
+    if(!curAudio||i>=urls.length){ stopAudio(); return; }
+    curAudio.src=urls[i]; i++;
+    curAudio.play().catch(function(){ stopAudio(); });
+  }
+  curAudio.addEventListener('ended', next);
+  next();
+}
+function refreshAudioButtons(){
+  var s=audioSettings();
+  document.querySelectorAll('[data-audio]').forEach(function(b){
+    var det=document.getElementById('w-'+b.dataset.audio);
+    var has = det && det.dataset.surano && (det.dataset.cat==='surah' || det.dataset.ayalist || det.dataset.ayano);
+    b.hidden = !s.enabled || !has;
+  });
+}
+window.refreshAudioButtons=refreshAudioButtons;
+function bindAudio(root){
+  root.querySelectorAll('[data-audio]').forEach(function(b){
+    if(isBound(b)) return;
+    b.addEventListener('click',function(){
+      if(curBtn===b){ stopAudio(); return; }
+      stopAudio();
+      var det=document.getElementById('w-'+b.dataset.audio);
+      if(!det) return;
+      var s=audioSettings(), sura=det.dataset.surano;
+      b.textContent='⏳ جاري التحميل...';
+      if(det.dataset.cat==='surah'){
+        fetchJson('https://quranapi.pages.dev/api/'+sura+'.json').then(function(d){
+          var url=d&&d.audio&&d.audio[s.reciter]&&d.audio[s.reciter].url;
+          playList(url?[url]:[], b);
+        });
+      } else {
+        var list=(det.dataset.ayalist?det.dataset.ayalist.split(','):[det.dataset.ayano]).filter(Boolean);
+        Promise.all(list.map(function(a){
+          return fetchJson('https://quranapi.pages.dev/api/audio/'+sura+'/'+a+'.json');
+        })).then(function(ds){
+          var urls=ds.map(function(d){ return d&&d[s.reciter]&&d[s.reciter].url; }).filter(Boolean);
+          playList(urls, b);
+        });
+      }
+    });
+  });
+}
+bindAudio(document);
+window.bindAudio=bindAudio;
+refreshAudioButtons();
 /* ---------- بيانات الباحث: حقول عامة تُحفظ وتُطبَّق على كل الأوراق ---------- */
 var META_KEY='tahleel-meta', META={};
 try{ META=JSON.parse(localStorage.getItem(META_KEY)||'{}')||{}; }catch(e){ META={}; }

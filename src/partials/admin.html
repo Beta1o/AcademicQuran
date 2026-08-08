@@ -23,6 +23,21 @@
         إظهار زر «الإجابة الصحيحة» تلقائيًا بعد إجابة خاطئة
       </label>
       <span class="admin-hint">عند إيقافه، يظل ✗ الخطأ ظاهرًا لكن دون زر يكشف الإجابة — لتشجيع المحاولة قبل الكشف.</span>
+
+      <label class="switch-row">
+        <input type="checkbox" id="setAudioEnabled" checked>
+        تفعيل الاستماع لتلاوة القرآن (للحفظ) في كل ورقة سورة أو آية
+      </label>
+      <label class="admin-field">القارئ
+        <select id="setReciter">
+          <option value="1">مشاري راشد العفاسي</option>
+          <option value="2">أبو بكر الشاطري</option>
+          <option value="3">ناصر القطامي</option>
+          <option value="4">ياسر الدوسري</option>
+          <option value="5">هاني الرفاعي</option>
+        </select>
+      </label>
+      <span class="admin-hint">تُشغَّل التلاوة عبر واجهة quranapi.pages.dev (رابط خارجي، دون تحميل أو استضافة الملفات في الموقع). يُربط الصوت تلقائيًا بأي ورقة سورة أو آية — مبنية في الموقع أو مضافة من هنا — بحسب رقم السورة/الآية دون أي إعداد يدوي.</span>
     </div>
 
     <div class="admin-steps">
