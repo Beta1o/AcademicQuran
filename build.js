@@ -59,9 +59,9 @@ function verseHTML(w){
   const endMark=w.cat==='surah'||!!AYA_END[w.id];
   return segs.map((s,i)=>{
     const last=i===segs.length-1;
-    if(last&&!endMark) return s;
     const n=nums[i]!==undefined?nums[i]:i+1;
-    return s+' <span class="aya" aria-label="آية '+toAr(n)+'">۝'+toAr(n)+'</span>';
+    if(last&&!endMark) return '<span class="aya-seg" data-aya="'+n+'">'+s+'</span>';
+    return '<span class="aya-seg" data-aya="'+n+'">'+s+' <span class="aya" aria-label="آية '+toAr(n)+'">۝'+toAr(n)+'</span></span>';
   }).join(' ');
 }
 const arDigits='٠١٢٣٤٥٦٧٨٩';
@@ -775,7 +775,7 @@ const html=`<!DOCTYPE html>
 <meta name="description" content="${DESC}">
 <meta name="robots" content="index, follow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://quranapi.pages.dev https://the-quran-project.github.io https://github.com https://raw.githubusercontent.com; media-src https://the-quran-project.github.io https://github.com https://raw.githubusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
 ${SITE_URL?`<link rel="canonical" href="${SITE_URL}/">`:''}
 <meta name="application-name" content="التحليل اللغوي المجهري">
 <meta property="og:title" content="التحليل اللغوي المجهري">

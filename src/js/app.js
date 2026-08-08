@@ -187,18 +187,31 @@ function fetchJson(url){
   audioCache[url]=fetch(url).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; });
   return audioCache[url];
 }
-var curAudio=null, curBtn=null;
+var curAudio=null, curBtn=null, curDet=null;
+function clearReading(){
+  if(curDet) curDet.querySelectorAll('.aya-seg.reading').forEach(function(el){ el.classList.remove('reading'); });
+}
 function stopAudio(){
   if(curAudio){ curAudio.pause(); curAudio=null; }
   if(curBtn){ curBtn.textContent='🔊 استماع للتلاوة'; curBtn.classList.remove('playing'); curBtn=null; }
+  clearReading(); curDet=null;
 }
-function playList(urls,btn){
-  if(!urls.length){ btn.textContent='🔊 لا يوجد صوت'; setTimeout(function(){ btn.textContent='🔊 استماع للتلاوة'; },1500); return; }
+function markReading(ayaNo){
+  if(!curDet) return;
+  clearReading();
+  var seg=curDet.querySelector('.aya-seg[data-aya="'+ayaNo+'"]');
+  if(seg){ seg.classList.add('reading'); try{ seg.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} }
+}
+/* تُشغَّل الآيات كملفات منفصلة بالتتابع (لا كصوت سورة كاملة واحد) كي يمكن تمييز الآية الحالية أثناء الاستماع لمساعدة الحفظ */
+function playAyaList(items,btn,det){
+  if(!items.length){ btn.textContent='🔊 لا يوجد صوت'; setTimeout(function(){ btn.textContent='🔊 استماع للتلاوة'; },1500); return; }
   var i=0;
-  curAudio=new Audio(); curBtn=btn; btn.textContent='⏸️ إيقاف التلاوة'; btn.classList.add('playing');
+  curAudio=new Audio(); curBtn=btn; curDet=det; btn.textContent='⏸️ إيقاف التلاوة'; btn.classList.add('playing');
   function next(){
-    if(!curAudio||i>=urls.length){ stopAudio(); return; }
-    curAudio.src=urls[i]; i++;
+    if(!curAudio||i>=items.length){ stopAudio(); return; }
+    var it=items[i]; i++;
+    markReading(it.aya);
+    curAudio.src=it.url;
     curAudio.play().catch(function(){ stopAudio(); });
   }
   curAudio.addEventListener('ended', next);
@@ -208,7 +221,7 @@ function refreshAudioButtons(){
   var s=audioSettings();
   document.querySelectorAll('[data-audio]').forEach(function(b){
     var det=document.getElementById('w-'+b.dataset.audio);
-    var has = det && det.dataset.surano && (det.dataset.cat==='surah' || det.dataset.ayalist || det.dataset.ayano);
+    var has = det && det.dataset.surano && (det.dataset.cat==='surah' ? det.dataset.ayat : (det.dataset.ayalist || det.dataset.ayano));
     b.hidden = !s.enabled || !has;
   });
 }
@@ -223,20 +236,20 @@ function bindAudio(root){
       if(!det) return;
       var s=audioSettings(), sura=det.dataset.surano;
       b.textContent='⏳ جاري التحميل...';
+      var list;
       if(det.dataset.cat==='surah'){
-        fetchJson('https://quranapi.pages.dev/api/'+sura+'.json').then(function(d){
-          var url=d&&d.audio&&d.audio[s.reciter]&&d.audio[s.reciter].url;
-          playList(url?[url]:[], b);
-        });
+        var n=parseInt(det.dataset.ayat,10)||0;
+        list=Array.from({length:n},function(_,i){ return i+1; });
       } else {
-        var list=(det.dataset.ayalist?det.dataset.ayalist.split(','):[det.dataset.ayano]).filter(Boolean);
-        Promise.all(list.map(function(a){
-          return fetchJson('https://quranapi.pages.dev/api/audio/'+sura+'/'+a+'.json');
-        })).then(function(ds){
-          var urls=ds.map(function(d){ return d&&d[s.reciter]&&d[s.reciter].url; }).filter(Boolean);
-          playList(urls, b);
-        });
+        list=(det.dataset.ayalist?det.dataset.ayalist.split(','):[det.dataset.ayano]).filter(Boolean);
       }
+      Promise.all(list.map(function(a){
+        return fetchJson('https://quranapi.pages.dev/api/audio/'+sura+'/'+a+'.json').then(function(d){
+          return {aya:a, url:d&&d[s.reciter]&&d[s.reciter].url};
+        });
+      })).then(function(items){
+        playAyaList(items.filter(function(it){ return it.url; }), b, det);
+      });
     });
   });
 }

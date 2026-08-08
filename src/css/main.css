@@ -99,6 +99,7 @@ input,textarea{font-family:inherit;color:var(--ink)}
 .ws-top .reset{background:#fff;border:1.5px solid var(--line);color:var(--ink-soft)}
 .ws-top .audio-play{background:#fff;border:1.5px solid var(--ac);color:var(--ac)}
 .ws-top .audio-play.playing{background:var(--ac);color:#fff}
+.aya-seg.reading{background:color-mix(in srgb, var(--ac) 22%, transparent);border-radius:6px;box-shadow:0 0 0 3px color-mix(in srgb, var(--ac) 22%, transparent)}
 
 .sheet{background:#fff;border:1.5px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 6px 30px rgba(38,49,58,.06)}
 .sheet-head{padding:26px 26px 20px;border-bottom:2px solid var(--line);background:

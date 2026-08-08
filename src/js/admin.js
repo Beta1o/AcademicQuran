@@ -41,8 +41,8 @@ function wsHTML(ws){
   var endMark=(ws.cat==='surah');
   var vHTML=segs.map(function(s,i){
     var last=i===segs.length-1;
-    if(last&&!endMark) return escA(s);
-    return escA(s)+' <span class="aya">۝'+toArD2(start+i)+'</span>';
+    if(last&&!endMark) return '<span class="aya-seg" data-aya="'+(start+i)+'">'+escA(s)+'</span>';
+    return '<span class="aya-seg" data-aya="'+(start+i)+'">'+escA(s)+' <span class="aya">۝'+toArD2(start+i)+'</span></span>';
   }).join(' ');
   var loc = ws.cat==='surah'
     ? [ws.num?'السورة رقم '+toArD2(ws.num)+' في المصحف':'', ws.ayat?'عدد آياتها '+toArD2(ws.ayat):''].filter(Boolean).join(' · ')
@@ -55,7 +55,7 @@ function wsHTML(ws){
   var mf=function(lbl,k){ return '<div class="mf"><label>'+lbl+'</label><input type="text" data-mf="'+k+'" title="يُطبَّق على جميع الأوراق"></div>'; };
   var ayaListAttr = ws.cat==='ayah' ? ' data-ayalist="'+segs.map(function(s,i){return start+i;}).join(',')+'"' : '';
   return '<details class="ws-item ws-custom" id="w-'+ws.id+'" style="--ac:var('+(ws.hue||'--teal')+')" data-cat="'+ws.cat+'" data-name="'+escA(ws.name)+'" data-words="'+words+'"'+
-    (ws.num?' data-surano="'+ws.num+'"':'')+(ws.cat==='ayah'&&ws.aya?' data-ayano="'+start+'"':'')+ayaListAttr+'>'+
+    (ws.num?' data-surano="'+ws.num+'"':'')+(ws.ayat?' data-ayat="'+ws.ayat+'"':'')+(ws.cat==='ayah'&&ws.aya?' data-ayano="'+start+'"':'')+ayaListAttr+'>'+
     '<summary class="card">'+
       '<div class="tagrow"><span class="tag">'+(ws.cat==='surah'?'سورة كاملة':'آية مختارة')+'</span>'+
       (ltag?'<span class="loc-tag">📍 '+escA(ltag)+'</span>':'')+'<span class="loc-tag new">جديدة</span></div>'+
