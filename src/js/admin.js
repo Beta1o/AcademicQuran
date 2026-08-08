@@ -117,6 +117,34 @@ function applyHidden(){
   refreshStats();
 }
 window.applyHidden=applyHidden;
+/* ---------- تعديلات على العناوين/الأوصاف/الألوان للأوراق الأصلية (لا تمسّ نص الآيات ولا الأسئلة) ---------- */
+var WS_OVERRIDES={};
+try{ var ov=localStorage.getItem('tahleel-overrides'); if(ov){ var op=JSON.parse(ov); if(op&&typeof op==='object') WS_OVERRIDES=op; } }catch(e){}
+function saveOverrides(){ try{ localStorage.setItem('tahleel-overrides', JSON.stringify(WS_OVERRIDES)); }catch(e){} }
+function applyOverrides(){
+  Object.keys(WS_OVERRIDES).forEach(function(id){
+    var d=document.getElementById('w-'+id); if(!d) return;
+    var o=WS_OVERRIDES[id];
+    if(o.name){
+      d.dataset.name=o.name;
+      var h3=d.querySelector('.card h3'); if(h3) h3.textContent=o.name;
+      var h2=d.querySelector('.sheet-head h2'); if(h2) h2.textContent=o.name;
+    }
+    if(o.info!==undefined){ var inf=d.querySelector('.sheet-head .info'); if(inf) inf.textContent=o.info; }
+    if(o.footV!==undefined){ var fv=d.querySelector('.sheet-foot .fv'); if(fv) fv.textContent=o.footV; }
+    if(o.footM!==undefined){
+      var fm=d.querySelector('.sheet-foot .fm');
+      if(o.footM){ if(fm) fm.textContent=o.footM; else { var ft=d.querySelector('.sheet-foot'); if(ft) ft.insertAdjacentHTML('beforeend','<div class="fm">'+escA(o.footM)+'</div>'); } }
+      else if(fm) fm.remove();
+    }
+    if(o.hue){ d.style.setProperty('--ac','var('+o.hue+')'); }
+    if(o.secs){
+      var heads=d.querySelectorAll('.sec .sec-head h3');
+      o.secs.forEach(function(t,i){ if(t && heads[i]) heads[i].textContent=t; });
+    }
+  });
+}
+window.applyOverrides=applyOverrides;
 
 /* ---------- question types catalog ---------- */
 var F_WORD=[{k:'word',label:'الكلمة'}];
@@ -512,6 +540,7 @@ if(panel){
   }
   function startEditWs(i){
     var ws=CUSTOMWS[i]; if(!ws) return;
+    stopEditingBuiltin();
     editingWsIdx=i;
     $('nwCat').value=ws.cat; toggleAyaField();
     $('nwName').value=ws.name; $('nwNum').value=ws.num||''; $('nwAyat').value=ws.ayat||''; $('nwAya').value=ws.aya||'';
@@ -523,15 +552,41 @@ if(panel){
     nwMsg('تعديل ورقة «'+ws.name+'» — احفظ التعديلات أو ألغِ',true);
     try{ $('nwName').focus(); panel.scrollTop=0; }catch(e){}
   }
+  function stopEditingBuiltin(){
+    editingBuiltinId=null;
+    $('nwVerse').disabled=false; $('nwAyaMark').disabled=false;
+  }
   $('nwCancelEdit').addEventListener('click',function(){
-    editingWsIdx=-1; $('nwSave').textContent='💾 حفظ الورقة والانتقال للأسئلة'; $('nwCancelEdit').hidden=true;
+    editingWsIdx=-1; stopEditingBuiltin();
+    $('nwSave').textContent='💾 حفظ الورقة والانتقال للأسئلة'; $('nwCancelEdit').hidden=true;
     resetWsForm();
   });
   $('nwClear').addEventListener('click',function(){
-    editingWsIdx=-1; $('nwSave').textContent='💾 حفظ الورقة والانتقال للأسئلة'; $('nwCancelEdit').hidden=true;
+    editingWsIdx=-1; stopEditingBuiltin();
+    $('nwSave').textContent='💾 حفظ الورقة والانتقال للأسئلة'; $('nwCancelEdit').hidden=true;
     resetWsForm();
   });
   $('nwSave').addEventListener('click',function(){
+    if(editingBuiltinId){
+      var id=editingBuiltinId;
+      var name=($('nwName').value||'').trim();
+      if(!name) return nwMsg('اكتب اسم الورقة',false);
+      var o={
+        name:name,
+        info:($('nwInfo').value||'').trim(),
+        footV:($('nwFootV').value||'').trim(),
+        footM:($('nwFootM').value||'').trim(),
+        hue:$('nwHue').value,
+        secs:[($('nwSec0').value||'').trim(),($('nwSec1').value||'').trim(),($('nwSec2').value||'').trim()]
+      };
+      WS_OVERRIDES[id]=o; saveOverrides(); applyOverrides();
+      stopEditingBuiltin();
+      $('nwSave').textContent='💾 حفظ الورقة والانتقال للأسئلة'; $('nwCancelEdit').hidden=true;
+      renderBwList(); fillWsOptions();
+      nwMsg('✅ حُفظت تعديلات «'+name+'»',true);
+      resetWsForm();
+      return;
+    }
     var name=($('nwName').value||'').trim();
     var verse=($('nwVerse').value||'').trim();
     if(!name) return nwMsg('اكتب اسم الورقة (مثال: سورة الضحى)',false);
@@ -595,27 +650,62 @@ if(panel){
     });
   }
   window.renderNwList=renderNwList;
-  /* ---------- قائمة الأوراق الأصلية (المدمجة) — إخفاء/إظهار فقط ---------- */
+  /* ---------- قائمة الأوراق الأصلية (المدمجة) — تعديل العنوان/الوصف، وحذف يطلب كلمة المرور ---------- */
+  var editingBuiltinId=null;
   function renderBwList(){
     var out=[];
     document.querySelectorAll('.ws-item:not(.ws-custom)').forEach(function(d){
       var id=d.id.slice(2), hidden=HIDDEN_WS.indexOf(id)>-1;
       out.push('<div class="row"><b>'+escA(d.dataset.name)+'</b><span class="builtin-tag">أصلية</span>'+
-        '<span>'+(d.dataset.cat==='surah'?'سورة':'آية')+'</span>'+
-        '<button class="hide-toggle" data-hideid="'+id+'">'+(hidden?'إظهار':'إخفاء')+'</button></div>');
+        '<span>'+(d.dataset.cat==='surah'?'سورة':'آية')+(hidden?' · مخفية':'')+'</span>'+
+        '<button class="edit" data-bwedit="'+id+'">تعديل</button>'+
+        '<button class="hide-toggle" data-hideid="'+id+'">'+(hidden?'استعادة':'حذف')+'</button></div>');
     });
     $('bwList').innerHTML=out.join('')||'<div class="row">لا توجد أوراق أصلية.</div>';
+    $('bwList').querySelectorAll('[data-bwedit]').forEach(function(b){
+      b.addEventListener('click',function(){ startEditBuiltin(b.dataset.bwedit); });
+    });
     $('bwList').querySelectorAll('[data-hideid]').forEach(function(b){
       b.addEventListener('click',function(){
         var id=b.dataset.hideid, i=HIDDEN_WS.indexOf(id);
-        if(i>-1) HIDDEN_WS.splice(i,1); else HIDDEN_WS.push(id);
-        saveHidden(); applyHidden(); renderBwList();
+        if(i>-1){ HIDDEN_WS.splice(i,1); saveHidden(); applyHidden(); renderBwList(); return; }
+        var p=prompt('لتأكيد حذف «'+(document.getElementById('w-'+id)||{}).dataset.name+'» أعد كتابة كلمة مرور المدير:');
+        if(p===null) return;
+        if(p!==ADMIN_PASS){ alert('كلمة المرور غير صحيحة — لم يُحذف شيء.'); return; }
+        HIDDEN_WS.push(id); saveHidden(); applyHidden(); renderBwList();
       });
     });
   }
   window.renderBwList=renderBwList;
   renderBwList();
   applyHidden();
+  applyOverrides();
+  function startEditBuiltin(id){
+    var d=document.getElementById('w-'+id); if(!d) return;
+    editingBuiltinId=id; editingWsIdx=-1;
+    $('nwSuraPick').value='';
+    $('nwCat').value=d.dataset.cat; toggleAyaField();
+    $('nwName').value=d.dataset.name;
+    $('nwNum').value=d.dataset.surano||'';
+    $('nwAyat').value=d.dataset.ayat||'';
+    $('nwAya').value=d.dataset.ayano||'';
+    $('nwAyaTo').value='';
+    $('nwVerse').value='(نص الورقة الأصلية — غير قابل للتعديل هنا)';
+    $('nwVerse').disabled=true; $('nwAyaMark').disabled=true;
+    var inf=d.querySelector('.sheet-head .info'); $('nwInfo').value=inf?inf.textContent:'';
+    var fv=d.querySelector('.sheet-foot .fv'); $('nwFootV').value=fv?fv.textContent:'';
+    var fm=d.querySelector('.sheet-foot .fm'); $('nwFootM').value=fm?fm.textContent:'';
+    var acVar=(d.style.getPropertyValue('--ac')||'').replace(/var\(|\)/g,'').trim();
+    $('nwHue').value=acVar||'--teal';
+    var heads=d.querySelectorAll('.sec .sec-head h3');
+    $('nwSec0').value=heads[0]?heads[0].textContent:'';
+    $('nwSec1').value=heads[1]?heads[1].textContent:'';
+    $('nwSec2').value=heads[2]?heads[2].textContent:'';
+    $('nwSave').textContent='💾 حفظ تعديلات العنوان والوصف';
+    $('nwCancelEdit').hidden=false;
+    nwMsg('تعديل ورقة أصلية «'+d.dataset.name+'» — العنوان والوصف واللون وعناوين الأقسام فقط (نص الآيات محمي)',true);
+    try{ $('nwName').focus(); panel.scrollTop=0; }catch(e){}
+  }
   /* ---------- إعدادات عامة: إظهار الإجابة الصحيحة تلقائيًا بعد إجابة خاطئة ---------- */
   (function(){
     var box=$('setShowAnsMistake'); if(!box) return;
