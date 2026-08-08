@@ -189,7 +189,7 @@ function fetchJson(url){
 }
 var curAudio=null, curBtn=null, curDet=null;
 function clearReading(){
-  if(curDet) curDet.querySelectorAll('.aya-seg.reading').forEach(function(el){ el.classList.remove('reading'); });
+  if(curDet) curDet.querySelectorAll('.sheet .verse .aya-seg.reading').forEach(function(el){ el.classList.remove('reading'); });
 }
 function stopAudio(){
   if(curAudio){ curAudio.pause(); curAudio=null; }
@@ -199,7 +199,7 @@ function stopAudio(){
 function markReading(ayaNo){
   if(!curDet) return;
   clearReading();
-  var seg=curDet.querySelector('.aya-seg[data-aya="'+ayaNo+'"]');
+  var seg=curDet.querySelector('.sheet .verse .aya-seg[data-aya="'+ayaNo+'"]');
   if(seg){ seg.classList.add('reading'); try{ seg.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} }
 }
 /* تُشغَّل الآيات كملفات منفصلة بالتتابع (لا كصوت سورة كاملة واحد) كي يمكن تمييز الآية الحالية أثناء الاستماع لمساعدة الحفظ */
