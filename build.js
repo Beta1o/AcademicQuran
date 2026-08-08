@@ -852,7 +852,17 @@ ${adminJs}
 <script>
 if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost' || location.hostname==='127.0.0.1')){
   window.addEventListener('load',function(){
-    navigator.serviceWorker.register('service-worker.js').catch(function(){});
+    navigator.serviceWorker.register('service-worker.js', {updateViaCache:'none'}).then(function(reg){
+      /* تحقّق من وجود نسخة جديدة عند كل زيارة (يتجاوز أي تخزين مؤقت للمتصفح لملف الووركر نفسه) */
+      reg.update().catch(function(){});
+      setInterval(function(){ reg.update().catch(function(){}); }, 30*60*1000);
+    }).catch(function(){});
+    /* بمجرد تفعيل نسخة جديدة من الووركر، أعد تحميل الصفحة تلقائيًا لعرض آخر تحديث
+       (أوراق/ميزات جديدة) دون الحاجة لمسح ذاكرة التخزين المؤقت يدويًا */
+    var refreshed=false;
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(refreshed) return; refreshed=true; window.location.reload();
+    });
   });
 }
 </script>
@@ -884,6 +894,14 @@ self.addEventListener('install',e=>{ self.skipWaiting(); e.waitUntil(caches.open
 self.addEventListener('activate',e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
+  if(e.request.mode==='navigate'){
+    e.respondWith(fetch(e.request).then(res=>{
+      const copy=res.clone();
+      caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});
+      return res;
+    }).catch(()=>caches.match(e.request).then(hit=>hit||caches.match('./index.html'))));
+    return;
+  }
   e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(res=>{
     const copy=res.clone();
     caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});
