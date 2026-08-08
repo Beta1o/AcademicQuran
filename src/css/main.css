@@ -116,6 +116,7 @@ input,textarea{font-family:inherit;color:var(--ink)}
 
 /* verse panel — illuminated frame */
 .verse-wrap{padding:26px 26px 8px}
+.verse-wrap .audio-play{display:inline-flex;align-items:center;gap:6px;margin-bottom:10px}
 .verse{
   position:relative;border:2px solid var(--gold);border-radius:12px;padding:26px 30px;
   background:linear-gradient(#FFFDF6,#FBF6E8);
@@ -193,7 +194,7 @@ input,textarea{font-family:inherit;color:var(--ink)}
 /* ---------- print ---------- */
 @media print{
   body{background:#fff}
-  .topbar,.ws-top,.progress,.ws-nav,.site-foot,.hero,.controls{display:none!important}
+  .topbar,.ws-top,.progress,.ws-nav,.site-foot,.hero,.controls,.audio-play{display:none!important}
   .ws{max-width:100%;padding:0}
   .sheet{border:none;box-shadow:none;border-radius:0}
   .q input[type=text]{border-bottom:1.2px dotted #999}

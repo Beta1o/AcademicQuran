@@ -726,7 +726,6 @@ const blocks=W.map((w,wi)=>{
     <div class="ws-top">
       <button class="act close" data-close="${w.id}">▲ إغلاق</button>
       <div class="spacer"></div>
-      <button class="act audio-play js-only" data-audio="${w.id}" hidden>🔊 استماع للتلاوة</button>
       <button class="act reset" data-reset="${w.id}">تفريغ الإجابات</button>
       <button class="act print" data-print="${w.id}">🖨️ طباعة الورقة</button>
     </div>
@@ -744,7 +743,10 @@ const blocks=W.map((w,wi)=>{
           <div class="mf"><label>الدرجة</label><input type="text" data-mf="grade" title="يُطبَّق على جميع الأوراق ويُحفظ تلقائيًا"></div>
         </div>
       </header>
-      <div class="verse-wrap"><div class="verse"><p>﴿ ${verseHTML(w)} ﴾</p></div></div>
+      <div class="verse-wrap">
+        <button class="act audio-play js-only" data-audio="${w.id}" hidden>🔊 استماع للتلاوة</button>
+        <div class="verse"><p>﴿ ${verseHTML(w)} ﴾</p></div>
+      </div>
       <div class="progress js-only"><div class="pbar"><i data-pfill="${w.id}" style="width:0%"></i></div><b data-ptxt="${w.id}">0 / ${total}</b><b class="score" data-score="${w.id}"></b></div>
       ${secs}
       <footer class="sheet-foot"><div class="fv">${esc(w.footV)}</div>${w.footM?`<div class="fm">${esc(w.footM)}</div>`:''}</footer>

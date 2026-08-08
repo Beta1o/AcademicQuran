@@ -66,7 +66,6 @@ function wsHTML(ws){
     '<div class="ws">'+
       '<div class="ws-top">'+
         '<button class="act close" data-close="'+ws.id+'">▲ إغلاق</button><div class="spacer"></div>'+
-        '<button class="act audio-play js-only" data-audio="'+ws.id+'" hidden>🔊 استماع للتلاوة</button>'+
         '<button class="act reset" data-reset="'+ws.id+'">تفريغ الإجابات</button>'+
         '<button class="act print" data-print="'+ws.id+'">🖨️ طباعة الورقة</button>'+
       '</div>'+
@@ -77,7 +76,10 @@ function wsHTML(ws){
           (loc?'<div class="loc">📍 '+escA(loc)+'</div>':'')+
           '<div class="meta-fields">'+mf('الاسم / اسم الباحث','name')+mf('التاريخ','date')+mf('المستوى','level')+mf('الدرجة','grade')+'</div>'+
         '</header>'+
-        '<div class="verse-wrap"><div class="verse"><p>﴿ '+vHTML+' ﴾</p></div></div>'+
+        '<div class="verse-wrap">'+
+          '<button class="act audio-play js-only" data-audio="'+ws.id+'" hidden>🔊 استماع للتلاوة</button>'+
+          '<div class="verse"><p>﴿ '+vHTML+' ﴾</p></div>'+
+        '</div>'+
         '<div class="progress js-only"><div class="pbar"><i data-pfill="'+ws.id+'" style="width:0%"></i></div>'+
           '<b data-ptxt="'+ws.id+'">0 / 0</b><b class="score" data-score="'+ws.id+'"></b></div>'+
         secs+
