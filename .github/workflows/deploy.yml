@@ -30,6 +30,8 @@ jobs:
           ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
           SITE_URL: ${{ vars.SITE_URL }}
       - run: npm test
+        env:
+          ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
