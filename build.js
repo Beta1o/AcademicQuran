@@ -36,7 +36,13 @@ const AYA_SEQ={
   takwir:[1,2,3,4,5,6,19,20],   // ٦ آيات ثم مقطع من ١٩ و ٢٠
   alaq:[1,2,3,4,5,6,7,8,19],    // ٨ آيات ثم خاتمة الآية ١٩
   sharh56:[5,6],
-  anbiya87:[87,88]
+  anbiya87:[87,88],
+  adam30:[30,31,32,33,34],
+  nar69:[68,69,70],
+  hudhud20:[20,21,22,23,24,25,26],
+  jalut249:[249,250,251],
+  ayyub83:[83,84],
+  zakariya2:[2,3,4,5,6,7,8,9,10,11]
 };
 function ayaNumbers(w,count){
   if(AYA_SEQ[w.id]) return AYA_SEQ[w.id];
@@ -46,7 +52,7 @@ function ayaNumbers(w,count){
 /* علامة نهاية الآية ۝ مع رقمها داخلها (خط أميري يُدرج الرقم داخل الزخرفة) */
 /* أوراق الآيات التي ينتهي نصّها عند نهاية الآية (تُختم بعلامة مرقّمة)،
    أما ما ينتهي في وسط الآية (كمطلع آية الكرسي) فلا علامة ختام له. */
-const AYA_END={fatiha1:1,baqara201:1,sharh56:1,ibrahim7:1,hadid3:1,hashr22:1,nahl90:1,anbiya87:1,kahf9:1};
+const AYA_END={fatiha1:1,baqara201:1,sharh56:1,ibrahim7:1,hadid3:1,hashr22:1,nahl90:1,anbiya87:1,kahf9:1,adam30:1,nar69:1,hudhud20:1,jalut249:1,ayyub83:1,zakariya2:1};
 function verseHTML(w){
   const segs=esc(w.verse).split('۝').map(p=>p.trim()).filter(Boolean);
   const nums=ayaNumbers(w,segs.length);
@@ -73,10 +79,10 @@ const SURA_NAMES=['الفاتحة','البقرة','آل عمران','النسا�
 const LETTER_NAMES={'الألف':'ا','الباء':'ب','التاء':'ت','الثاء':'ث','الجيم':'ج','الحاء':'ح','الخاء':'خ','الدال':'د','الذال':'ذ','الراء':'ر','الزاي':'ز','السين':'س','الشين':'ش','الصاد':'ص','الضاد':'ض','الطاء':'ط','الظاء':'ظ','العين':'ع','الغين':'غ','الفاء':'ف','القاف':'ق','الكاف':'ك','اللام':'ل','الميم':'م','النون':'ن','الهاء':'ه','الواو':'و','الياء':'ي'};
 /* عدد آيات السورة التي تنتمي إليها الورقة */
 const AYAT={falaq:5,shams:15,teen:8,takwir:29,ghashiya:26,masad:5,kafirun:6,nasr:3,takathur:8,bayyina:8,adiyat:11,quraysh:4,alaq:19,asr:3,zalzala:8,feel:5,kawthar:3,qaria:11,nas:6,fatiha1:7,ikhlas:4,nahl90:128,duha:11,layl:21,balad:20,qadr:5,humaza:9,maun:7,tariq:17,infitar:19,fajr:30};
-const SURA_OF={fatiha1:'الفاتحة',kursi:'البقرة',baqara201:'البقرة',baqara286:'البقرة',sharh56:'الشرح',ibrahim7:'ابراهيم',talaq3:'الطلاق',hadid3:'الحديد',hashr22:'الحشر',ikhlas:'الإخلاص',nahl90:'النحل',anbiya87:'الأنبياء',yusuf4:'يوسف',qasas7:'القصص',nur35:'النور',kahf9:'الكهف'};
-const AYA_NUM={kursi:'255',baqara201:'201',baqara286:'286',ibrahim7:'7',talaq3:'3',hadid3:'3',hashr22:'22',fatiha1:'1',nahl90:'90',yusuf4:'4',qasas7:'7',nur35:'35',kahf9:'9'};
+const SURA_OF={fatiha1:'الفاتحة',kursi:'البقرة',baqara201:'البقرة',baqara286:'البقرة',sharh56:'الشرح',ibrahim7:'ابراهيم',talaq3:'الطلاق',hadid3:'الحديد',hashr22:'الحشر',ikhlas:'الإخلاص',nahl90:'النحل',anbiya87:'الأنبياء',yusuf4:'يوسف',qasas7:'القصص',nur35:'النور',kahf9:'الكهف',adam30:'البقرة',nar69:'الأنبياء',hudhud20:'النمل',jalut249:'البقرة',ayyub83:'الأنبياء',zakariya2:'مريم'};
+const AYA_NUM={kursi:'255',baqara201:'201',baqara286:'286',ibrahim7:'7',talaq3:'3',hadid3:'3',hashr22:'22',fatiha1:'1',nahl90:'90',yusuf4:'4',qasas7:'7',nur35:'35',kahf9:'9',adam30:'30',nar69:'68',hudhud20:'20',jalut249:'249',ayyub83:'83',zakariya2:'2'};
 /* نص بديل لموضع الآية عندما لا يكون رقمًا واحدًا */
-const AYA_TXT={sharh56:'الآيتان ٥ و ٦',anbiya87:'الآيتان ٨٧ و ٨٨',kahf9:'الآيات ٩-١٢'};
+const AYA_TXT={sharh56:'الآيتان ٥ و ٦',anbiya87:'الآيتان ٨٧ و ٨٨',kahf9:'الآيات ٩-١٢',adam30:'الآيات ٣٠-٣٤',nar69:'الآيات ٦٨-٧٠',hudhud20:'الآيات ٢٠-٢٦',jalut249:'الآيات ٢٤٩-٢٥١',ayyub83:'الآيتان ٨٣ و ٨٤',zakariya2:'الآيات ٢-١١'};
 /* رقم السورة في المصحف (لكل ورقة: السورة نفسها أو السورة التي منها الآية) */
 const SURA_NO={
   fatiha1:1, kursi:2, baqara201:2, baqara286:2, ibrahim7:14, nahl90:16, talaq3:65, hadid3:57, hashr22:59,
@@ -84,7 +90,8 @@ const SURA_NO={
   qaria:101, takathur:102, asr:103, feel:105, quraysh:106, kawthar:108, kafirun:109, nasr:110, masad:111,
   ikhlas:112, falaq:113, nas:114, balad:90, layl:92, duha:93, anbiya87:21,
   qadr:97, humaza:104, maun:107, tariq:86, infitar:82, yusuf4:12, qasas7:28,
-  fajr:89, nur35:24, kahf9:18
+  fajr:89, nur35:24, kahf9:18,
+  adam30:2, nar69:21, hudhud20:27, jalut249:2, ayyub83:21, zakariya2:19
 };
 /* سطر الموقع المعروض في رأس الورقة وعلى البطاقة */
 function locText(w){
