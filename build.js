@@ -78,7 +78,7 @@ const SURA_NAMES=['الفاتحة','البقرة','آل عمران','النسا�
 /* أسماء الحروف → الحرف نفسه */
 const LETTER_NAMES={'الألف':'ا','الباء':'ب','التاء':'ت','الثاء':'ث','الجيم':'ج','الحاء':'ح','الخاء':'خ','الدال':'د','الذال':'ذ','الراء':'ر','الزاي':'ز','السين':'س','الشين':'ش','الصاد':'ص','الضاد':'ض','الطاء':'ط','الظاء':'ظ','العين':'ع','الغين':'غ','الفاء':'ف','القاف':'ق','الكاف':'ك','اللام':'ل','الميم':'م','النون':'ن','الهاء':'ه','الواو':'و','الياء':'ي'};
 /* عدد آيات السورة التي تنتمي إليها الورقة */
-const AYAT={falaq:5,shams:15,teen:8,takwir:29,ghashiya:26,masad:5,kafirun:6,nasr:3,takathur:8,bayyina:8,adiyat:11,quraysh:4,alaq:19,asr:3,zalzala:8,feel:5,kawthar:3,qaria:11,nas:6,fatiha1:7,ikhlas:4,nahl90:128,duha:11,layl:21,balad:20,qadr:5,humaza:9,maun:7,tariq:17,infitar:19,fajr:30,naba:40,naziat:46};
+const AYAT={falaq:5,shams:15,teen:8,takwir:29,ghashiya:26,masad:5,kafirun:6,nasr:3,takathur:8,bayyina:8,adiyat:11,quraysh:4,alaq:19,asr:3,zalzala:8,feel:5,kawthar:3,qaria:11,nas:6,fatiha1:7,ikhlas:4,nahl90:128,duha:11,layl:21,balad:20,qadr:5,humaza:9,maun:7,tariq:17,infitar:19,fajr:30,naba:40,naziat:46,abasa:42,mutaffifin:36};
 const SURA_OF={fatiha1:'الفاتحة',kursi:'البقرة',baqara201:'البقرة',baqara286:'البقرة',sharh56:'الشرح',ibrahim7:'ابراهيم',talaq3:'الطلاق',hadid3:'الحديد',hashr22:'الحشر',ikhlas:'الإخلاص',nahl90:'النحل',anbiya87:'الأنبياء',yusuf4:'يوسف',qasas7:'القصص',nur35:'النور',kahf9:'الكهف',adam30:'البقرة',nar69:'الأنبياء',hudhud20:'النمل',jalut249:'البقرة',ayyub83:'الأنبياء',zakariya2:'مريم'};
 const AYA_NUM={kursi:'255',baqara201:'201',baqara286:'286',ibrahim7:'7',talaq3:'3',hadid3:'3',hashr22:'22',fatiha1:'1',nahl90:'90',yusuf4:'4',qasas7:'7',nur35:'35',kahf9:'9',adam30:'30',nar69:'68',hudhud20:'20',jalut249:'249',ayyub83:'83',zakariya2:'2'};
 /* نص بديل لموضع الآية عندما لا يكون رقمًا واحدًا */
@@ -92,7 +92,7 @@ const SURA_NO={
   qadr:97, humaza:104, maun:107, tariq:86, infitar:82, yusuf4:12, qasas7:28,
   fajr:89, nur35:24, kahf9:18,
   adam30:2, nar69:21, hudhud20:27, jalut249:2, ayyub83:21, zakariya2:19,
-  naba:78, naziat:79
+  naba:78, naziat:79, abasa:80, mutaffifin:83
 };
 /* سطر الموقع المعروض في رأس الورقة وعلى البطاقة */
 function locText(w){
