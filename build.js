@@ -712,7 +712,11 @@ const blocks=W.map((w,wi)=>{
   const total=w.secs.reduce((a,s)=>a+s.q.length,0);
   const loc=locText(w), ltag=locTag(w);
   const ayaListAttr = w.cat==='ayah' ? ` data-ayalist="${ayaNumbers(w, w.verse.split('۝').length).join(',')}"` : '';
-  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${ayaListAttr}>
+  /* الصوت يُتاح فقط حين يكون النص المعروض مطابقًا تمامًا لنص الآية الكاملة كما تُتلى —
+     أي حين تنتهي الورقة عند نهاية الآية فعليًا (endMark)، وليس لمقتطف جزئي منها
+     (كمطلع آية الكرسي)، تجنّبًا لسماع تلاوة أطول مما هو ظاهر على الورقة. */
+  const endMark=w.cat==='surah'||!!AYA_END[w.id];
+  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${endMark?` data-ayaend="1"`:''}${ayaListAttr}>
   <summary class="card">
     <div class="tagrow">
       <span class="tag">${w.cat==='surah'?'سورة كاملة':'آية مختارة'}</span>

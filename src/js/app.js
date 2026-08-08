@@ -236,7 +236,7 @@ function refreshAudioButtons(){
   var s=audioSettings();
   document.querySelectorAll('[data-audio]').forEach(function(b){
     var det=document.getElementById('w-'+b.dataset.audio);
-    var has = det && det.dataset.surano && (det.dataset.cat==='surah' ? det.dataset.ayat : (det.dataset.ayalist || det.dataset.ayano));
+    var has = det && det.dataset.surano && det.dataset.ayaend==='1' && (det.dataset.cat==='surah' ? det.dataset.ayat : (det.dataset.ayalist || det.dataset.ayano));
     b.hidden = !s.enabled || !has;
   });
 }

@@ -55,7 +55,7 @@ function wsHTML(ws){
   var mf=function(lbl,k){ return '<div class="mf"><label>'+lbl+'</label><input type="text" data-mf="'+k+'" title="يُطبَّق على جميع الأوراق"></div>'; };
   var ayaListAttr = ws.cat==='ayah' ? ' data-ayalist="'+segs.map(function(s,i){return start+i;}).join(',')+'"' : '';
   return '<details class="ws-item ws-custom" id="w-'+ws.id+'" style="--ac:var('+(ws.hue||'--teal')+')" data-cat="'+ws.cat+'" data-name="'+escA(ws.name)+'" data-words="'+words+'"'+
-    (ws.num?' data-surano="'+ws.num+'"':'')+(ws.ayat?' data-ayat="'+ws.ayat+'"':'')+(ws.cat==='ayah'&&ws.aya?' data-ayano="'+start+'"':'')+ayaListAttr+'>'+
+    (ws.num?' data-surano="'+ws.num+'"':'')+(ws.ayat?' data-ayat="'+ws.ayat+'"':'')+(ws.cat==='ayah'&&ws.aya?' data-ayano="'+start+'"':'')+(endMark?' data-ayaend="1"':'')+ayaListAttr+'>'+
     '<summary class="card">'+
       '<div class="tagrow"><span class="tag">'+(ws.cat==='surah'?'سورة كاملة':'آية مختارة')+'</span>'+
       (ltag?'<span class="loc-tag">📍 '+escA(ltag)+'</span>':'')+'<span class="loc-tag new">جديدة</span></div>'+
