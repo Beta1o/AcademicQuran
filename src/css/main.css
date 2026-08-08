@@ -201,4 +201,7 @@ input,textarea{font-family:inherit;color:var(--ink)}
   /* لا تُطبع نصوص التلميح داخل الحقول (مثل «اكتب الحروف — تُفصَل بـ + تلقائيًا») —
      هي إرشاد للاستخدام على الشاشة فقط، وتُترك الحقول فارغة على الورق ليكتب فيها الطفل */
   input::placeholder,textarea::placeholder{color:transparent!important;opacity:0!important}
+  /* كذلك نص «✏️ مساحة الرسم — على النسخة المطبوعة» تعليمة شاشة فقط —
+     يبقى مربع الرسم المنقّط ظاهرًا على الورق كمساحة فارغة، دون النص داخله */
+  .drawbox{color:transparent!important}
 }
