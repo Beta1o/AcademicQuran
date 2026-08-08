@@ -69,8 +69,14 @@ function grade(el){
   }
   if(ok===null){ if(el.dataset.show) revealBtn(q,el,'إظهار الإجابة النموذجية'); return; }
   q.classList.add(ok?'ok':'bad');
-  if(!ok && el.dataset.show) revealBtn(q,el,'إظهار الإجابة الصحيحة');
+  if(!ok && el.dataset.show && showAnswerOnMistake()) revealBtn(q,el,'إظهار الإجابة الصحيحة');
 }
+/* ---------- إعداد: هل يظهر زر «الإجابة الصحيحة» تلقائيًا بعد إجابة خاطئة؟ (يُضبط من صفحة المدير) ---------- */
+var SETTINGS_KEY='tahleel-settings';
+function showAnswerOnMistake(){
+  try{ var s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'); return s.showAnswerOnMistake!==false; }catch(e){ return true; }
+}
+window.showAnswerOnMistake=showAnswerOnMistake;
 /* زر إظهار الإجابة — يعمل مع الأسئلة المصححة آليًا ومع الإجابات النموذجية */
 function revealBtn(q,el,label){
   if(q.querySelector('.ansbtn')) return;

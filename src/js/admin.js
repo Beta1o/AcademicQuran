@@ -98,13 +98,25 @@ function renderCustomWs(){
 }
 /* تحديث أرقام الصفحة الرئيسية بعد الإضافة */
 function refreshStats(){
-  var all=document.querySelectorAll('.ws-item');
-  var qs=document.querySelectorAll('.q').length;
+  var all=document.querySelectorAll('.ws-item:not(.ws-hidden)');
+  var qs=document.querySelectorAll('.ws-item:not(.ws-hidden) .q').length;
   var s=0,a=0;
   all.forEach(function(d){ if(d.dataset.cat==='surah') s++; else a++; });
   var set=function(k,v){ var el=document.querySelector('[data-stat="'+k+'"]'); if(el) el.textContent=v; };
   set('ws',all.length); set('surah',s); set('ayah',a); set('q',qs);
 }
+/* ---------- إخفاء/إظهار الأوراق الأصلية (المدمجة وقت البناء) — بديل الحذف الآمن لها ---------- */
+var HIDDEN_WS=[];
+try{ var hv=localStorage.getItem('tahleel-hidden'); if(hv){ var hp=JSON.parse(hv); if(Array.isArray(hp)) HIDDEN_WS=hp; } }catch(e){}
+function saveHidden(){ try{ localStorage.setItem('tahleel-hidden', JSON.stringify(HIDDEN_WS)); }catch(e){} }
+function applyHidden(){
+  document.querySelectorAll('.ws-item').forEach(function(d){
+    var id=d.id.slice(2);
+    d.classList.toggle('ws-hidden', HIDDEN_WS.indexOf(id)>-1);
+  });
+  refreshStats();
+}
+window.applyHidden=applyHidden;
 
 /* ---------- question types catalog ---------- */
 var F_WORD=[{k:'word',label:'الكلمة'}];
@@ -429,18 +441,41 @@ if(panel){
     o.dataset.name=row[1]; o.dataset.ayat=row[2];
     $('nwSuraPick').appendChild(o);
   });
+  /* ---------- نص القرآن الكريم كاملًا (مضمَّن من صفحة المدير) — ١١٤ سورة × آياتها ---------- */
+  var QURAN_FULL=[];
+  try{ var qf=document.getElementById('quranfull'); if(qf) QURAN_FULL=JSON.parse(qf.textContent||'[]')||[]; }catch(e){ QURAN_FULL=[]; }
+  function fillVerseFromQuran(){
+    var opt=$('nwSuraPick').selectedOptions[0]; if(!opt||!opt.value) return;
+    var ayahs=QURAN_FULL[(+opt.value)-1]; if(!ayahs||!ayahs.length) return;
+    if($('nwCat').value==='surah'){
+      $('nwVerse').value=ayahs.join(' ۝ ');
+      return;
+    }
+    var from=toInt($('nwAya').value);
+    if(!from||from<1||from>ayahs.length) return;
+    var to=toInt($('nwAyaTo').value)||from;
+    if(to<from) to=from;
+    if(to>ayahs.length) to=ayahs.length;
+    $('nwVerse').value=ayahs.slice(from-1,to).join(' ۝ ');
+  }
   $('nwSuraPick').addEventListener('change',function(){
     var opt=$('nwSuraPick').selectedOptions[0]; if(!opt||!opt.value) return;
     $('nwNum').value=opt.value;
     if($('nwCat').value==='surah'){
       $('nwName').value='سورة '+opt.dataset.name;
       $('nwAyat').value=opt.dataset.ayat;
+      fillVerseFromQuran();
     } else {
       $('nwName').value='سورة '+opt.dataset.name+' — الآية';
       $('nwAyat').value=opt.dataset.ayat;
       try{ $('nwAya').focus(); }catch(e){}
     }
   });
+  $('nwAya').addEventListener('change',function(){
+    $('nwName').value='سورة '+((($('nwSuraPick').selectedOptions[0]||{}).dataset||{}).name||'')+' — الآية '+toArD2(toInt($('nwAya').value)||'');
+    fillVerseFromQuran();
+  });
+  $('nwAyaTo').addEventListener('change',fillVerseFromQuran);
 
   /* ---------- نموذج إضافة/تعديل سورة أو آية ---------- */
   function nwMsg(s,ok){ $('nwMsg').textContent=s||''; $('nwMsg').className='admin-msg '+(s?(ok?'ok':'err'):''); }
@@ -449,7 +484,11 @@ if(panel){
     do{ id='ws'+i; i++; }while(document.getElementById('w-'+id));
     return id;
   }
-  function toggleAyaField(){ $('nwAyaWrap').style.display = ($('nwCat').value==='ayah')?'':'none'; }
+  function toggleAyaField(){
+    var on=($('nwCat').value==='ayah');
+    $('nwAyaWrap').style.display = on?'':'none';
+    $('nwAyaToWrap').style.display = on?'':'none';
+  }
   $('nwCat').addEventListener('change',toggleAyaField); toggleAyaField();
   $('nwAyaMark').addEventListener('click',function(){
     var t=$('nwVerse'); var p=t.selectionStart||t.value.length;
@@ -465,7 +504,7 @@ if(panel){
   });
   var editingWsIdx=-1;
   function resetWsForm(){
-    ['nwName','nwNum','nwAyat','nwAya','nwVerse','nwInfo','nwFootV','nwFootM'].forEach(function(id){ $(id).value=''; });
+    ['nwName','nwNum','nwAyat','nwAya','nwAyaTo','nwVerse','nwInfo','nwFootV','nwFootM'].forEach(function(id){ $(id).value=''; });
     $('nwSec0').value='أولًا: لغة الأرقام'; $('nwSec1').value='ثانيًا: مهارات الاستخراج'; $('nwSec2').value='ثالثًا: التدبر والنسخ';
     $('nwCat').value='surah'; toggleAyaField();
     $('nwSuraPick').value='';
@@ -556,6 +595,39 @@ if(panel){
     });
   }
   window.renderNwList=renderNwList;
+  /* ---------- قائمة الأوراق الأصلية (المدمجة) — إخفاء/إظهار فقط ---------- */
+  function renderBwList(){
+    var out=[];
+    document.querySelectorAll('.ws-item:not(.ws-custom)').forEach(function(d){
+      var id=d.id.slice(2), hidden=HIDDEN_WS.indexOf(id)>-1;
+      out.push('<div class="row"><b>'+escA(d.dataset.name)+'</b><span class="builtin-tag">أصلية</span>'+
+        '<span>'+(d.dataset.cat==='surah'?'سورة':'آية')+'</span>'+
+        '<button class="hide-toggle" data-hideid="'+id+'">'+(hidden?'إظهار':'إخفاء')+'</button></div>');
+    });
+    $('bwList').innerHTML=out.join('')||'<div class="row">لا توجد أوراق أصلية.</div>';
+    $('bwList').querySelectorAll('[data-hideid]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var id=b.dataset.hideid, i=HIDDEN_WS.indexOf(id);
+        if(i>-1) HIDDEN_WS.splice(i,1); else HIDDEN_WS.push(id);
+        saveHidden(); applyHidden(); renderBwList();
+      });
+    });
+  }
+  window.renderBwList=renderBwList;
+  renderBwList();
+  applyHidden();
+  /* ---------- إعدادات عامة: إظهار الإجابة الصحيحة تلقائيًا بعد إجابة خاطئة ---------- */
+  (function(){
+    var box=$('setShowAnsMistake'); if(!box) return;
+    var cur;
+    try{ cur=JSON.parse(localStorage.getItem('tahleel-settings')||'{}'); }catch(e){ cur={}; }
+    box.checked = cur.showAnswerOnMistake!==false;
+    box.addEventListener('change',function(){
+      var s; try{ s=JSON.parse(localStorage.getItem('tahleel-settings')||'{}'); }catch(e){ s={}; }
+      s.showAnswerOnMistake=box.checked;
+      try{ localStorage.setItem('tahleel-settings', JSON.stringify(s)); }catch(e){}
+    });
+  })();
   renderNwList();
   function fillTypeOptions(){
     var sec=+($('admSec').value||0);

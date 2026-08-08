@@ -1,4 +1,8 @@
 node_modules/
 dist/
 *.log
-.claude/settings.local.json
+.claude/
+Admin.txt
+*password*
+*secret*
+!package-lock.json

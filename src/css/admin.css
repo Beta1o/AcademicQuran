@@ -5,6 +5,11 @@
 .admin-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .admin-head h2{margin:0;font-size:1.25rem;color:#5a4a1a}
 .admin-head button{margin-inline-start:auto}
+.admin-settings{background:#fff;border:1px solid #eadfc2;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;flex-direction:column;gap:4px}
+.admin-settings .switch-row{display:flex;align-items:center;gap:8px;font-weight:700;color:#5a4a1a;font-size:.92rem;cursor:pointer}
+.admin-settings .switch-row input{width:18px;height:18px}
+.admin-list .row .hide-toggle{background:none;border:1px solid #9a7414;color:#8a6d1f;border-radius:8px;padding:3px 10px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.admin-list .row .builtin-tag{background:#eef2fb;color:#3E5A9B;border-radius:6px;padding:1px 8px;font-size:.72rem;font-weight:700}
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
 .admin-grid label{display:flex;flex-direction:column;gap:5px;font-size:.85rem;color:#6b5a28;font-weight:600}
 .admin-grid input,.admin-grid select,.admin-grid textarea{border:1px solid #d8cba6;border-radius:9px;padding:8px 10px;font-family:inherit;font-size:.95rem;background:#fff;max-width:100%}

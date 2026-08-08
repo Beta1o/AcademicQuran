@@ -17,6 +17,14 @@
       <button id="admClose" class="act" type="button">✕ إغلاق</button>
     </div>
 
+    <div class="admin-settings">
+      <label class="switch-row">
+        <input type="checkbox" id="setShowAnsMistake" checked>
+        إظهار زر «الإجابة الصحيحة» تلقائيًا بعد إجابة خاطئة
+      </label>
+      <span class="admin-hint">عند إيقافه، يظل ✗ الخطأ ظاهرًا لكن دون زر يكشف الإجابة — لتشجيع المحاولة قبل الكشف.</span>
+    </div>
+
     <div class="admin-steps">
       <button type="button" class="step on" data-step="ws"><b>١</b> إضافة سورة أو آية</button>
       <button type="button" class="step" data-step="q"><b>٢</b> إضافة الأسئلة</button>
@@ -35,7 +43,8 @@
         <label>اسم الورقة <input type="text" id="nwName" placeholder="مثال: سورة الضحى"></label>
         <label>رقم السورة في المصحف <input type="text" id="nwNum" inputmode="numeric" placeholder="١ - ١١٤"></label>
         <label>عدد آيات السورة <input type="text" id="nwAyat" inputmode="numeric" placeholder="مثال: ١١"></label>
-        <label id="nwAyaWrap">رقم الآية (للآية المختارة) <input type="text" id="nwAya" inputmode="numeric" placeholder="مثال: ٩٠"></label>
+        <label id="nwAyaWrap">من الآية <input type="text" id="nwAya" inputmode="numeric" placeholder="مثال: ٩٠"></label>
+        <label id="nwAyaToWrap">إلى الآية (اختياري — لتحديد مقطع من عدة آيات)<input type="text" id="nwAyaTo" inputmode="numeric" placeholder="اتركه فارغًا لآية واحدة"></label>
         <label>لون الورقة
           <select id="nwHue">
             <option value="--teal">أخضر</option><option value="--gold">ذهبي</option>
@@ -66,6 +75,9 @@
       <div id="nwMsg" class="admin-msg"></div>
       <h3 class="admin-sub">الأوراق المضافة</h3>
       <div id="nwList" class="admin-list"></div>
+      <h3 class="admin-sub">الأوراق الأصلية (المدمجة في الموقع)</h3>
+      <p class="admin-hint">لا يمكن تعديل نص هذه الأوراق من هنا (لأن أسئلتها المحسوبة تلقائيًا مرتبطة بنصّها الأصلي)، لكن يمكن إخفاء أي ورقة من الموقع أو إعادة إظهارها.</p>
+      <div id="bwList" class="admin-list"></div>
     </section>
 
     <!-- ========== الخطوة ٢: الأسئلة ========== -->
