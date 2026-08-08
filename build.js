@@ -843,6 +843,7 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
 </body>
 </html>`;
 /* ================= إخراج الملفات الثابتة المرافقة (PWA وSEO) ================= */
+fs.mkdirSync(path.join(__dirname,'dist'), {recursive:true});
 function writeStaticAssets(){
   const manifest = {
     name:"التحليل اللغوي المجهري", short_name:"المجهري اللغوي",
