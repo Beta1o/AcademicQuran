@@ -83,7 +83,10 @@
   .controls{margin-top:18px;gap:10px}
   .tabs{width:100%;justify-content:stretch}
   .tabs button{flex:1;padding:9px 6px;font-size:.82rem;white-space:nowrap}
-  .lvl-tabs button{flex:0 0 auto;padding:9px 14px}
+  /* مستويات الصعوبة: تلتفّ على سطرين بدل التمرير الأفقي — التمرير في صفحات RTL
+     قد لا يبدأ من الموضع الصحيح في بعض المتصفحات فيبقى آخر مستوى (صعب جدًا) مقصوصًا */
+  .lvl-tabs{overflow-x:visible;flex-wrap:wrap;width:100%;justify-content:center;border-radius:16px}
+  .lvl-tabs button{flex:0 1 auto;padding:8px 12px;font-size:.8rem}
   .search{flex:1 1 100%}
   .search input{width:100%}
 
