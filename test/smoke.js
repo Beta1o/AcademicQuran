@@ -43,6 +43,9 @@ setTimeout(()=>{
     missing++;
   });
   ok('every question has an answer, key, or is an activity', missing===0);
+  /* لا وجود لأي نشاط «قراءة عكسية» — القراءة العكسية للقرآن غير مستحبة، ولا يجوز إضافتها مجددًا */
+  ok('no reverse-reading (قراءة عكسية) activity anywhere',
+     ![...doc.querySelectorAll('.q .txt')].some(t=>t.textContent.includes('عكسية')));
 
   /* ---------- مستويات الصعوبة ---------- */
   const lvls=new Set([...doc.querySelectorAll('.q')].map(q=>q.dataset.lvl));

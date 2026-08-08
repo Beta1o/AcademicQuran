@@ -711,14 +711,10 @@ if(panel){
       out.push('<div class="row"><b>'+escA(d.dataset.name)+'</b><span class="builtin-tag">أصلية</span>'+
         '<span>'+(d.dataset.cat==='surah'?'سورة':'آية')+(hidden?' · مخفية':'')+' · '+toArD2(nq)+' سؤالًا</span>'+
         '<span class="bw-lvls">'+lvlSummary+'</span>'+
-        '<button class="edit" data-bwedit="'+id+'">تعديل العنوان</button>'+
         '<button class="edit" data-bwq="'+id+'">أسئلة الورقة</button>'+
         '<button class="hide-toggle" data-hideid="'+id+'">'+(hidden?'استعادة':'حذف')+'</button></div>');
     });
     $('bwList').innerHTML=out.join('')||'<div class="row">لا توجد أوراق أصلية.</div>';
-    $('bwList').querySelectorAll('[data-bwedit]').forEach(function(b){
-      b.addEventListener('click',function(){ startEditBuiltin(b.dataset.bwedit); });
-    });
     $('bwList').querySelectorAll('[data-bwq]').forEach(function(b){
       b.addEventListener('click',function(){ openBwQuestionList(b.dataset.bwq); });
     });
