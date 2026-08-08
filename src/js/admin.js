@@ -860,6 +860,7 @@ if(panel){
     });
     if(cur && ids.indexOf(cur)>-1) $('admType').value=cur;
     renderFields();
+    renderAdmList();
   }
   function renderFields(){
     var t=TYPES.filter(function(x){return x.id===$('admType').value;})[0];
@@ -895,18 +896,22 @@ if(panel){
     msg('✅ تمت إضافة السؤال إلى '+wsName(ws),true);
   });
   function renderAdmList(){
+    var curWs=$('admWs').value, curSec=+($('admSec').value||0);
+    var items=(CUSTOM[curWs]||[]).map(function(it,idx){ return {it:it, idx:idx}; })
+      .filter(function(x){ return (+(x.it.sec||0))===curSec; });
     var out='';
-    Object.keys(CUSTOM).forEach(function(ws){
-      (CUSTOM[ws]||[]).forEach(function(it,idx){
-        var ans=it.show||it.ans||'—';
-        out+='<div class="row" data-row="'+ws+':'+idx+'"><b>'+escA(wsName(ws))+'</b><span class="txt-cell">'+escA(it.t)+'</span>'+
-          '<span class="ans-wrap"><span class="ans-hidden">••••</span><span class="ans-val" hidden>'+escA(ans)+'</span>'+
-          '<button class="reveal" type="button">👁️ الإجابة</button></span>'+
-          '<button class="edit" data-ws="'+ws+'" data-i="'+idx+'">تعديل</button>'+
-          '<button class="del" data-ws="'+ws+'" data-i="'+idx+'">حذف</button></div>';
-      });
+    items.forEach(function(x){
+      var it=x.it, idx=x.idx;
+      var ans=it.show||it.ans||'—';
+      out+='<div class="row" data-row="'+curWs+':'+idx+'"><b>'+escA(wsName(curWs))+'</b><span class="txt-cell">'+escA(it.t)+'</span>'+
+        '<span class="ans-wrap"><span class="ans-hidden">••••</span><span class="ans-val" hidden>'+escA(ans)+'</span>'+
+        '<button class="reveal" type="button">👁️ الإجابة</button></span>'+
+        '<button class="edit" data-ws="'+curWs+'" data-i="'+idx+'">تعديل</button>'+
+        '<button class="del" data-ws="'+curWs+'" data-i="'+idx+'">حذف</button></div>';
     });
-    $('admList').innerHTML=out||'<div class="row">لا توجد أسئلة مضافة بعد.</div>';
+    var secLabel=($('admSec').selectedOptions[0]||{}).textContent||'';
+    $('admListHead').textContent='الأسئلة المضافة في «'+wsName(curWs)+'» — '+secLabel+' ('+toArD2(items.length)+')';
+    $('admList').innerHTML=out||'<div class="row">لا توجد أسئلة مضافة في هذا القسم من هذه الورقة بعد.</div>';
     $('admList').querySelectorAll('.reveal').forEach(function(b){
       b.addEventListener('click',function(){
         var wrap=b.closest('.ans-wrap');
