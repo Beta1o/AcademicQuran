@@ -24,12 +24,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
       - run: node build.js --prod
         env:
           NODE_ENV: production
           ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
           SITE_URL: ${{ vars.SITE_URL }}
+      - run: npm test
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
