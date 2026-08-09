@@ -371,20 +371,20 @@ var Locale = (function(){
        السؤال الأصلي — لا يُعاد كتابته أبدًا مهما كانت اللغة، فيُستبعد أي
        احتمال خطأ في نقله. ما لا يملك ترجمة قالب معروفة يبقى بعربيته الأصلية
        تلقائيًا (تدهور سلس، لا نص مفقود). */
-    var tpl = cat && cat.tpl, terms = cat && cat.term;
+    var tpl = cat && cat.tpl, terms = cat && cat.term, suraDict = cat && cat.sura;
     document.querySelectorAll('[data-i18n-tpl]').forEach(function(node){
       var key=node.dataset.i18nTpl, word=node.dataset.i18nWord;
       var phrase = (tpl && tpl[key]) || key;
       /* بعض الكلمات بين القوسين ليست منقولة من نص الآية بل مصطلحات لغوية عامة
-         (كـ«شدّة» أو «تنوين ضم») يمكن ترجمتها كسائر النص؛ تُترجَم هذه فقط إن
-         وُجدت في قاموس المصطلحات المعروف — أي كلمة أخرى غير مدرَجة فيه تُعامَل
-         بحذر بصفتها كلمة قرآنية فعلية وتبقى عربية حرفيًا كما وردت. */
-      var out = word!==undefined ? phrase.replace('{}', (terms && terms[word]) || word) : phrase;
+         (كـ«شدّة» أو «تنوين ضم») أو اسم سورة (كموقع الآية "من سورة X") يمكن
+         ترجمتها كسائر النص؛ تُترجَم هذه فقط إن وُجدت في قاموس معروف — أي كلمة
+         أخرى غير مدرَجة فيهما تُعامَل بحذر بصفتها كلمة قرآنية فعلية وتبقى
+         عربية حرفيًا كما وردت. */
+      var out = word!==undefined ? phrase.replace('{}', (terms && terms[word]) || (suraDict && suraDict[word]) || word) : phrase;
       node.textContent = out;
     });
     /* أسماء السور داخل عنوان الورقة — على عكس كلمات الأسئلة، اسم السورة نفسه
        يُترجَم (له اسم معروف بكل لغة)، فقط نص القرآن وكلماته يبقى عربيًا دائمًا. */
-    var suraDict = cat && cat.sura;
     document.querySelectorAll('[data-i18n-name]').forEach(function(node){
       var ar=node.dataset.i18nName;
       node.textContent = (suraDict && suraDict[ar]) || ar;

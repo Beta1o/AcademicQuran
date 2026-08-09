@@ -48,6 +48,14 @@ function wsHTML(ws){
     ? [ws.num?'السورة رقم '+toArD2(ws.num)+' في المصحف':'', ws.ayat?'عدد آياتها '+toArD2(ws.ayat):''].filter(Boolean).join(' · ')
     : [ws.aya?'الآية '+toArD2(ws.aya):'', ws.num?'(السورة رقم '+toArD2(ws.num)+' في المصحف)':''].filter(Boolean).join(' ');
   var ltag = ws.cat==='surah' ? (ws.num?'السورة '+toArD2(ws.num):'') : (ws.aya?'الآية '+toArD2(ws.aya):'');
+  var locHTML = ws.cat==='surah'
+    ? [ws.num?'<span data-i18n-tpl="السورة رقم {} في المصحف" data-i18n-word="'+toArD2(ws.num)+'">السورة رقم '+toArD2(ws.num)+' في المصحف</span>':'',
+       ws.ayat?'<span data-i18n-tpl="عدد آياتها {}" data-i18n-word="'+toArD2(ws.ayat)+'">عدد آياتها '+toArD2(ws.ayat)+'</span>':''].filter(Boolean).join(' · ')
+    : [ws.aya?'<span data-i18n-tpl="الآية {}" data-i18n-word="'+toArD2(ws.aya)+'">الآية '+toArD2(ws.aya)+'</span>':'',
+       ws.num?'(<span data-i18n-tpl="السورة رقم {} في المصحف" data-i18n-word="'+toArD2(ws.num)+'">السورة رقم '+toArD2(ws.num)+' في المصحف</span>)':''].filter(Boolean).join(' ');
+  var ltagHTML = ws.cat==='surah'
+    ? (ws.num?'<span data-i18n-tpl="السورة {}" data-i18n-word="'+toArD2(ws.num)+'">السورة '+toArD2(ws.num)+'</span>':'')
+    : (ws.aya?'<span data-i18n-tpl="الآية {}" data-i18n-word="'+toArD2(ws.aya)+'">الآية '+toArD2(ws.aya)+'</span>':'');
   var secs=(ws.secs||[]).map(function(t,i){
     return '<section class="sec"><div class="sec-head"><span class="lens-badge">'+(['١','٢','٣'][i]||(i+1))+'</span>'+
       '<h3>'+escA(t)+'</h3><span class="rule"></span></div><div class="qlist"></div></section>';
@@ -61,7 +69,7 @@ function wsHTML(ws){
     (ws.num?' data-surano="'+ws.num+'"':'')+(ws.ayat?' data-ayat="'+ws.ayat+'"':'')+(ws.cat==='ayah'&&ws.aya?' data-ayano="'+start+'"':'')+(endMark?' data-ayaend="1"':'')+ayaListAttr+'>'+
     '<summary class="card">'+
       '<div class="tagrow"><span class="tag" data-i18n="'+(ws.cat==='surah'?'tagSurah':'tagAyah')+'">'+(ws.cat==='surah'?'سورة كاملة':'آية مختارة')+'</span>'+
-      (ltag?'<span class="loc-tag">📍 '+escA(ltag)+'</span>':'')+'<span class="loc-tag new">جديدة</span></div>'+
+      (ltag?'<span class="loc-tag">📍 '+ltagHTML+'</span>':'')+'<span class="loc-tag new">جديدة</span></div>'+
       '<h3>'+nameHtml+'</h3>'+
       '<div class="vpeek">﴿ '+vHTML+' ﴾</div>'+
       '<div class="cmeta"><span class="prog-mini" data-i18n-tpl="{} سؤالًا" data-i18n-word="٠">0 سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
@@ -76,7 +84,7 @@ function wsHTML(ws){
         '<header class="sheet-head"><div class="lab-line">التحليل اللغوي المجهري</div>'+
           '<h2>'+nameHtml+'</h2>'+
           '<div class="info" data-i18n-tpl="'+escA(ws.info||'')+'">'+escA(ws.info||'')+'</div>'+
-          (loc?'<div class="loc">📍 '+escA(loc)+'</div>':'')+
+          (loc?'<div class="loc">📍 '+locHTML+'</div>':'')+
         '</header>'+
         '<div class="verse-wrap">'+
           '<button class="act audio-play js-only" data-audio="'+ws.id+'" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>'+
@@ -86,7 +94,7 @@ function wsHTML(ws){
           '<b data-ptxt="'+ws.id+'">0 / 0</b><b class="score" data-score="'+ws.id+'"></b></div>'+
         secs+
         '<footer class="sheet-foot"><div class="fv">'+escA(ws.footV||'')+'</div>'+
-          (ws.footM?'<div class="fm">'+escA(ws.footM)+'</div>':'')+'</footer>'+
+          (ws.footM?'<div class="fm" data-i18n-tpl="'+escA(ws.footM)+'">'+escA(ws.footM)+'</div>':'')+'</footer>'+
       '</article>'+
       '<div class="ws-close"><button class="act" data-close="'+ws.id+'" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>'+
     '</div></details>';

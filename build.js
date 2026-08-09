@@ -97,7 +97,7 @@ const SURA_NO={
   adam30:2, nar69:21, hudhud20:27, jalut249:2, ayyub83:21, zakariya2:19,
   naba:78, naziat:79, abasa:80, mutaffifin:83, inshiqaq:84, buruj:85, aala:87, sharh:94
 };
-/* سطر الموقع المعروض في رأس الورقة وعلى البطاقة */
+/* سطر الموقع المعروض في رأس الورقة وعلى البطاقة (نص عربي خام، للبحث/التصدير) */
 function locText(w){
   const n=SURA_NO[w.id];
   if(w.cat==='surah'){
@@ -113,6 +113,24 @@ function locText(w){
   if(n) parts.push('(السورة رقم '+toAr(n)+' في المصحف)');
   return parts.join(' ');
 }
+/* نفس سطر الموقع، لكن مقسّمًا إلى مقاطع قابلة للترجمة كل على حدة (رقم السورة،
+   عدد الآيات، اسم السورة...). نطاقات الآيات غير المنتظمة (AYA_TXT، كـ"الآيتان
+   ٨٧ و ٨٨") تبقى عربية حاليًا — حالات قليلة (٩ أوراق) غير نمطية. */
+function locHTML(w){
+  const n=SURA_NO[w.id];
+  if(w.cat==='surah'){
+    const parts=[];
+    if(n) parts.push(`<span data-i18n-tpl="السورة رقم {} في المصحف" data-i18n-word="${toAr(n)}">السورة رقم ${toAr(n)} في المصحف</span>`);
+    if(AYAT[w.id]) parts.push(`<span data-i18n-tpl="عدد آياتها {}" data-i18n-word="${toAr(AYAT[w.id])}">عدد آياتها ${toAr(AYAT[w.id])}</span>`);
+    return parts.join(' · ');
+  }
+  const parts=[];
+  if(AYA_TXT[w.id]) parts.push(esc(AYA_TXT[w.id]));
+  else if(AYA_NUM[w.id]) parts.push(`<span data-i18n-tpl="الآية {}" data-i18n-word="${toAr(AYA_NUM[w.id])}">الآية ${toAr(AYA_NUM[w.id])}</span>`);
+  if(SURA_OF[w.id]) parts.push(`<span data-i18n-tpl="من سورة {}" data-i18n-word="${esc(SURA_OF[w.id])}">من سورة ${esc(SURA_OF[w.id])}</span>`);
+  if(n) parts.push(`(<span data-i18n-tpl="السورة رقم {} في المصحف" data-i18n-word="${toAr(n)}">السورة رقم ${toAr(n)} في المصحف</span>)`);
+  return parts.join(' ');
+}
 /* اسم الورقة قابل للترجمة جزئيًا: "سورة X" أو "سورة X — Y" — تُترجَم كلمة
    «سورة» واسم السورة X عبر القاموس، بينما يبقى الوصف الإضافي Y (نطاق الآية
    ونحوه) عربيًا حاليًا؛ مقتطف تدريجي أفضل من عدم الترجمة إطلاقًا. */
@@ -126,6 +144,14 @@ function locTag(w){
   if(w.cat==='surah') return n?('السورة '+toAr(n)):'';
   const a=AYA_NUM[w.id];
   return (SURA_OF[w.id]||'')+(a?' '+toAr(a):'');
+}
+/* بطاقة الموقع المختصرة على الغلاف — مقسّمة لمقاطع قابلة للترجمة كسابقتها */
+function locTagHTML(w){
+  const n=SURA_NO[w.id];
+  if(w.cat==='surah') return n?`<span data-i18n-tpl="السورة {}" data-i18n-word="${toAr(n)}">السورة ${toAr(n)}</span>`:'';
+  const a=AYA_NUM[w.id];
+  const suraPart = SURA_OF[w.id] ? `<span data-i18n-name="${esc(SURA_OF[w.id])}">${esc(SURA_OF[w.id])}</span>` : '';
+  return suraPart+(a?' '+toAr(a):'');
 }
 
 function verseWordsOrig(w){ // original (with diacritics), Quran-mark-free
@@ -742,7 +768,7 @@ const blocks=W.map((w,wi)=>{
   <summary class="card">
     <div class="tagrow">
       <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':'tagAyah'}">${w.cat==='surah'?'سورة كاملة':'آية مختارة'}</span>
-      ${ltag?`<span class="loc-tag">📍 ${esc(ltag)}</span>`:''}
+      ${ltag?`<span class="loc-tag">📍 ${locTagHTML(w)}</span>`:''}
     </div>
     <h3>${nameHTML(w)}</h3>
     <div class="vpeek">﴿ ${verseHTML(w)} ﴾</div>
@@ -760,7 +786,7 @@ const blocks=W.map((w,wi)=>{
         <div class="lab-line">${esc(w.lab)}</div>
         <h2>${nameHTML(w)}</h2>
         <div class="info" data-i18n-tpl="${esc(w.info)}">${esc(w.info)}</div>
-        ${loc?`<div class="loc">📍 ${esc(loc)}</div>`:''}
+        ${loc?`<div class="loc">📍 ${locHTML(w)}</div>`:''}
         <div class="lvl-legend"><span data-i18n="lvlLegendLabel">مستويات الأسئلة:</span> ${lvlLegend}</div>
       </header>
       <div class="verse-wrap">
@@ -769,7 +795,7 @@ const blocks=W.map((w,wi)=>{
       </div>
       <div class="progress js-only"><div class="pbar"><i data-pfill="${w.id}" style="width:0%"></i></div><b data-ptxt="${w.id}">0 / ${total}</b><b class="score" data-score="${w.id}"></b></div>
       ${secs}
-      <footer class="sheet-foot"><div class="fv">${esc(w.footV)}</div>${w.footM?`<div class="fm">${esc(w.footM)}</div>`:''}</footer>
+      <footer class="sheet-foot"><div class="fv">${esc(w.footV)}</div>${w.footM?`<div class="fm" data-i18n-tpl="${esc(w.footM)}">${esc(w.footM)}</div>`:''}</footer>
     </article>
     <div class="ws-close"><button class="act" data-close="${w.id}" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>
   </div>
