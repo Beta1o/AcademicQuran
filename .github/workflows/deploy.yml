@@ -29,7 +29,6 @@ jobs:
           NODE_ENV: production
           ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
           SITE_URL: ${{ vars.SITE_URL }}
-          ANDROID_ASSETLINKS_SHA256: ${{ vars.ANDROID_ASSETLINKS_SHA256 }}
       - run: npm test
         env:
           ADMIN_PASS: ${{ secrets.ADMIN_PASS }}

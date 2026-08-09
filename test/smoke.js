@@ -23,8 +23,6 @@ setTimeout(()=>{
   ok('api/worksheets.json has all worksheets', apiWs.length===WS);
   ok('api/meta.json counts match the build', apiMeta.worksheets===WS && apiMeta.questions===QS);
   ok('api worksheets carry their questions', apiWs.every(w=>w.sections.every(s=>s.questions.length>0)));
-  const assetlinks=JSON.parse(fs.readFileSync(path.join(__dirname,'../dist/.well-known/assetlinks.json'),'utf8'));
-  ok('.well-known/assetlinks.json is a valid array (Android TWA digital asset links)', Array.isArray(assetlinks));
   ok('new surah (الإخلاص) present', !!doc.getElementById('w-ikhlas'));
   ok('new ayah (النحل ٩٠) present', !!doc.getElementById('w-nahl90'));
   ok('each worksheet has 3 sections', [...doc.querySelectorAll('details.ws-item')].every(d=>d.querySelectorAll('.sec').length===3));

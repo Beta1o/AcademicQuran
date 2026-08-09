@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- سمة بلا AppCompat؛ نفس لون خلفية الموقع (paper) كي لا تلمح شاشة بيضاء
+         فارغة قبل رسم WebView لمحتواه -->
+    <style name="Theme.AcademicQuran" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FBF8F0</item>
+        <item name="android:statusBarColor">#FBF8F0</item>
+        <item name="android:navigationBarColor">#FBF8F0</item>
+    </style>
+</resources>

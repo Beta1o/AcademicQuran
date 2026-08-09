@@ -1,0 +1,56 @@
+plugins {
+    id 'com.android.application'
+}
+
+// الموقع مبني كملف واحد قائم بذاته (../../dist/index.html — كل CSS/JS مضمّن
+// داخله)، فتُزامَن نسخة منه إلى أصول التطبيق قبل كل بناء، كي لا يُحزَم التطبيق
+// أبدًا بنسخة قديمة من الموقع. يجب تشغيل `node build.js --prod` في جذر
+// المستودع قبل هذا البناء لتوليد dist/index.html أولًا (يفعله سير العمل تلقائيًا).
+def webAssetsDir = layout.buildDirectory.dir('generated/webassets')
+
+tasks.register('syncWebAssets', Sync) {
+    from(rootProject.file('../dist')) {
+        include 'index.html'
+        into 'www'
+    }
+    into webAssetsDir
+}
+
+android {
+    namespace 'com.beta1o.academicquran'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.beta1o.academicquran'
+        minSdk 26   // أيقونة adaptive فقط (anydpi-v26) — أندرويد 8.0 فأعلى
+        targetSdk 35
+        versionCode 1
+        versionName '1.1.0'
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += webAssetsDir.get().asFile
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // توقيع الإصدار بمفتاح التطوير كي يُثبَّت الملف كما هو مباشرة؛
+            // للنشر الرسمي على متجر Play استبدله بمفتاح توقيع حقيقي (signingConfig)
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    lint {
+        abortOnError false
+    }
+}
+
+tasks.named('preBuild') { dependsOn 'syncWebAssets' }

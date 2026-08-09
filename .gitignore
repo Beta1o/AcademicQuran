@@ -1,6 +1,7 @@
 node_modules/
 dist/
-android/app/
+android/.gradle/
+android/app/build/
 *.keystore
 *.log
 .claude/

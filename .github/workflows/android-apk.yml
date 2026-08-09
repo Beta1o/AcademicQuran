@@ -1,95 +1,41 @@
-name: Build Android APK (TWA)
+name: Android APK
 
-# يبني تطبيق أندرويد (Trusted Web Activity) يفتح الموقع المنشور فعليًا
-# (beta1o.github.io/AcademicQuran) داخل غلاف تطبيق حقيقي — لا نسخة مبنية
-# محليًا مضمَّنة، فيبقى متزامنًا تلقائيًا مع كل تحديث للموقع دون الحاجة
-# لإعادة بناء التطبيق. يعمل هذا فقط على عدّاد GitHub (فيه Java وAndroid SDK
-# جاهزان مسبقًا)، لا داخل بيئة العمل المحلية التي لا تملكهما.
-#
-# ملاحظة: `bubblewrap init` و`bubblewrap build` أدوات تفاعلية بالأساس (تسألان
-# عشرات الأسئلة ولا تملكان خيارًا لتخطّيها بالكامل)، فتتجمّدان بلا استجابة في
-# بيئة CI. لذلك تُستخدم هنا مكتبة @bubblewrap/core مباشرة (عبر
-# android/scripts/init-project.js) لتوليد المشروع من twa-manifest.json الجاهز
-# مسبقًا دون أي سؤال تفاعلي، وتُمرَّر كلمات مرور التوقيع عبر متغيّرات البيئة
-# الرسمية (BUBBLEWRAP_KEYSTORE_PASSWORD/BUBBLEWRAP_KEY_PASSWORD) بدل الإدخال
-# التفاعلي.
 on:
-  workflow_dispatch: {}
   push:
-    paths:
-      - 'android/twa-manifest.json'
-      - 'android/icons/**'
-      - 'android/scripts/**'
-      - '.github/workflows/android-apk.yml'
-
-permissions:
-  contents: read
+    branches: [main]
+    paths: ['android/**', 'build.js', 'src/**', '.github/workflows/android-apk.yml']
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 22
 
-      - uses: android-actions/setup-android@v3
-
-      - name: Install Bubblewrap (local, so scripts/init-project.js can require it)
-        working-directory: android
-        run: npm install
-
-      # ملف إعداد Bubblewrap يُكتب مباشرة بمسارَي JDK وAndroid SDK الجاهزين
-      # على العدّاد — تفادي أي استدعاء تفاعلي عند أول قراءة لهذا الملف.
-      - name: Pre-configure Bubblewrap (JDK/Android SDK paths)
-        run: |
-          mkdir -p "$HOME/.bubblewrap"
-          printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "$ANDROID_HOME" > "$HOME/.bubblewrap/config.json"
-
-      - name: Generate the Android project (non-interactive)
-        working-directory: android
-        run: node scripts/init-project.js ./app
-
-      # مفتاح توقيع ثابت عبر أسرار المستودع يحافظ على هوية التطبيق نفسها بين
-      # الإصدارات (ضروري لقبول أي تحديث لاحق على نفس التثبيت). في حال غيابه
-      # يُنشأ مفتاح توقيع ذاتي مؤقت هنا فقط — يصلح للتجربة والتثبيت اليدوي،
-      # لا للنشر الرسمي على متجر Play (راجع android/SETUP.md).
-      - name: Restore or generate the signing keystore
-        working-directory: android/app
-        run: |
-          if [ "$HAS_KEYSTORE" = "true" ]; then
-            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android.keystore
-          else
-            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret set - generating a throwaway signing key. Fine for sideload-testing this run's APK, but every future build will be signed differently until a persistent keystore secret is added (see android/SETUP.md)."
-            keytool -genkeypair -noprompt -keystore android.keystore -alias android \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass "$KS_PASS" -keypass "$KEY_PASS" \
-              -dname "CN=AcademicQuran, OU=CI, O=Beta1o, L=NA, ST=NA, C=US"
-          fi
+      # يبني الموقع أولًا (dist/index.html) — مهمة syncWebAssets في
+      # android/app/build.gradle تُحزّم هذا الملف نفسه داخل التطبيق، فيبقى
+      # التطبيق دائمًا نسخة طبق الأصل من آخر بناء للموقع
+      - run: npm ci
+      - run: node build.js --prod
         env:
-          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
-          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}
+          NODE_ENV: production
+          ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
+          SITE_URL: ${{ vars.SITE_URL }}
 
-      - name: Build the signed APK
-        working-directory: android/app
-        run: npx bubblewrap build --skipPwaValidation
-        env:
-          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
-          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}
+      - name: Build release APK (debug-signed)
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: academicquran-android-apk
-          path: android/app/app-release-signed.apk
-          if-no-files-found: error
-          retention-days: 90
+          name: AcademicQuran-apk
+          path: android/app/build/outputs/apk/release/app-release.apk

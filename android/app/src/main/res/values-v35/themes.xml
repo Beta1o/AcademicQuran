@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- أندرويد 15 يفرض عرضًا حافة-لحافة على targetSdk 35، فيرسم الصفحة تحت
+         شريط الحالة (يتداخل معه الشعار العلوي) — نُلغي ذلك ليبدأ المحتوى تحت
+         شريط الحالة كما في إصدارات أندرويد الأقدم -->
+    <style name="Theme.AcademicQuran" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FBF8F0</item>
+        <item name="android:statusBarColor">#FBF8F0</item>
+        <item name="android:navigationBarColor">#FBF8F0</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    </style>
+</resources>
