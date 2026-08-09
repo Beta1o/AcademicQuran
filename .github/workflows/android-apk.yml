@@ -55,18 +55,17 @@ jobs:
         working-directory: android/app
         run: |
           if [ -f android.keystore ]; then
-            bubblewrap build \
-              --skipPwaValidation \
+            printf '%s\n%s\n' "$KS_PASS" "$KEY_PASS" | bubblewrap build --skipPwaValidation \
               --signingKeyPath=android.keystore \
-              --signingKeyAlias="${{ secrets.ANDROID_KEY_ALIAS || 'android' }}" \
-              <<EOF
-${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
-${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}
-EOF
+              --signingKeyAlias="$KEY_ALIAS"
           else
-            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret set — building with a fresh throwaway key. Fine for sideload-testing this run's APK, but every future build will be signed differently until a persistent keystore secret is added (see android/README.md)."
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret set - building with a fresh throwaway key. Fine for sideload-testing this run's APK, but every future build will be signed differently until a persistent keystore secret is added (see android/SETUP.md)."
             bubblewrap build --skipPwaValidation
           fi
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'android' }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
