@@ -973,6 +973,19 @@ function writeStaticAssets(){
   }));
   fs.writeFileSync(path.join(__dirname,'dist/robots.txt'),
     'User-agent: *\nAllow: /\n'+(SITE_URL?`Sitemap: ${SITE_URL}/sitemap.xml\n`:''));
+  /* روابط الأصول الرقمية لتطبيق أندرويد (TWA) — تُثبت أن الموقع والتطبيق من
+     نفس الجهة، فيُفتح التطبيق بلا شريط عنوان متصفح. بصمة SHA256 تعتمد على
+     مفتاح توقيع APK نفسه (غير معروفة قبل أول بناء في GitHub Actions)، فتُقرأ
+     من متغيّر بيئة اختياريًا؛ تبقى القائمة فارغة (والتطبيق يعمل، لكن بشريط
+     عنوان ظاهر) حتى يُضبط هذا المتغيّر بعد الحصول على البصمة الفعلية. */
+  const androidFingerprint = (process.env.ANDROID_ASSETLINKS_SHA256||'').trim();
+  fs.mkdirSync(path.join(__dirname,'dist/.well-known'), {recursive:true});
+  fs.writeFileSync(path.join(__dirname,'dist/.well-known/assetlinks.json'), JSON.stringify(
+    androidFingerprint ? [{
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: { namespace: "android_app", package_name: "com.beta1o.academicquran", sha256_cert_fingerprints: [androidFingerprint] }
+    }] : []
+  ));
   if(SITE_URL){
     fs.writeFileSync(path.join(__dirname,'dist/sitemap.xml'),
       `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${SITE_URL}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url></urlset>\n`);

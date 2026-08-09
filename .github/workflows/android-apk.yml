@@ -1,0 +1,77 @@
+name: Build Android APK (TWA)
+
+# يبني تطبيق أندرويد (Trusted Web Activity) يفتح الموقع المنشور فعليًا
+# (beta1o.github.io/AcademicQuran) داخل غلاف تطبيق حقيقي — لا نسخة مبنية
+# محليًا مضمَّنة، فيبقى متزامنًا تلقائيًا مع كل تحديث للموقع دون الحاجة
+# لإعادة بناء التطبيق. يعمل هذا فقط على عدّاد GitHub (فيه Java وAndroid SDK
+# جاهزان مسبقًا)، لا داخل بيئة العمل المحلية التي لا تملكهما.
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'android/twa-manifest.json'
+      - 'android/icons/**'
+      - '.github/workflows/android-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Bubblewrap CLI
+        run: npm install -g @bubblewrap/cli
+
+      - name: Initialize the TWA Android project
+        working-directory: android
+        run: |
+          bubblewrap init --manifest=./twa-manifest.json --directory=./app --skipPwaValidation
+        env:
+          # يوافق تلقائيًا على تنزيل Android SDK/NDK دون تدخل يدوي (بيئة غير تفاعلية)
+          ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+
+      # مفتاح توقيع ثابت عبر أسرار المستودع يحافظ على هوية التطبيق نفسها بين
+      # الإصدارات (ضروري لقبول أي تحديث لاحق على نفس التثبيت). في حال غيابه
+      # (أول تشغيل قبل إضافة الأسرار) يُنشئ Bubblewrap مفتاحًا مؤقتًا تلقائيًا
+      # يصلح للتجربة والتثبيت اليدوي فقط، لا للنشر الرسمي على متجر Play.
+      - name: Restore signing keystore (if configured)
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        working-directory: android/app
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android.keystore
+
+      - name: Build the signed APK
+        working-directory: android/app
+        run: |
+          if [ -f android.keystore ]; then
+            bubblewrap build \
+              --skipPwaValidation \
+              --signingKeyPath=android.keystore \
+              --signingKeyAlias="${{ secrets.ANDROID_KEY_ALIAS || 'android' }}" \
+              <<EOF
+${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
+${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}
+EOF
+          else
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret set — building with a fresh throwaway key. Fine for sideload-testing this run's APK, but every future build will be signed differently until a persistent keystore secret is added (see android/README.md)."
+            bubblewrap build --skipPwaValidation
+          fi
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: academicquran-android-apk
+          path: android/app/app-release-signed.apk
+          if-no-files-found: error
+          retention-days: 90

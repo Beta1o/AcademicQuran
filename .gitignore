@@ -1,5 +1,7 @@
 node_modules/
 dist/
+android/app/
+*.keystore
 *.log
 .claude/
 Admin.txt
