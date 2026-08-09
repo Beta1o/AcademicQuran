@@ -73,6 +73,8 @@ const LEX=JSON.parse(R('src/data/lexicon.json'));
 const ANSWERS=JSON.parse(R('src/data/answers.json'));
 /* نص القرآن الكريم كاملًا (١١٤ سورة) — لتعبئة صفحة المدير تلقائيًا عند اختيار سورة */
 const QURAN_FULL=R('src/data/quran-full.json');
+/* قاموس ترجمة واجهة الموقع (الأزرار والتسميات فقط) — النصوص القرآنية والأسئلة تبقى عربية دائمًا */
+const I18N=R('src/data/i18n.json');
 /* أسماء سور القرآن بالترتيب — لأسئلة «السورة السابقة/التالية» ورقم السورة */
 const SURA_NAMES=['الفاتحة','البقرة','آل عمران','النساء','المائدة','الأنعام','الأعراف','الأنفال','التوبة','يونس','هود','يوسف','الرعد','إبراهيم','الحجر','النحل','الإسراء','الكهف','مريم','طه','الأنبياء','الحج','المؤمنون','النور','الفرقان','الشعراء','النمل','القصص','العنكبوت','الروم','لقمان','السجدة','الأحزاب','سبأ','فاطر','يس','الصافات','ص','الزمر','غافر','فصلت','الشورى','الزخرف','الدخان','الجاثية','الأحقاف','محمد','الفتح','الحجرات','ق','الذاريات','الطور','النجم','القمر','الرحمن','الواقعة','الحديد','المجادلة','الحشر','الممتحنة','الصف','الجمعة','المنافقون','التغابن','الطلاق','التحريم','الملك','القلم','الحاقة','المعارج','نوح','الجن','المزمل','المدثر','القيامة','الإنسان','المرسلات','النبأ','النازعات','عبس','التكوير','الانفطار','المطففين','الانشقاق','البروج','الطارق','الأعلى','الغاشية','الفجر','البلد','الشمس','الليل','الضحى','الشرح','التين','العلق','القدر','البينة','الزلزلة','العاديات','القارعة','التكاثر','العصر','الهمزة','الفيل','قريش','الماعون','الكوثر','الكافرون','النصر','المسد','الإخلاص','الفلق','الناس'];
 /* أسماء الحروف → الحرف نفسه */
@@ -722,19 +724,19 @@ const blocks=W.map((w,wi)=>{
   return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${endMark?` data-ayaend="1"`:''}${ayaListAttr}>
   <summary class="card">
     <div class="tagrow">
-      <span class="tag">${w.cat==='surah'?'سورة كاملة':'آية مختارة'}</span>
+      <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':'tagAyah'}">${w.cat==='surah'?'سورة كاملة':'آية مختارة'}</span>
       ${ltag?`<span class="loc-tag">📍 ${esc(ltag)}</span>`:''}
     </div>
     <h3>${esc(w.name)}</h3>
     <div class="vpeek">﴿ ${verseHTML(w)} ﴾</div>
-    <div class="cmeta"><span class="prog-mini">${total} سؤالًا</span><span class="go">افتح الورقة ▾</span></div>
+    <div class="cmeta"><span class="prog-mini">${total} سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>
   </summary>
   <div class="ws">
     <div class="ws-top">
-      <button class="act close" data-close="${w.id}">▲ إغلاق</button>
+      <button class="act close" data-close="${w.id}" data-i18n="closeWs">▲ إغلاق</button>
       <div class="spacer"></div>
-      <button class="act reset" data-reset="${w.id}">تفريغ الإجابات</button>
-      <button class="act print" data-print="${w.id}">🖨️ طباعة الورقة</button>
+      <button class="act reset" data-reset="${w.id}" data-i18n="resetWs">تفريغ الإجابات</button>
+      <button class="act print" data-print="${w.id}" data-i18n="printWs">🖨️ طباعة الورقة</button>
     </div>
     <article class="sheet">
       <header class="sheet-head">
@@ -742,17 +744,17 @@ const blocks=W.map((w,wi)=>{
         <h2>${esc(w.name)}</h2>
         <div class="info">${esc(w.info)}</div>
         ${loc?`<div class="loc">📍 ${esc(loc)}</div>`:''}
-        <div class="lvl-legend">مستويات الأسئلة: ${lvlLegend}</div>
+        <div class="lvl-legend"><span data-i18n="lvlLegendLabel">مستويات الأسئلة:</span> ${lvlLegend}</div>
       </header>
       <div class="verse-wrap">
-        <button class="act audio-play js-only" data-audio="${w.id}" hidden>🔊 استماع للتلاوة</button>
+        <button class="act audio-play js-only" data-audio="${w.id}" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>
         <div class="verse"><p>﴿ ${verseHTML(w)} ﴾</p></div>
       </div>
       <div class="progress js-only"><div class="pbar"><i data-pfill="${w.id}" style="width:0%"></i></div><b data-ptxt="${w.id}">0 / ${total}</b><b class="score" data-score="${w.id}"></b></div>
       ${secs}
       <footer class="sheet-foot"><div class="fv">${esc(w.footV)}</div>${w.footM?`<div class="fm">${esc(w.footM)}</div>`:''}</footer>
     </article>
-    <div class="ws-close"><button class="act" data-close="${w.id}">▲ إغلاق الورقة</button></div>
+    <div class="ws-close"><button class="act" data-close="${w.id}" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>
   </div>
 </details>`;
 }).join('\n');
@@ -778,7 +780,7 @@ const html=`<!DOCTYPE html>
 <meta name="description" content="${DESC}">
 <meta name="robots" content="index, follow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://quranapi.pages.dev https://the-quran-project.github.io https://github.com https://raw.githubusercontent.com; media-src https://the-quran-project.github.io https://github.com https://raw.githubusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://quranapi.pages.dev https://the-quran-project.github.io https://github.com https://raw.githubusercontent.com; media-src https://the-quran-project.github.io https://github.com https://raw.githubusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 ${SITE_URL?`<link rel="canonical" href="${SITE_URL}/">`:''}
 <meta name="application-name" content="التحليل اللغوي المجهري">
 <meta property="og:title" content="التحليل اللغوي المجهري">
@@ -808,14 +810,23 @@ ${responsiveCss}</style>
   <div class="topbar-in">
     <div class="brand" id="brandKey" title="التحليل اللغوي المجهري">
       <span class="lens" aria-hidden="true"></span>
-      <span class="bt">التحليل اللغوي المجهري<small>مختبر تحليل السور والآيات — نسخة ${VERSION}</small></span>
+      <span class="bt"><span data-i18n="brand">التحليل اللغوي المجهري</span><small data-i18n="brandSub">مختبر تحليل السور والآيات — نسخة ${VERSION}</small></span>
     </div>
     <div class="spacer"></div>
+    <div class="lang-switch">
+      <button type="button" class="act" id="langBtn" aria-haspopup="true" aria-expanded="false">🌐 <span id="langBtnLabel">العربية</span></button>
+      <div id="langPanel" class="audio-settings-panel" hidden>
+        <button type="button" class="lang-opt" data-lang="ar">العربية</button>
+        <button type="button" class="lang-opt" data-lang="en">English</button>
+        <button type="button" class="lang-opt" data-lang="ur">اردو</button>
+        <button type="button" class="lang-opt" data-lang="tr">Türkçe</button>
+      </div>
+    </div>
     <button type="button" class="act" id="themeToggle" title="الوضع الداكن/الفاتح" aria-label="تبديل الوضع الداكن/الفاتح">🌙</button>
     <div class="audio-settings js-only">
-      <button type="button" class="act" id="pubAudioBtn" aria-haspopup="true" aria-expanded="false">🔊 إعدادات التلاوة</button>
+      <button type="button" class="act" id="pubAudioBtn" aria-haspopup="true" aria-expanded="false">🔊 <span data-i18n="audioSettingsBtn">إعدادات التلاوة</span></button>
       <div id="pubAudioPanel" class="audio-settings-panel" hidden>
-        <label class="admin-field">القارئ
+        <label class="admin-field" data-i18n="reciterLabel">القارئ
           <select id="pubAudioReciter">
             <option value="1">مشاري راشد العفاسي</option>
             <option value="2">أبو بكر الشاطري</option>
@@ -824,7 +835,7 @@ ${responsiveCss}</style>
             <option value="5">هاني الرفاعي</option>
           </select>
         </label>
-        <span class="admin-hint">يعمل تلقائيًا مع أي ورقة سورة أو آية كاملة.</span>
+        <span class="admin-hint" data-i18n="audioHint">يعمل تلقائيًا مع أي ورقة سورة أو آية كاملة.</span>
       </div>
     </div>
   </div>
@@ -833,13 +844,13 @@ ${responsiveCss}</style>
 <div class="home">
   <section class="hero">
     <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
-    <h1>التحليل اللغوي <span class="mag">المجهري</span></h1>
-    <p class="sub">ضع آيات القرآن الكريم تحت المجهر — اضغط أي بطاقة لفتح ورقة العمل، واكتب إجاباتك: الأسئلة القابلة للتصحيح تُصحَّح تلقائيًا (✓ صحيح / ✗ حاول مجددًا)، ويمكن طباعة أي ورقة كما هي.</p>
+    <h1><span data-i18n="heroTitleMain">التحليل اللغوي</span> <span class="mag" data-i18n="heroTitleMag">المجهري</span></h1>
+    <p class="sub" data-i18n="heroSub">ضع آيات القرآن الكريم تحت المجهر — اضغط أي بطاقة لفتح ورقة العمل، واكتب إجاباتك: الأسئلة القابلة للتصحيح تُصحَّح تلقائيًا (✓ صحيح / ✗ حاول مجددًا)، ويمكن طباعة أي ورقة كما هي.</p>
   </section>
   <div class="controls js-only">
-    <div class="tabs"><button class="on" data-f="all">الكل</button><button data-f="surah">السور الكاملة</button><button data-f="ayah">الآيات المختارة</button><button data-f="story">القصص</button></div>
-    <div class="tabs lvl-tabs"><button class="on" data-lf="all">كل المستويات</button>${LEVELS.map((L,i)=>`<button data-lf="${i+1}" class="lvl-tab lvl-${i+1}">${L}</button>`).join('')}</div>
-    <div class="search"><input id="q" type="text" placeholder="ابحث عن سورة أو آية..."></div>
+    <div class="tabs"><button class="on" data-f="all" data-i18n="fAll">الكل</button><button data-f="surah" data-i18n="fSurah">السور الكاملة</button><button data-f="ayah" data-i18n="fAyah">الآيات المختارة</button><button data-f="story" data-i18n="fStory">القصص</button></div>
+    <div class="tabs lvl-tabs"><button class="on" data-lf="all" data-i18n="lvlAll">كل المستويات</button>${LEVELS.map((L,i)=>`<button data-lf="${i+1}" class="lvl-tab lvl-${i+1}" data-i18n="lvl${i+1}">${L}</button>`).join('')}</div>
+    <div class="search"><input id="q" type="text" placeholder="ابحث عن سورة أو آية..." data-i18n-ph="searchPh"></div>
   </div>
 </div>
 <section class="grid">
@@ -854,6 +865,7 @@ ${adminHtml}
 <script type="application/json" id="customws">[]</script>
 <script type="application/json" id="customq">{}</script>
 <script type="application/json" id="quranfull">${QURAN_FULL}</script>
+<script type="application/json" id="i18nData">${I18N}</script>
 <script>
 ${js}
 </script>

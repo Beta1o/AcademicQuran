@@ -54,6 +54,12 @@ input,textarea{font-family:inherit;color:var(--ink)}
 .topbar .spacer{flex:1}
 #themeToggle{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;width:38px;height:38px;font-size:1rem;line-height:1;transition:.18s}
 #themeToggle:hover{border-color:var(--teal)}
+.lang-switch{position:relative}
+.lang-switch #langBtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:.18s}
+.lang-switch #langBtn:hover,.lang-switch #langBtn[aria-expanded="true"]{border-color:var(--teal);color:var(--teal)}
+.lang-switch .audio-settings-panel{padding:8px;gap:2px}
+.lang-opt{display:block;width:100%;text-align:start;border:none;background:none;border-radius:10px;padding:9px 12px;font-weight:700;font-size:.9rem;color:var(--ink)}
+.lang-opt:hover{background:color-mix(in srgb, var(--teal) 10%, transparent);color:var(--teal)}
 .audio-settings{position:relative}
 .audio-settings #pubAudioBtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 18px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:.18s}
 .audio-settings #pubAudioBtn:hover,.audio-settings #pubAudioBtn[aria-expanded="true"]{border-color:var(--teal);color:var(--teal)}
@@ -147,9 +153,6 @@ input,textarea{font-family:inherit;color:var(--ink)}
   background:linear-gradient(#FFFDF6,#FBF6E8);
   box-shadow:inset 0 0 0 5px #fff, inset 0 0 0 6.5px var(--gold-soft);
 }
-.verse::before,.verse::after{content:"❁";position:absolute;color:var(--gold);font-size:1.1rem;background:#fff;padding:0 6px}
-.verse::before{top:-13px;right:26px}
-.verse::after{bottom:-13px;left:26px}
 .verse p{font-family:var(--f-quran);font-size:clamp(1.35rem,3vw,1.8rem);line-height:2.5;text-align:center;color:#233}
 .verse .aya{color:var(--gold);font-size:.85em;margin:0 4px}
 
@@ -237,7 +240,6 @@ input,textarea{font-family:inherit;color:var(--ink)}
   .loc{font-size:.85rem}
   .verse-wrap{padding:8px 0}
   .verse{border-width:1px;padding:10px 14px;background:none}
-  .verse::before,.verse::after{display:none}
   .verse p{font-size:1.15rem;line-height:1.9}
   .sec-head{margin:10px 0 8px}
   .sec-head .lens-badge{width:22px;height:22px;font-size:.8rem}

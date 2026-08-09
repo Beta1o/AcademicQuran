@@ -324,6 +324,55 @@ refreshAudioButtons();
     apply(next);
   });
 })();
+/* ---------- تعدد اللغات: واجهة الموقع فقط (أزرار/تسميات) — نص القرآن والأسئلة يبقى عربيًا دائمًا ---------- */
+var LANG_KEY='tahleel-lang';
+var LANG_NAMES={ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe'};
+var LANG_DIR={ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr'};
+var I18N_DICT={};
+try{ var i18nEl=document.getElementById('i18nData'); if(i18nEl) I18N_DICT=JSON.parse(i18nEl.textContent||'{}')||{}; }catch(e){ I18N_DICT={}; }
+var AR_DEFAULTS={};
+document.querySelectorAll('[data-i18n]').forEach(function(el){ var k=el.dataset.i18n; if(!(k in AR_DEFAULTS)) AR_DEFAULTS[k]=el.textContent; });
+document.querySelectorAll('[data-i18n-ph]').forEach(function(el){ var k=el.dataset.i18nPh; if(!(k in AR_DEFAULTS)) AR_DEFAULTS['ph:'+k]=el.getAttribute('placeholder'); });
+function applyLang(lang){
+  var dict = lang==='ar' ? null : (I18N_DICT[lang]||{});
+  document.documentElement.setAttribute('lang', lang);
+  document.documentElement.setAttribute('dir', LANG_DIR[lang]||'rtl');
+  document.querySelectorAll('[data-i18n]').forEach(function(el){
+    var k=el.dataset.i18n;
+    el.textContent = dict ? (dict[k]||AR_DEFAULTS[k]) : AR_DEFAULTS[k];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(function(el){
+    var k=el.dataset.i18nPh;
+    el.setAttribute('placeholder', dict ? (dict[k]||AR_DEFAULTS['ph:'+k]) : AR_DEFAULTS['ph:'+k]);
+  });
+  var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=LANG_NAMES[lang]||LANG_NAMES.ar;
+}
+(function(){
+  var btn=document.getElementById('langBtn'), panel=document.getElementById('langPanel');
+  if(!btn||!panel) return;
+  var closePanel=function(){ panel.hidden=true; btn.setAttribute('aria-expanded','false'); };
+  var saved='ar';
+  try{ saved=localStorage.getItem(LANG_KEY)||'ar'; }catch(e){}
+  applyLang(saved);
+  panel.querySelectorAll('.lang-opt').forEach(function(o){
+    o.addEventListener('click',function(){
+      var lang=o.dataset.lang;
+      try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
+      applyLang(lang);
+      closePanel();
+    });
+  });
+  btn.addEventListener('click',function(){
+    var open=panel.hidden;
+    panel.hidden=!open; btn.setAttribute('aria-expanded',String(open));
+  });
+  document.addEventListener('click',function(e){
+    if(!panel.hidden && !panel.contains(e.target) && e.target!==btn) closePanel();
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape' && !panel.hidden) closePanel();
+  });
+})();
 /* ---------- شريط علوي لاصق: قياس ارتفاعه الفعلي لضبط الإزاحات ---------- */
 var topbar=document.querySelector('.topbar');
 function syncTopbar(){

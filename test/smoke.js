@@ -46,6 +46,9 @@ setTimeout(()=>{
   /* لا وجود لأي نشاط «قراءة عكسية» — القراءة العكسية للقرآن غير مستحبة، ولا يجوز إضافتها مجددًا */
   ok('no reverse-reading (قراءة عكسية) activity anywhere',
      ![...doc.querySelectorAll('.q .txt')].some(t=>t.textContent.includes('عكسية')));
+  /* لا زخارف زاوية (❁) على مربع الآية — طُلب إزالتها نهائيًا وعدم إعادتها مستقبلًا */
+  ok('no decorative flower ornaments (❁) on the verse box',
+     !/\.verse::before,?\.verse::after\{content:"❁"/.test(html) && !/content:"❁"/.test(html));
 
   /* ---------- مستويات الصعوبة ---------- */
   const lvls=new Set([...doc.querySelectorAll('.q')].map(q=>q.dataset.lvl));

@@ -1,20 +1,20 @@
 <div id="admGate" class="adm-gate" hidden>
   <form class="adm-gate-box" id="admGateForm" autocomplete="off">
-    <h3>🔒 صفحة المدير</h3>
-    <p>هذه الصفحة للمعلّم — أدخل كلمة المرور للمتابعة</p>
-    <input id="admPass" type="password" inputmode="text" autocomplete="current-password" placeholder="كلمة المرور" aria-label="كلمة المرور">
+    <h3 data-i18n="gateTitle">🔒 صفحة المدير</h3>
+    <p data-i18n="gateDesc">هذه الصفحة للمعلّم — أدخل كلمة المرور للمتابعة</p>
+    <input id="admPass" type="password" inputmode="text" autocomplete="current-password" placeholder="كلمة المرور" aria-label="كلمة المرور" data-i18n-ph="gatePassPh">
     <div class="adm-gate-msg" id="admGateMsg" role="alert"></div>
     <div class="adm-gate-actions">
-      <button type="submit" class="act print">دخول</button>
-      <button type="button" class="act" id="admGateCancel">إلغاء</button>
+      <button type="submit" class="act print" data-i18n="gateEnter">دخول</button>
+      <button type="button" class="act" id="admGateCancel" data-i18n="gateCancel">إلغاء</button>
     </div>
   </form>
 </div>
 <div id="adminPanel" class="admin-panel" hidden>
   <div class="admin-box">
     <div class="admin-head">
-      <h2>🛠️ صفحة المدير</h2>
-      <button id="admClose" class="act" type="button">✕ إغلاق</button>
+      <h2 data-i18n="adminTitle">🛠️ صفحة المدير</h2>
+      <button id="admClose" class="act" type="button" data-i18n="adminClose">✕ إغلاق</button>
     </div>
 
     <div class="stats admin-stats">
@@ -34,8 +34,8 @@
     </div>
 
     <div class="admin-steps">
-      <button type="button" class="step on" data-step="ws"><b>١</b> إضافة سورة أو آية</button>
-      <button type="button" class="step" data-step="q"><b>٢</b> إضافة الأسئلة</button>
+      <button type="button" class="step on" data-step="ws"><b>١</b> <span data-i18n="adminStep1">إضافة سورة أو آية</span></button>
+      <button type="button" class="step" data-step="q"><b>٢</b> <span data-i18n="adminStep2">إضافة الأسئلة</span></button>
     </div>
 
     <!-- ========== الخطوة ١: ورقة عمل جديدة ========== -->
