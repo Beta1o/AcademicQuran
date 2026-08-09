@@ -133,7 +133,10 @@
    "اسم السورة السابقة لها": "Name of the surah before it",
    "اسم السورة التالية لها": "Name of the surah after it",
    "عدد كلمات الآيتين =": "Number of words in the two ayat ="
-  }
+  },
+  "revealModel": "Show model answer",
+  "revealCorrect": "Show correct answer",
+  "answerPrefix": "Answer: "
  },
  "ur": {
   "brand": "خوردبینی لسانی تجزیہ",
@@ -269,7 +272,10 @@
    "اسم السورة السابقة لها": "اس سے پہلی سورت کا نام",
    "اسم السورة التالية لها": "اس کے بعد والی سورت کا نام",
    "عدد كلمات الآيتين =": "دونوں آیات کے الفاظ کی تعداد ="
-  }
+  },
+  "revealModel": "نمونہ جواب دکھائیں",
+  "revealCorrect": "درست جواب دکھائیں",
+  "answerPrefix": "جواب: "
  },
  "tr": {
   "brand": "Mikroskobik Dilbilimsel Analiz",
@@ -405,6 +411,9 @@
    "اسم السورة السابقة لها": "Ondan önceki surenin adı",
    "اسم السورة التالية لها": "Ondan sonraki surenin adı",
    "عدد كلمات الآيتين =": "İki ayetteki kelime sayısı ="
-  }
+  },
+  "revealModel": "Örnek cevabı göster",
+  "revealCorrect": "Doğru cevabı göster",
+  "answerPrefix": "Cevap: "
  }
 }

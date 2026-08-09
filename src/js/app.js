@@ -67,9 +67,9 @@ function grade(el){
       }
     }
   }
-  if(ok===null){ if(el.dataset.show) revealBtn(q,el,'إظهار الإجابة النموذجية'); return; }
+  if(ok===null){ if(el.dataset.show) revealBtn(q,el,t('revealModel')); return; }
   q.classList.add(ok?'ok':'bad');
-  if(!ok && el.dataset.show && showAnswerOnMistake()) revealBtn(q,el,'إظهار الإجابة الصحيحة');
+  if(!ok && el.dataset.show && showAnswerOnMistake()) revealBtn(q,el,t('revealCorrect'));
 }
 /* ---------- إعداد: هل يظهر زر «الإجابة الصحيحة» تلقائيًا بعد إجابة خاطئة؟ (يُضبط من صفحة المدير) ---------- */
 var SETTINGS_KEY='tahleel-settings';
@@ -84,7 +84,7 @@ function revealBtn(q,el,label){
   b.className='ansbtn'; b.type='button'; b.textContent=label;
   b.addEventListener('click',function(){
     var h=q.querySelector('.hint');
-    h.textContent='الإجابة: '+el.dataset.show; h.hidden=false; b.remove();
+    h.textContent=t('answerPrefix')+el.dataset.show; h.hidden=false; b.remove();
   });
   el.insertAdjacentElement('afterend', b);
 }
@@ -330,6 +330,14 @@ var LANG_NAMES={ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe'};
 var LANG_DIR={ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr'};
 var I18N_DICT={};
 try{ var i18nEl=document.getElementById('i18nData'); if(i18nEl) I18N_DICT=JSON.parse(i18nEl.textContent||'{}')||{}; }catch(e){ I18N_DICT={}; }
+/* دالة ترجمة عامة لأي نص واجهة يُنشأ ديناميكيًا وقت التشغيل (مثل زر إظهار الإجابة) */
+function curLang(){ try{ return localStorage.getItem(LANG_KEY)||'ar'; }catch(e){ return 'ar'; } }
+function t(key){
+  var lang=curLang();
+  if(lang==='ar') return AR_STRINGS[key]||key;
+  var d=I18N_DICT[lang]; return (d&&d[key])||AR_STRINGS[key]||key;
+}
+var AR_STRINGS={revealModel:'إظهار الإجابة النموذجية',revealCorrect:'إظهار الإجابة الصحيحة',answerPrefix:'الإجابة: '};
 var AR_DEFAULTS={};
 document.querySelectorAll('[data-i18n]').forEach(function(el){ var k=el.dataset.i18n; if(!(k in AR_DEFAULTS)) AR_DEFAULTS[k]=el.textContent; });
 document.querySelectorAll('[data-i18n-ph]').forEach(function(el){ var k=el.dataset.i18nPh; if(!(k in AR_DEFAULTS)) AR_DEFAULTS['ph:'+k]=el.getAttribute('placeholder'); });

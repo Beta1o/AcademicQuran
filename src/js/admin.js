@@ -153,17 +153,43 @@ function applyOverrides(){
   });
 }
 window.applyOverrides=applyOverrides;
+/* بعد أي تعديل لنص سؤال، يُعاد اشتقاق قالب الترجمة وكلمته من النص الجديد مباشرةً —
+   لا تبقى وسوم الترجمة عالقة بنص قديم. وإن كانت الكلمة بين القوسين غير موجودة حرفيًا
+   في نص الآية (WORDS[wsId])، تُعاد الدالة بتحذير كي لا تُكتب كلمة مغايرة للآية سهوًا. */
+function syncQI18n(qtxtEl, wsId){
+  if(!qtxtEl) return null;
+  var text=qtxtEl.textContent.replace(/\s+$/,'');
+  var m=text.match(/\(([^)]*)\)/);
+  if(m){
+    qtxtEl.dataset.i18nTpl=text.slice(0,m.index)+'({})'+text.slice(m.index+m[0].length);
+    qtxtEl.dataset.i18nWord=m[1];
+    var words=(WORDS[wsId]||[]).map(function(x){return x[0];});
+    if(words.length && words.indexOf(m[1])===-1){
+      return 'تنبيه: الكلمة «'+m[1]+'» بين القوسين غير منسوخة حرفيًا من نص الآية — تأكد من مطابقتها لتبقى الترجمة والتصحيح الآلي صحيحين.';
+    }
+  } else {
+    qtxtEl.dataset.i18nTpl=text;
+    delete qtxtEl.dataset.i18nWord;
+  }
+  return null;
+}
+window.syncQI18n=syncQI18n;
 /* يطبّق تعديل سؤال واحد (نصّه وإجابته) على عنصره في DOM دون المساس بنوع الحقل */
 function applyQuestionEdit(wsEl, key, edit){
   var el=wsEl.querySelector('[data-k="'+key+'"]'); if(!el) return null;
   var q=el.closest('.q'); if(!q) return null;
   var txtEl=q.querySelector('.txt');
   var before={ t: txtEl?txtEl.firstChild.textContent:'', ans: el.dataset.ans, show: el.dataset.show, mode: el.dataset.mode };
-  if(edit.t!==undefined && txtEl && txtEl.firstChild) txtEl.firstChild.textContent=edit.t+' ';
+  var i18nWarning=null;
+  if(edit.t!==undefined && txtEl && txtEl.firstChild){
+    txtEl.firstChild.textContent=edit.t+' ';
+    i18nWarning=syncQI18n(txtEl.firstChild, wsEl.id.slice(2));
+  }
   if(edit.show!==undefined){
     if(edit.show){ el.dataset.show=edit.show; if(edit.ans!==undefined) el.dataset.ans=edit.ans; else delete el.dataset.ans; el.dataset.mode='contains'; }
     else { delete el.dataset.show; delete el.dataset.ans; delete el.dataset.mode; }
   }
+  before.i18nWarning=i18nWarning;
   return before;
 }
 
@@ -773,7 +799,7 @@ if(panel){
       s.snapshot.forEach(function(row){
         var el=d2.querySelector('[data-k="'+row.key+'"]'); if(!el) return;
         var q=el.closest('.q'), txtEl=q.querySelector('.txt');
-        if(txtEl&&txtEl.firstChild) txtEl.firstChild.textContent=row.t+' ';
+        if(txtEl&&txtEl.firstChild){ txtEl.firstChild.textContent=row.t+' '; syncQI18n(txtEl.firstChild, wsId); }
         if(row.ans!==undefined) el.dataset.ans=row.ans; else delete el.dataset.ans;
         if(row.show!==undefined) el.dataset.show=row.show; else delete el.dataset.show;
         if(row.mode!==undefined) el.dataset.mode=row.mode; else delete el.dataset.mode;
@@ -813,13 +839,13 @@ if(panel){
       var edit={t:t};
       if(a){ edit.show=a; edit.ans=(a.length<=16)?norm(a):undefined; }
       else { edit.show=''; }
-      applyQuestionEdit(d, key, edit);
+      var res=applyQuestionEdit(d, key, edit);
       WS_OVERRIDES[s.wsId]=WS_OVERRIDES[s.wsId]||{};
       WS_OVERRIDES[s.wsId].questions=WS_OVERRIDES[s.wsId].questions||{};
       WS_OVERRIDES[s.wsId].questions[key]=edit;
       saveOverrides();
       renderBwQuestionList();
-      msg('✅ حُفظ تعديل السؤال',true);
+      msg(res&&res.i18nWarning ? '⚠️ حُفظ التعديل — '+res.i18nWarning : '✅ حُفظ تعديل السؤال', !(res&&res.i18nWarning));
     });
   }
   renderBwList();
