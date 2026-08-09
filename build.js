@@ -824,7 +824,7 @@ ${responsiveCss}</style>
             <option value="5">هاني الرفاعي</option>
           </select>
         </label>
-        <span class="admin-hint">تُشغَّل التلاوة عبر واجهة quranapi.pages.dev (رابط خارجي، دون تحميل أو استضافة الملفات في الموقع). يُربط الصوت تلقائيًا بأي ورقة سورة أو آية كاملة — بحسب رقم السورة/الآية — دون أي إعداد يدوي.</span>
+        <span class="admin-hint">يعمل تلقائيًا مع أي ورقة سورة أو آية كاملة.</span>
       </div>
     </div>
   </div>

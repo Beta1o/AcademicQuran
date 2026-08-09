@@ -287,9 +287,11 @@ refreshAudioButtons();
   if(!btn||!panel||!box||!sel) return;
   var cur=audioSettings();
   box.checked=cur.enabled; sel.value=cur.reciter;
+  var closePanel=function(){ panel.hidden=true; btn.setAttribute('aria-expanded','false'); };
   var save=function(){
     try{ localStorage.setItem(AUDIO_KEY, JSON.stringify({enabled:box.checked, reciter:+sel.value||1})); }catch(e){}
     refreshAudioButtons();
+    setTimeout(closePanel, 450); /* يُغلَق تلقائيًا بعد ضبط الإعداد */
   };
   box.addEventListener('change',save);
   sel.addEventListener('change',save);
@@ -298,10 +300,10 @@ refreshAudioButtons();
     panel.hidden=!open; btn.setAttribute('aria-expanded',String(open));
   });
   document.addEventListener('click',function(e){
-    if(!panel.hidden && !panel.contains(e.target) && e.target!==btn) { panel.hidden=true; btn.setAttribute('aria-expanded','false'); }
+    if(!panel.hidden && !panel.contains(e.target) && e.target!==btn) closePanel();
   });
   document.addEventListener('keydown',function(e){
-    if(e.key==='Escape' && !panel.hidden){ panel.hidden=true; btn.setAttribute('aria-expanded','false'); }
+    if(e.key==='Escape' && !panel.hidden) closePanel();
   });
 })();
 /* ---------- شريط علوي لاصق: قياس ارتفاعه الفعلي لضبط الإزاحات ---------- */
