@@ -52,7 +52,10 @@ jobs:
 
       - name: Initialize the TWA Android project
         working-directory: android
-        run: bubblewrap init --manifest=./twa-manifest.json --directory=./app --skipPwaValidation
+        # يُنشئ مجلد الإخراج مسبقًا كي لا يسأل bubblewrap تفاعليًا عن إنشائه
+        run: |
+          mkdir -p ./app
+          bubblewrap init --manifest=./twa-manifest.json --directory=./app --skipPwaValidation
 
       # مفتاح توقيع ثابت عبر أسرار المستودع يحافظ على هوية التطبيق نفسها بين
       # الإصدارات (ضروري لقبول أي تحديث لاحق على نفس التثبيت). في حال غيابه
