@@ -177,7 +177,7 @@ window.bindControls=bindControls;
 /* ---------- تلاوة القرآن (حفظ) — عبر واجهة quranapi.pages.dev، تُربط تلقائيًا بكل ورقة سورة أو آية بناءً على أرقامها ---------- */
 var AUDIO_KEY='tahleel-audio';
 function audioSettings(){
-  try{ var s=JSON.parse(localStorage.getItem(AUDIO_KEY)||'{}'); return {enabled:s.enabled!==false, reciter:s.reciter||1}; }
+  try{ var s=JSON.parse(localStorage.getItem(AUDIO_KEY)||'{}'); return {enabled:true, reciter:s.reciter||1}; }
   catch(e){ return {enabled:true, reciter:1}; }
 }
 window.audioSettings=audioSettings;
@@ -236,7 +236,7 @@ function refreshAudioButtons(){
   var s=audioSettings();
   document.querySelectorAll('[data-audio]').forEach(function(b){
     var det=document.getElementById('w-'+b.dataset.audio);
-    var has = det && det.dataset.surano && det.dataset.ayaend==='1' && (det.dataset.cat==='surah' ? det.dataset.ayat : (det.dataset.ayalist || det.dataset.ayano));
+    var has = det && det.dataset.surano && det.dataset.ayaend==='1' && det.dataset.ayalist;
     b.hidden = !s.enabled || !has;
   });
 }
@@ -251,13 +251,7 @@ function bindAudio(root){
       if(!det) return;
       var s=audioSettings(), sura=det.dataset.surano;
       b.textContent='⏳ جاري التحميل...';
-      var list;
-      if(det.dataset.cat==='surah'){
-        var n=parseInt(det.dataset.ayat,10)||0;
-        list=Array.from({length:n},function(_,i){ return i+1; });
-      } else {
-        list=(det.dataset.ayalist?det.dataset.ayalist.split(','):[det.dataset.ayano]).filter(Boolean);
-      }
+      var list=(det.dataset.ayalist?det.dataset.ayalist.split(','):[]).filter(Boolean);
       var basmalaP = needsBasmala(det)
         ? fetchJson('https://quranapi.pages.dev/api/audio/1/1.json').then(function(d){
             var u=d&&d[s.reciter]&&d[s.reciter].url; return u?[{aya:null, url:u}]:[];
@@ -283,17 +277,16 @@ refreshAudioButtons();
 /* ---------- إعدادات التلاوة العامة: متاحة لكل زائر من شريط الموقع، وليست حكرًا على المدير ---------- */
 (function(){
   var btn=document.getElementById('pubAudioBtn'), panel=document.getElementById('pubAudioPanel');
-  var box=document.getElementById('pubAudioEnabled'), sel=document.getElementById('pubAudioReciter');
-  if(!btn||!panel||!box||!sel) return;
+  var sel=document.getElementById('pubAudioReciter');
+  if(!btn||!panel||!sel) return;
   var cur=audioSettings();
-  box.checked=cur.enabled; sel.value=cur.reciter;
+  sel.value=cur.reciter;
   var closePanel=function(){ panel.hidden=true; btn.setAttribute('aria-expanded','false'); };
   var save=function(){
-    try{ localStorage.setItem(AUDIO_KEY, JSON.stringify({enabled:box.checked, reciter:+sel.value||1})); }catch(e){}
+    try{ localStorage.setItem(AUDIO_KEY, JSON.stringify({reciter:+sel.value||1})); }catch(e){}
     refreshAudioButtons();
     setTimeout(closePanel, 450); /* يُغلَق تلقائيًا بعد ضبط الإعداد */
   };
-  box.addEventListener('change',save);
   sel.addEventListener('change',save);
   btn.addEventListener('click',function(){
     var open=panel.hidden;
@@ -304,6 +297,31 @@ refreshAudioButtons();
   });
   document.addEventListener('keydown',function(e){
     if(e.key==='Escape' && !panel.hidden) closePanel();
+  });
+})();
+/* ---------- تبديل الوضع الداكن/الفاتح يدويًا (فوق الاعتماد التلقائي على إعداد الجهاز) ---------- */
+(function(){
+  var THEME_KEY='tahleel-theme';
+  var btn=document.getElementById('themeToggle');
+  if(!btn) return;
+  var systemDark=function(){
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  };
+  var apply=function(t){
+    if(t){ document.documentElement.setAttribute('data-theme',t); }
+    else { document.documentElement.removeAttribute('data-theme'); }
+    var dark = t ? t==='dark' : systemDark();
+    btn.textContent = dark ? '☀️' : '🌙';
+  };
+  var saved=null;
+  try{ saved=localStorage.getItem(THEME_KEY); }catch(e){}
+  apply(saved);
+  btn.addEventListener('click',function(){
+    var cur=document.documentElement.getAttribute('data-theme');
+    var dark = cur ? cur==='dark' : systemDark();
+    var next = dark ? 'light' : 'dark';
+    try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+    apply(next);
   });
 })();
 /* ---------- شريط علوي لاصق: قياس ارتفاعه الفعلي لضبط الإزاحات ---------- */

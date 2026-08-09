@@ -711,7 +711,10 @@ const blocks=W.map((w,wi)=>{
   const lvlLegend=LEVELS.map((L,i)=>lvlCount[i]?`<span class="lvl lvl-${i+1}">${L} ${toAr(lvlCount[i])}</span>`:'').filter(Boolean).join('');
   const total=w.secs.reduce((a,s)=>a+s.q.length,0);
   const loc=locText(w), ltag=locTag(w);
-  const ayaListAttr = w.cat==='ayah' ? ` data-ayalist="${ayaNumbers(w, w.verse.split('۝').length).join(',')}"` : '';
+  /* قائمة أرقام الآيات الفعلية المعروضة نصًّا — تُستخدم لجلب صوت التلاوة، فتُطابق
+     ما يُعرض حرفيًا (حتى للمقاطع غير المتسلسلة كمطلع سورة التكوير)، لا عددها
+     الكلي في المصحف؛ وإلا تُتلى آيات لا وجود لها على الورقة. */
+  const ayaListAttr = ` data-ayalist="${ayaNumbers(w, w.verse.split('۝').length).join(',')}"`;
   /* الصوت يُتاح فقط حين يكون النص المعروض مطابقًا تمامًا لنص الآية الكاملة كما تُتلى —
      أي حين تنتهي الورقة عند نهاية الآية فعليًا (endMark)، وليس لمقتطف جزئي منها
      (كمطلع آية الكرسي)، تجنّبًا لسماع تلاوة أطول مما هو ظاهر على الورقة. */
@@ -808,13 +811,10 @@ ${responsiveCss}</style>
       <span class="bt">التحليل اللغوي المجهري<small>مختبر تحليل السور والآيات — نسخة ${VERSION}</small></span>
     </div>
     <div class="spacer"></div>
+    <button type="button" class="act" id="themeToggle" title="الوضع الداكن/الفاتح" aria-label="تبديل الوضع الداكن/الفاتح">🌙</button>
     <div class="audio-settings js-only">
       <button type="button" class="act" id="pubAudioBtn" aria-haspopup="true" aria-expanded="false">🔊 إعدادات التلاوة</button>
       <div id="pubAudioPanel" class="audio-settings-panel" hidden>
-        <label class="switch-row">
-          <input type="checkbox" id="pubAudioEnabled" checked>
-          تفعيل الاستماع لتلاوة القرآن (للحفظ) في كل ورقة سورة أو آية
-        </label>
         <label class="admin-field">القارئ
           <select id="pubAudioReciter">
             <option value="1">مشاري راشد العفاسي</option>

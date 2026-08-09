@@ -52,7 +52,7 @@ function wsHTML(ws){
     return '<section class="sec"><div class="sec-head"><span class="lens-badge">'+(['١','٢','٣'][i]||(i+1))+'</span>'+
       '<h3>'+escA(t)+'</h3><span class="rule"></span></div><div class="qlist"></div></section>';
   }).join('');
-  var ayaListAttr = ws.cat==='ayah' ? ' data-ayalist="'+segs.map(function(s,i){return start+i;}).join(',')+'"' : '';
+  var ayaListAttr = ' data-ayalist="'+segs.map(function(s,i){return start+i;}).join(',')+'"';
   return '<details class="ws-item ws-custom" id="w-'+ws.id+'" style="--ac:var('+(ws.hue||'--teal')+')" data-cat="'+ws.cat+'" data-name="'+escA(ws.name)+'" data-words="'+words+'"'+
     (ws.num?' data-surano="'+ws.num+'"':'')+(ws.ayat?' data-ayat="'+ws.ayat+'"':'')+(ws.cat==='ayah'&&ws.aya?' data-ayano="'+start+'"':'')+(endMark?' data-ayaend="1"':'')+ayaListAttr+'>'+
     '<summary class="card">'+
