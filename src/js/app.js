@@ -326,8 +326,8 @@ refreshAudioButtons();
 })();
 /* ---------- تعدد اللغات: واجهة الموقع فقط (أزرار/تسميات) — نص القرآن والأسئلة يبقى عربيًا دائمًا ---------- */
 var LANG_KEY='tahleel-lang';
-var LANG_NAMES={ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe'};
-var LANG_DIR={ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr'};
+var LANG_NAMES={ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe',ug:'ئۇيغۇرچە'};
+var LANG_DIR={ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr',ug:'rtl'};
 var I18N_DICT={};
 try{ var i18nEl=document.getElementById('i18nData'); if(i18nEl) I18N_DICT=JSON.parse(i18nEl.textContent||'{}')||{}; }catch(e){ I18N_DICT={}; }
 /* دالة ترجمة عامة لأي نص واجهة يُنشأ ديناميكيًا وقت التشغيل (مثل زر إظهار الإجابة) */
@@ -337,7 +337,7 @@ function t(key){
   if(lang==='ar') return AR_STRINGS[key]||key;
   var d=I18N_DICT[lang]; return (d&&d[key])||AR_STRINGS[key]||key;
 }
-var AR_STRINGS={revealModel:'إظهار الإجابة النموذجية',revealCorrect:'إظهار الإجابة الصحيحة',answerPrefix:'الإجابة: '};
+var AR_STRINGS={revealModel:'إظهار الإجابة النموذجية',revealCorrect:'إظهار الإجابة الصحيحة',answerPrefix:'الإجابة: ',openWsToggle:'افتح الورقة ▾',closeWsToggle:'إغلاق الورقة ▴'};
 var AR_DEFAULTS={};
 document.querySelectorAll('[data-i18n]').forEach(function(el){ var k=el.dataset.i18n; if(!(k in AR_DEFAULTS)) AR_DEFAULTS[k]=el.textContent; });
 document.querySelectorAll('[data-i18n-ph]').forEach(function(el){ var k=el.dataset.i18nPh; if(!(k in AR_DEFAULTS)) AR_DEFAULTS['ph:'+k]=el.getAttribute('placeholder'); });
@@ -362,6 +362,13 @@ function applyLang(lang){
     var key=el.dataset.i18nTpl, word=el.dataset.i18nWord;
     var phrase = (tpl && tpl[key]) || key;
     el.textContent = word!==undefined ? phrase.replace('{}', word) : phrase;
+  });
+  /* أسماء السور داخل عنوان الورقة — على عكس كلمات الأسئلة، اسم السورة نفسه
+     يُترجَم (له اسم معروف بكل لغة)، فقط نص القرآن وكلماته يبقى عربيًا دائمًا. */
+  var suraDict = dict && dict.sura;
+  document.querySelectorAll('[data-i18n-name]').forEach(function(el){
+    var ar=el.dataset.i18nName;
+    el.textContent = (suraDict && suraDict[ar]) || ar;
   });
   var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=LANG_NAMES[lang]||LANG_NAMES.ar;
 }
@@ -409,7 +416,7 @@ function bindToggles(root){
     if(isBound(d)) return;
     var setGoLabel=function(){
       var go=d.querySelector('.cmeta .go');
-      if(go) go.textContent = d.open ? 'إغلاق الورقة ▴' : 'افتح الورقة ▾';
+      if(go) go.textContent = d.open ? t('closeWsToggle') : t('openWsToggle');
     };
     setGoLabel();
     d.addEventListener('toggle',function(){

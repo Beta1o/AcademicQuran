@@ -74,7 +74,8 @@ const ANSWERS=JSON.parse(R('src/data/answers.json'));
 /* نص القرآن الكريم كاملًا (١١٤ سورة) — لتعبئة صفحة المدير تلقائيًا عند اختيار سورة */
 const QURAN_FULL=R('src/data/quran-full.json');
 /* قاموس ترجمة واجهة الموقع (الأزرار والتسميات فقط) — النصوص القرآنية والأسئلة تبقى عربية دائمًا */
-const I18N=R('src/data/i18n.json');
+const I18N_LANGS=['en','ur','tr','ug'];
+const I18N=JSON.stringify(Object.fromEntries(I18N_LANGS.map(l=>[l,JSON.parse(R('src/data/i18n/'+l+'.json'))])));
 /* أسماء سور القرآن بالترتيب — لأسئلة «السورة السابقة/التالية» ورقم السورة */
 const SURA_NAMES=['الفاتحة','البقرة','آل عمران','النساء','المائدة','الأنعام','الأعراف','الأنفال','التوبة','يونس','هود','يوسف','الرعد','إبراهيم','الحجر','النحل','الإسراء','الكهف','مريم','طه','الأنبياء','الحج','المؤمنون','النور','الفرقان','الشعراء','النمل','القصص','العنكبوت','الروم','لقمان','السجدة','الأحزاب','سبأ','فاطر','يس','الصافات','ص','الزمر','غافر','فصلت','الشورى','الزخرف','الدخان','الجاثية','الأحقاف','محمد','الفتح','الحجرات','ق','الذاريات','الطور','النجم','القمر','الرحمن','الواقعة','الحديد','المجادلة','الحشر','الممتحنة','الصف','الجمعة','المنافقون','التغابن','الطلاق','التحريم','الملك','القلم','الحاقة','المعارج','نوح','الجن','المزمل','المدثر','القيامة','الإنسان','المرسلات','النبأ','النازعات','عبس','التكوير','الانفطار','المطففين','الانشقاق','البروج','الطارق','الأعلى','الغاشية','الفجر','البلد','الشمس','الليل','الضحى','الشرح','التين','العلق','القدر','البينة','الزلزلة','العاديات','القارعة','التكاثر','العصر','الهمزة','الفيل','قريش','الماعون','الكوثر','الكافرون','النصر','المسد','الإخلاص','الفلق','الناس'];
 /* أسماء الحروف → الحرف نفسه */
@@ -111,6 +112,14 @@ function locText(w){
   if(SURA_OF[w.id]) parts.push('من سورة '+SURA_OF[w.id]);
   if(n) parts.push('(السورة رقم '+toAr(n)+' في المصحف)');
   return parts.join(' ');
+}
+/* اسم الورقة قابل للترجمة جزئيًا: "سورة X" أو "سورة X — Y" — تُترجَم كلمة
+   «سورة» واسم السورة X عبر القاموس، بينما يبقى الوصف الإضافي Y (نطاق الآية
+   ونحوه) عربيًا حاليًا؛ مقتطف تدريجي أفضل من عدم الترجمة إطلاقًا. */
+function nameHTML(w){
+  const m=w.name.match(/^سورة (.+?)(?: — (.+))?$/);
+  if(!m) return esc(w.name);
+  return `<span data-i18n="surahWord">سورة</span> <span data-i18n-name="${esc(m[1])}">${esc(m[1])}</span>${m[2]?' — '+esc(m[2]):''}`;
 }
 function locTag(w){
   const n=SURA_NO[w.id];
@@ -716,7 +725,7 @@ const blocks=W.map((w,wi)=>{
         : ` data-i18n-tpl="${esc(q)}"`;
       return `<div class="q" data-lvl="${lvl}"><span class="num">${n}</span><div class="body"><div class="txt"><span class="qtxt"${qTplAttr}>${esc(q)}</span> <span class="lvl lvl-${lvl}">${LEVELS[lvl-1]}</span></div>${field}<div class="hint" hidden></div></div></div>`;
     }).join('\n');
-    return `<section class="sec"><div class="sec-head"><span class="lens-badge">${['١','٢','٣'][si]||si+1}</span><h3>${esc(s.t)}</h3><span class="rule"></span></div><div class="qlist">${items}</div></section>`;
+    return `<section class="sec"><div class="sec-head"><span class="lens-badge">${['١','٢','٣'][si]||si+1}</span><h3 data-i18n-tpl="${esc(s.t)}">${esc(s.t)}</h3><span class="rule"></span></div><div class="qlist">${items}</div></section>`;
   }).join('\n');
   const lvlLegend=LEVELS.map((L,i)=>lvlCount[i]?`<span class="lvl lvl-${i+1}">${L} ${toAr(lvlCount[i])}</span>`:'').filter(Boolean).join('');
   const total=w.secs.reduce((a,s)=>a+s.q.length,0);
@@ -735,9 +744,9 @@ const blocks=W.map((w,wi)=>{
       <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':'tagAyah'}">${w.cat==='surah'?'سورة كاملة':'آية مختارة'}</span>
       ${ltag?`<span class="loc-tag">📍 ${esc(ltag)}</span>`:''}
     </div>
-    <h3>${esc(w.name)}</h3>
+    <h3>${nameHTML(w)}</h3>
     <div class="vpeek">﴿ ${verseHTML(w)} ﴾</div>
-    <div class="cmeta"><span class="prog-mini">${total} سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>
+    <div class="cmeta"><span class="prog-mini" data-i18n-tpl="{} سؤالًا" data-i18n-word="${toAr(total)}">${total} سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>
   </summary>
   <div class="ws">
     <div class="ws-top">
@@ -749,8 +758,8 @@ const blocks=W.map((w,wi)=>{
     <article class="sheet">
       <header class="sheet-head">
         <div class="lab-line">${esc(w.lab)}</div>
-        <h2>${esc(w.name)}</h2>
-        <div class="info">${esc(w.info)}</div>
+        <h2>${nameHTML(w)}</h2>
+        <div class="info" data-i18n-tpl="${esc(w.info)}">${esc(w.info)}</div>
         ${loc?`<div class="loc">📍 ${esc(loc)}</div>`:''}
         <div class="lvl-legend"><span data-i18n="lvlLegendLabel">مستويات الأسئلة:</span> ${lvlLegend}</div>
       </header>
@@ -828,6 +837,7 @@ ${responsiveCss}</style>
         <button type="button" class="lang-opt" data-lang="en">English</button>
         <button type="button" class="lang-opt" data-lang="ur">اردو</button>
         <button type="button" class="lang-opt" data-lang="tr">Türkçe</button>
+        <button type="button" class="lang-opt" data-lang="ug">ئۇيغۇرچە</button>
       </div>
     </div>
     <button type="button" class="act" id="themeToggle" title="الوضع الداكن/الفاتح" aria-label="تبديل الوضع الداكن/الفاتح">🌙</button>
@@ -912,6 +922,29 @@ function writeStaticAssets(){
     ]
   };
   fs.writeFileSync(path.join(__dirname,'dist/manifest.webmanifest'), JSON.stringify(manifest));
+  /* ================= API ثابتة (JSON) لكل الأوراق المبنية في الموقع =================
+     تُعاد كتابتها في كل بناء/نشر من نفس مصدر البيانات (worksheets.json) — أي ورقة
+     جديدة تُضاف للموقع تظهر هنا تلقائيًا دون أي خطوة يدوية إضافية. يمكن لأي تطبيق
+     خارجي (كتطبيق جوال) قراءتها عبر GET بسيط، دون خادم أو مصادقة. ملاحظة: الأوراق
+     التي يضيفها المدير من صفحة المدير محلية لمتصفحه (localStorage) ولا تظهر هنا —
+     ذلك يتطلب خادمًا وقاعدة بيانات فعليين، وهو تغيير بنية منفصل عن هذا الموقع الثابت. */
+  const apiWorksheets = W.map(w => ({
+    id: w.id, cat: w.cat, name: w.name, info: w.info,
+    suraNo: SURA_NO[w.id]||null, ayat: AYAT[w.id]||null, ayaFrom: AYA_NUM[w.id]?arNum(AYA_NUM[w.id]):null,
+    hue: w.hue, story: !!w.story,
+    verse: w.verse.split('۝').map(s=>s.trim()).filter(Boolean),
+    footV: w.footV||'', footM: w.footM||'',
+    sections: w.secs.map(s => ({
+      title: s.t,
+      questions: s.q.map(q => ({ text: q, answer: (ANSWERS[w.id]&&ANSWERS[w.id][q])||null }))
+    }))
+  }));
+  fs.mkdirSync(path.join(__dirname,'dist/api'), {recursive:true});
+  fs.writeFileSync(path.join(__dirname,'dist/api/worksheets.json'), JSON.stringify(apiWorksheets));
+  fs.writeFileSync(path.join(__dirname,'dist/api/meta.json'), JSON.stringify({
+    version: VERSION, buildDate: BUILD_DATE,
+    worksheets: W.length, questions: W.reduce((a,w)=>a+w.secs.reduce((b,s)=>b+s.q.length,0),0)
+  }));
   fs.writeFileSync(path.join(__dirname,'dist/robots.txt'),
     'User-agent: *\nAllow: /\n'+(SITE_URL?`Sitemap: ${SITE_URL}/sitemap.xml\n`:''));
   if(SITE_URL){
