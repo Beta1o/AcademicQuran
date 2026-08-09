@@ -33,16 +33,20 @@ jobs:
         with:
           node-version: '20'
 
+      - uses: android-actions/setup-android@v3
+
       - name: Install Bubblewrap CLI
         run: npm install -g @bubblewrap/cli
 
+      # يهيّئ ملف إعداد Bubblewrap بمسارَي JDK وAndroid SDK الجاهزين مسبقًا
+      # على العدّاد، فلا يحاول lاحقًا تثبيتهما تفاعليًا (بيئة CI بلا طرفية تفاعلية،
+      # وأي سؤال تفاعلي هناك يوقف التشغيل فورًا لعدم وجود مُدخِل يجيب عليه).
+      - name: Pre-configure Bubblewrap (skip interactive JDK/SDK setup)
+        run: bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$ANDROID_HOME"
+
       - name: Initialize the TWA Android project
         working-directory: android
-        run: |
-          bubblewrap init --manifest=./twa-manifest.json --directory=./app --skipPwaValidation
-        env:
-          # يوافق تلقائيًا على تنزيل Android SDK/NDK دون تدخل يدوي (بيئة غير تفاعلية)
-          ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+        run: bubblewrap init --manifest=./twa-manifest.json --directory=./app --skipPwaValidation
 
       # مفتاح توقيع ثابت عبر أسرار المستودع يحافظ على هوية التطبيق نفسها بين
       # الإصدارات (ضروري لقبول أي تحديث لاحق على نفس التثبيت). في حال غيابه
