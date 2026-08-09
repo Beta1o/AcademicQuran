@@ -52,7 +52,6 @@ function wsHTML(ws){
     return '<section class="sec"><div class="sec-head"><span class="lens-badge">'+(['١','٢','٣'][i]||(i+1))+'</span>'+
       '<h3>'+escA(t)+'</h3><span class="rule"></span></div><div class="qlist"></div></section>';
   }).join('');
-  var mf=function(lbl,k){ return '<div class="mf"><label>'+lbl+'</label><input type="text" data-mf="'+k+'" title="يُطبَّق على جميع الأوراق"></div>'; };
   var ayaListAttr = ws.cat==='ayah' ? ' data-ayalist="'+segs.map(function(s,i){return start+i;}).join(',')+'"' : '';
   return '<details class="ws-item ws-custom" id="w-'+ws.id+'" style="--ac:var('+(ws.hue||'--teal')+')" data-cat="'+ws.cat+'" data-name="'+escA(ws.name)+'" data-words="'+words+'"'+
     (ws.num?' data-surano="'+ws.num+'"':'')+(ws.ayat?' data-ayat="'+ws.ayat+'"':'')+(ws.cat==='ayah'&&ws.aya?' data-ayano="'+start+'"':'')+(endMark?' data-ayaend="1"':'')+ayaListAttr+'>'+
@@ -74,7 +73,6 @@ function wsHTML(ws){
           '<h2>'+escA(ws.name)+'</h2>'+
           '<div class="info">'+escA(ws.info||'')+'</div>'+
           (loc?'<div class="loc">📍 '+escA(loc)+'</div>':'')+
-          '<div class="meta-fields">'+mf('الاسم / اسم الباحث','name')+mf('التاريخ','date')+mf('المستوى','level')+mf('الدرجة','grade')+'</div>'+
         '</header>'+
         '<div class="verse-wrap">'+
           '<button class="act audio-play js-only" data-audio="'+ws.id+'" hidden>🔊 استماع للتلاوة</button>'+
@@ -866,20 +864,6 @@ if(panel){
       s.showAnswerOnMistake=box.checked;
       try{ localStorage.setItem('tahleel-settings', JSON.stringify(s)); }catch(e){}
     });
-  })();
-  /* ---------- إعدادات التلاوة: تفعيل الاستماع واختيار القارئ ---------- */
-  (function(){
-    var box=$('setAudioEnabled'), sel=$('setReciter'); if(!box||!sel) return;
-    var cur; try{ cur=JSON.parse(localStorage.getItem('tahleel-audio')||'{}'); }catch(e){ cur={}; }
-    box.checked = cur.enabled!==false;
-    sel.value = cur.reciter||1;
-    var save=function(){
-      var s={enabled:box.checked, reciter:+sel.value||1};
-      try{ localStorage.setItem('tahleel-audio', JSON.stringify(s)); }catch(e){}
-      if(window.refreshAudioButtons) window.refreshAudioButtons();
-    };
-    box.addEventListener('change',save);
-    sel.addEventListener('change',save);
   })();
   renderNwList();
   function fillTypeOptions(){

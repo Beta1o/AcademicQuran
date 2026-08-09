@@ -740,12 +740,6 @@ const blocks=W.map((w,wi)=>{
         <div class="info">${esc(w.info)}</div>
         ${loc?`<div class="loc">📍 ${esc(loc)}</div>`:''}
         <div class="lvl-legend">مستويات الأسئلة: ${lvlLegend}</div>
-        <div class="meta-fields">
-          <div class="mf"><label>الاسم / اسم الباحث</label><input type="text" data-mf="name" title="يُطبَّق على جميع الأوراق ويُحفظ تلقائيًا"></div>
-          <div class="mf"><label>التاريخ</label><input type="text" data-mf="date" title="يُطبَّق على جميع الأوراق ويُحفظ تلقائيًا"></div>
-          <div class="mf"><label>المستوى</label><input type="text" data-mf="level" title="يُطبَّق على جميع الأوراق ويُحفظ تلقائيًا"></div>
-          <div class="mf"><label>الدرجة</label><input type="text" data-mf="grade" title="يُطبَّق على جميع الأوراق ويُحفظ تلقائيًا"></div>
-        </div>
       </header>
       <div class="verse-wrap">
         <button class="act audio-play js-only" data-audio="${w.id}" hidden>🔊 استماع للتلاوة</button>
@@ -814,6 +808,25 @@ ${responsiveCss}</style>
       <span class="bt">التحليل اللغوي المجهري<small>مختبر تحليل السور والآيات — نسخة ${VERSION}</small></span>
     </div>
     <div class="spacer"></div>
+    <div class="audio-settings js-only">
+      <button type="button" class="act" id="pubAudioBtn" aria-haspopup="true" aria-expanded="false">🔊 إعدادات التلاوة</button>
+      <div id="pubAudioPanel" class="audio-settings-panel" hidden>
+        <label class="switch-row">
+          <input type="checkbox" id="pubAudioEnabled" checked>
+          تفعيل الاستماع لتلاوة القرآن (للحفظ) في كل ورقة سورة أو آية
+        </label>
+        <label class="admin-field">القارئ
+          <select id="pubAudioReciter">
+            <option value="1">مشاري راشد العفاسي</option>
+            <option value="2">أبو بكر الشاطري</option>
+            <option value="3">ناصر القطامي</option>
+            <option value="4">ياسر الدوسري</option>
+            <option value="5">هاني الرفاعي</option>
+          </select>
+        </label>
+        <span class="admin-hint">تُشغَّل التلاوة عبر واجهة quranapi.pages.dev (رابط خارجي، دون تحميل أو استضافة الملفات في الموقع). يُربط الصوت تلقائيًا بأي ورقة سورة أو آية كاملة — بحسب رقم السورة/الآية — دون أي إعداد يدوي.</span>
+      </div>
+    </div>
   </div>
 </header>
 <main id="app">
@@ -822,12 +835,6 @@ ${responsiveCss}</style>
     <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
     <h1>التحليل اللغوي <span class="mag">المجهري</span></h1>
     <p class="sub">ضع آيات القرآن الكريم تحت المجهر — اضغط أي بطاقة لفتح ورقة العمل، واكتب إجاباتك: الأسئلة القابلة للتصحيح تُصحَّح تلقائيًا (✓ صحيح / ✗ حاول مجددًا)، ويمكن طباعة أي ورقة كما هي.</p>
-    <div class="stats">
-      <div class="stat"><b data-stat="ws">${W.length}</b><span>ورقة عمل</span></div>
-      <div class="stat"><b data-stat="surah">${nS}</b><span>سورة كاملة</span></div>
-      <div class="stat"><b data-stat="ayah">${nA}</b><span>آية مختارة</span></div>
-      <div class="stat"><b data-stat="q">${totQ}</b><span>سؤالًا</span></div>
-    </div>
   </section>
   <div class="controls js-only">
     <div class="tabs"><button class="on" data-f="all">الكل</button><button data-f="surah">السور الكاملة</button><button data-f="ayah">الآيات المختارة</button><button data-f="story">القصص</button></div>

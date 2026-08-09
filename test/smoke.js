@@ -61,12 +61,7 @@ setTimeout(()=>{
   ok('surah location shown', /السورة رقم ١١٣ في المصحف/.test(doc.querySelector('#w-falaq .loc').textContent));
   ok('ayah location shown', /الآية ٩٠ من سورة النحل/.test(doc.querySelector('#w-nahl90 .loc').textContent));
 
-  /* ---------- بيانات الباحث العامة ---------- */
-  const mf=doc.querySelector('[data-mf="name"]');
-  mf.value='أحمد'; mf.dispatchEvent(new w.Event('input',{bubbles:true}));
-  const others=[...doc.querySelectorAll('[data-mf="name"]')];
-  ok('meta fields are global across sheets', others.length===WS && others.every(i=>i.value==='أحمد'));
-  ok('meta fields persist', JSON.parse(w.localStorage.getItem('tahleel-meta')).name==='أحمد');
+  ok('meta fields removed from worksheets', doc.querySelectorAll('[data-mf]').length===0);
 
   /* ---------- التجاوب ---------- */
   const vp=doc.querySelector('meta[name=viewport]').content;

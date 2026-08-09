@@ -40,6 +40,21 @@ input,textarea{font-family:inherit;color:var(--ink)}
 .brand .lens{width:34px;height:34px;border-radius:50%;border:3px solid var(--teal);position:relative;background:radial-gradient(circle at 35% 35%, #fff 0 30%, #CDE6E1 70%)}
 .brand .lens::after{content:"";position:absolute;bottom:-7px;left:50%;width:3px;height:9px;background:var(--teal);transform:translateX(-50%) rotate(35deg);border-radius:2px}
 .topbar .spacer{flex:1}
+.audio-settings{position:relative}
+.audio-settings #pubAudioBtn{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 18px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:.18s}
+.audio-settings #pubAudioBtn:hover,.audio-settings #pubAudioBtn[aria-expanded="true"]{border-color:var(--teal);color:var(--teal)}
+.audio-settings-panel{
+  position:absolute;top:calc(100% + 10px);left:0;z-index:60;width:min(320px,88vw);
+  background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;
+  box-shadow:0 14px 40px rgba(38,49,58,.14);display:flex;flex-direction:column;gap:12px;
+}
+.audio-settings-panel .switch-row{display:flex;align-items:flex-start;gap:8px;font-weight:700;color:var(--ink);font-size:.88rem;cursor:pointer;line-height:1.5}
+.audio-settings-panel .switch-row input{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--teal)}
+.audio-settings-panel .admin-field{display:flex;flex-direction:column;gap:6px;font-size:.83rem;font-weight:700;color:var(--ink-soft)}
+.audio-settings-panel .admin-field select{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.9rem;color:var(--ink);background:#fff}
+.audio-settings-panel .admin-field select:focus{outline:none;border-color:var(--teal)}
+.audio-settings-panel .admin-hint{font-size:.78rem;color:var(--ink-soft);line-height:1.6}
+@media (max-width:640px){ .audio-settings-panel{left:auto;right:0} }
 .topnav{display:flex;gap:8px;flex-wrap:wrap}
 .chip-btn{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 16px;font-size:.86rem;font-weight:600;color:var(--ink-soft);transition:.18s}
 .chip-btn:hover{border-color:var(--teal);color:var(--teal)}
@@ -107,10 +122,6 @@ input,textarea{font-family:inherit;color:var(--ink)}
 .sheet-head .lab-line::after{background:linear-gradient(-90deg,transparent,var(--gold-soft))}
 .sheet-head h2{text-align:center;font-family:var(--f-disp);font-weight:800;font-size:clamp(1.5rem,3.6vw,2.2rem);color:var(--ac);margin-top:4px}
 .sheet-head .info{text-align:center;color:var(--ink-soft);font-size:.85rem;margin-top:4px}
-.meta-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:20px}
-.mf label{display:block;font-size:.75rem;font-weight:700;color:var(--ink-soft);margin-bottom:4px}
-.mf input{width:100%;border:none;border-bottom:2px dotted var(--gold);background:transparent;padding:4px 2px;font-size:.95rem}
-.mf input:focus{outline:none;border-bottom-color:var(--ac);border-bottom-style:solid}
 
 /* verse panel — illuminated frame */
 .verse-wrap{padding:26px 26px 8px}
@@ -190,17 +201,37 @@ input,textarea{font-family:inherit;color:var(--ink)}
 :focus-visible{outline:2.5px solid var(--teal);outline-offset:2px;border-radius:4px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 
-/* ---------- print ---------- */
+/* ---------- print: ورقة واحدة مضغوطة (تنسيق أفقي عريض لاستيعاب الأسئلة الستين) ---------- */
 @media print{
+  @page{size:A4 landscape;margin:8mm}
+  html{font-size:56%}
   body{background:#fff}
   .topbar,.ws-top,.progress,.ws-nav,.site-foot,.hero,.controls,.audio-play{display:none!important}
   .ws{max-width:100%;padding:0}
   .sheet{border:none;box-shadow:none;border-radius:0}
+  .sheet-head{padding:0 0 6px;background:none;border-bottom:1px solid #999}
+  .sheet-head .lab-line{display:none}
+  .sheet-head h2{font-size:1.35rem;margin-top:0}
+  .sheet-head .info{margin-top:1px}
+  .lvl-legend{display:none}
+  .loc{font-size:.78rem}
+  .verse-wrap{padding:6px 0}
+  .verse{border-width:1px;padding:8px 12px;background:none}
+  .verse::before,.verse::after{display:none}
+  .verse p{font-size:1.05rem;line-height:1.9}
+  .sec-head{margin:8px 0 6px}
+  .sec-head .lens-badge{width:20px;height:20px;font-size:.75rem}
+  .sec-head h3{font-size:.92rem}
+  .qlist{display:grid;grid-template-columns:repeat(4,1fr);gap:1px 12px}
   .q input[type=text]{border-bottom:1.2px dotted #999}
-  .qlist{gap:4px 18px}
-  .q{break-inside:avoid;padding:4px 2px}
+  .q{break-inside:avoid;padding:2px 2px;gap:6px}
+  .q .num{width:16px;height:16px;font-size:.68rem}
+  .q .txt{font-size:.8rem}
+  .q [data-ui] , .q input, .q textarea{font-size:.8rem;padding:1px 2px 0;margin-top:0}
   .sec{break-inside:auto}
-  .verse{box-shadow:none}
+  .sheet-foot{margin-top:8px;padding:6px 0 0;background:none;border-top:1px solid #999}
+  .sheet-foot .fv{font-size:.95rem;line-height:1.6}
+  .sheet-foot .fm{font-size:.78rem;margin-top:1px}
   /* لا تُطبع نصوص التلميح داخل الحقول (مثل «اكتب الحروف — تُفصَل بـ + تلقائيًا») —
      هي إرشاد للاستخدام على الشاشة فقط، وتُترك الحقول فارغة على الورق ليكتب فيها الطفل */
   input::placeholder,textarea::placeholder{color:transparent!important;opacity:0!important}

@@ -17,27 +17,20 @@
       <button id="admClose" class="act" type="button">✕ إغلاق</button>
     </div>
 
+    <div class="stats admin-stats">
+      <div class="stat"><b data-stat="ws">0</b><span>ورقة عمل</span></div>
+      <div class="stat"><b data-stat="surah">0</b><span>سورة كاملة</span></div>
+      <div class="stat"><b data-stat="ayah">0</b><span>آية مختارة</span></div>
+      <div class="stat"><b data-stat="q">0</b><span>سؤالًا</span></div>
+    </div>
+
     <div class="admin-settings">
       <label class="switch-row">
         <input type="checkbox" id="setShowAnsMistake" checked>
         إظهار زر «الإجابة الصحيحة» تلقائيًا بعد إجابة خاطئة
       </label>
       <span class="admin-hint">عند إيقافه، يظل ✗ الخطأ ظاهرًا لكن دون زر يكشف الإجابة — لتشجيع المحاولة قبل الكشف.</span>
-
-      <label class="switch-row">
-        <input type="checkbox" id="setAudioEnabled" checked>
-        تفعيل الاستماع لتلاوة القرآن (للحفظ) في كل ورقة سورة أو آية
-      </label>
-      <label class="admin-field">القارئ
-        <select id="setReciter">
-          <option value="1">مشاري راشد العفاسي</option>
-          <option value="2">أبو بكر الشاطري</option>
-          <option value="3">ناصر القطامي</option>
-          <option value="4">ياسر الدوسري</option>
-          <option value="5">هاني الرفاعي</option>
-        </select>
-      </label>
-      <span class="admin-hint">تُشغَّل التلاوة عبر واجهة quranapi.pages.dev (رابط خارجي، دون تحميل أو استضافة الملفات في الموقع). يُربط الصوت تلقائيًا بأي ورقة سورة أو آية — مبنية في الموقع أو مضافة من هنا — بحسب رقم السورة/الآية دون أي إعداد يدوي.</span>
+      <span class="admin-hint">إعدادات تلاوة القرآن (تفعيلها واختيار القارئ) صارت متاحة لكل زائر من زر «🔊 إعدادات التلاوة» أعلى الصفحة، وليست حكرًا على المدير.</span>
     </div>
 
     <div class="admin-steps">

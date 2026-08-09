@@ -280,29 +280,30 @@ function bindAudio(root){
 bindAudio(document);
 window.bindAudio=bindAudio;
 refreshAudioButtons();
-/* ---------- بيانات الباحث: حقول عامة تُحفظ وتُطبَّق على كل الأوراق ---------- */
-var META_KEY='tahleel-meta', META={};
-try{ META=JSON.parse(localStorage.getItem(META_KEY)||'{}')||{}; }catch(e){ META={}; }
-function applyMeta(root){
-  (root||document).querySelectorAll('[data-mf]').forEach(function(el){
-    var v=META[el.dataset.mf];
-    if(v!==undefined && el.value!==v) el.value=v;
+/* ---------- إعدادات التلاوة العامة: متاحة لكل زائر من شريط الموقع، وليست حكرًا على المدير ---------- */
+(function(){
+  var btn=document.getElementById('pubAudioBtn'), panel=document.getElementById('pubAudioPanel');
+  var box=document.getElementById('pubAudioEnabled'), sel=document.getElementById('pubAudioReciter');
+  if(!btn||!panel||!box||!sel) return;
+  var cur=audioSettings();
+  box.checked=cur.enabled; sel.value=cur.reciter;
+  var save=function(){
+    try{ localStorage.setItem(AUDIO_KEY, JSON.stringify({enabled:box.checked, reciter:+sel.value||1})); }catch(e){}
+    refreshAudioButtons();
+  };
+  box.addEventListener('change',save);
+  sel.addEventListener('change',save);
+  btn.addEventListener('click',function(){
+    var open=panel.hidden;
+    panel.hidden=!open; btn.setAttribute('aria-expanded',String(open));
   });
-}
-function bindMeta(root){
-  root.querySelectorAll('[data-mf]').forEach(function(el){
-    if(isBound(el)) return;
-    el.addEventListener('input',function(){
-      var k=el.dataset.mf; META[k]=el.value;
-      document.querySelectorAll('[data-mf="'+k+'"]').forEach(function(o){ if(o!==el) o.value=el.value; });
-      try{ localStorage.setItem(META_KEY, JSON.stringify(META)); }catch(e){}
-    });
+  document.addEventListener('click',function(e){
+    if(!panel.hidden && !panel.contains(e.target) && e.target!==btn) { panel.hidden=true; btn.setAttribute('aria-expanded','false'); }
   });
-  applyMeta(root);
-}
-bindMeta(document);
-window.bindMeta=bindMeta;
-window.applyMeta=applyMeta;
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape' && !panel.hidden){ panel.hidden=true; btn.setAttribute('aria-expanded','false'); }
+  });
+})();
 /* ---------- شريط علوي لاصق: قياس ارتفاعه الفعلي لضبط الإزاحات ---------- */
 var topbar=document.querySelector('.topbar');
 function syncTopbar(){
@@ -341,7 +342,7 @@ bindToggles(document);
 window.bindToggles=bindToggles;
 /* تهيئة ورقة أُضيفت في وقت التشغيل (من صفحة المدير) */
 window.bindSheet=function(root){
-  bindAnswers(root); bindControls(root); bindMeta(root); bindToggles(root);
+  bindAnswers(root); bindControls(root); bindToggles(root);
 };
 var filter='all';
 function applyFilter(){
