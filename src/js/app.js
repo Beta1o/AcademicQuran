@@ -324,66 +324,89 @@ refreshAudioButtons();
     apply(next);
   });
 })();
-/* ---------- تعدد اللغات: واجهة الموقع فقط (أزرار/تسميات) — نص القرآن والأسئلة يبقى عربيًا دائمًا ---------- */
-var LANG_KEY='tahleel-lang';
-var LANG_NAMES={ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe',ug:'ئۇيغۇرچە'};
-var LANG_DIR={ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr',ug:'rtl'};
-var I18N_DICT={};
-try{ var i18nEl=document.getElementById('i18nData'); if(i18nEl) I18N_DICT=JSON.parse(i18nEl.textContent||'{}')||{}; }catch(e){ I18N_DICT={}; }
-/* دالة ترجمة عامة لأي نص واجهة يُنشأ ديناميكيًا وقت التشغيل (مثل زر إظهار الإجابة) */
-function curLang(){ try{ return localStorage.getItem(LANG_KEY)||'ar'; }catch(e){ return 'ar'; } }
-function t(key){
-  var lang=curLang();
-  if(lang==='ar') return AR_STRINGS[key]||key;
-  var d=I18N_DICT[lang]; return (d&&d[key])||AR_STRINGS[key]||key;
-}
-var AR_STRINGS={revealModel:'إظهار الإجابة النموذجية',revealCorrect:'إظهار الإجابة الصحيحة',answerPrefix:'الإجابة: ',openWsToggle:'افتح الورقة ▾',closeWsToggle:'إغلاق الورقة ▴'};
-var AR_DEFAULTS={};
-document.querySelectorAll('[data-i18n]').forEach(function(el){ var k=el.dataset.i18n; if(!(k in AR_DEFAULTS)) AR_DEFAULTS[k]=el.textContent; });
-document.querySelectorAll('[data-i18n-ph]').forEach(function(el){ var k=el.dataset.i18nPh; if(!(k in AR_DEFAULTS)) AR_DEFAULTS['ph:'+k]=el.getAttribute('placeholder'); });
-function applyLang(lang){
-  var dict = lang==='ar' ? null : (I18N_DICT[lang]||{});
-  document.documentElement.setAttribute('lang', lang);
-  document.documentElement.setAttribute('dir', LANG_DIR[lang]||'rtl');
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.dataset.i18n;
-    el.textContent = dict ? (dict[k]||AR_DEFAULTS[k]) : AR_DEFAULTS[k];
-  });
-  document.querySelectorAll('[data-i18n-ph]').forEach(function(el){
-    var k=el.dataset.i18nPh;
-    el.setAttribute('placeholder', dict ? (dict[k]||AR_DEFAULTS['ph:'+k]) : AR_DEFAULTS['ph:'+k]);
-  });
-  /* أسئلة الأوراق: نص السؤال يُترجَم عبر قاموس القوالب مع إبقاء الكلمة/الحرف
-     القرآني (بين قوسين) عربيًا كما ورد حرفيًا في نص السؤال الأصلي — لا يُعاد
-     كتابته أبدًا، فيُستبعد أي احتمال خطأ في نقله. الأسئلة التي لا تملك ترجمة
-     قالب معروفة تبقى بعربيتها الأصلية تلقائيًا (تدهور سلس، لا نص مفقود). */
-  var tpl = dict && dict.tpl;
-  document.querySelectorAll('[data-i18n-tpl]').forEach(function(el){
-    var key=el.dataset.i18nTpl, word=el.dataset.i18nWord;
-    var phrase = (tpl && tpl[key]) || key;
-    el.textContent = word!==undefined ? phrase.replace('{}', word) : phrase;
-  });
-  /* أسماء السور داخل عنوان الورقة — على عكس كلمات الأسئلة، اسم السورة نفسه
-     يُترجَم (له اسم معروف بكل لغة)، فقط نص القرآن وكلماته يبقى عربيًا دائمًا. */
-  var suraDict = dict && dict.sura;
-  document.querySelectorAll('[data-i18n-name]').forEach(function(el){
-    var ar=el.dataset.i18nName;
-    el.textContent = (suraDict && suraDict[ar]) || ar;
-  });
-  var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=LANG_NAMES[lang]||LANG_NAMES.ar;
-}
+/* =====================================================================
+   Locale — Global State
+   واحدة، مصدر الحقيقة الوحيد لكل ما يخص اللغة الحالية في التطبيق. أي جزء
+   من الواجهة يقرأ اللغة الحالية أو يترجم نصًّا يمر عبر هذا الكائن، ولا
+   يقرأ localStorage أو القاموس مباشرة من مكان آخر. الاستثناء الوحيد
+   والدائم: نص القرآن وكلماته (المحفوظة صراحةً بـ data-i18n-word) لا
+   تمر عبر Locale إطلاقًا — تبقى عربية دائمًا مهما كانت اللغة المختارة،
+   لأنها منسوخة حرفيًا من الآية نفسها لا "مترجمة". ---------------------- */
+var Locale = (function(){
+  var STORAGE_KEY = 'tahleel-locale';
+  var NAMES = {ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe',ug:'ئۇيغۇرچە'};
+  var DIRS  = {ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr',ug:'rtl'};
+  var catalogs = {}; // {en:{...}, ur:{...}, tr:{...}, ug:{...}} — كل شيء عدا العربية (الافتراضية المطبوعة في الصفحة أصلًا)
+  try{ var el=document.getElementById('i18nData'); if(el) catalogs=JSON.parse(el.textContent||'{}')||{}; }catch(e){ catalogs={}; }
+  var arStrings = {revealModel:'إظهار الإجابة النموذجية',revealCorrect:'إظهار الإجابة الصحيحة',answerPrefix:'الإجابة: ',openWsToggle:'افتح الورقة ▾',closeWsToggle:'إغلاق الورقة ▴'};
+  var arDefaults = {}; // النصوص العربية الأصلية كما طُبعت في الصفحة، تُستعاد عند العودة للعربية
+  document.querySelectorAll('[data-i18n]').forEach(function(node){ var k=node.dataset.i18n; if(!(k in arDefaults)) arDefaults[k]=node.textContent; });
+  document.querySelectorAll('[data-i18n-ph]').forEach(function(node){ var k=node.dataset.i18nPh; if(!(k in arDefaults)) arDefaults['ph:'+k]=node.getAttribute('placeholder'); });
+
+  var current = 'ar';
+  try{ current = localStorage.getItem(STORAGE_KEY) || 'ar'; }catch(e){}
+
+  /* ترجمة نص واجهة يُنشأ ديناميكيًا وقت التشغيل (مثل زر إظهار الإجابة) — لا علاقة له بكلمات القرآن */
+  function t(key){
+    var cat = catalogs[current];
+    return (cat && cat[key]) || arStrings[key] || key;
+  }
+
+  function render(){
+    var isArabic = current==='ar';
+    var cat = isArabic ? null : (catalogs[current]||{});
+    document.documentElement.setAttribute('lang', current);
+    document.documentElement.setAttribute('dir', DIRS[current]||'rtl');
+    document.querySelectorAll('[data-i18n]').forEach(function(node){
+      var k=node.dataset.i18n;
+      node.textContent = cat ? (cat[k]||arDefaults[k]) : arDefaults[k];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(function(node){
+      var k=node.dataset.i18nPh;
+      node.setAttribute('placeholder', cat ? (cat[k]||arDefaults['ph:'+k]) : arDefaults['ph:'+k]);
+    });
+    /* أسئلة الأوراق (وعناوين الأقسام والمعلومات وعدد الأسئلة، المدمَجة في نفس
+       القاموس): تُترجَم الصياغة المحيطة عبر قاموس القوالب، بينما تبقى الكلمة/
+       الحرف القرآني المحفوظ في data-i18n-word عربيًا حرفيًا كما ورد في نص
+       السؤال الأصلي — لا يُعاد كتابته أبدًا مهما كانت اللغة، فيُستبعد أي
+       احتمال خطأ في نقله. ما لا يملك ترجمة قالب معروفة يبقى بعربيته الأصلية
+       تلقائيًا (تدهور سلس، لا نص مفقود). */
+    var tpl = cat && cat.tpl;
+    document.querySelectorAll('[data-i18n-tpl]').forEach(function(node){
+      var key=node.dataset.i18nTpl, word=node.dataset.i18nWord;
+      var phrase = (tpl && tpl[key]) || key;
+      node.textContent = word!==undefined ? phrase.replace('{}', word) : phrase;
+    });
+    /* أسماء السور داخل عنوان الورقة — على عكس كلمات الأسئلة، اسم السورة نفسه
+       يُترجَم (له اسم معروف بكل لغة)، فقط نص القرآن وكلماته يبقى عربيًا دائمًا. */
+    var suraDict = cat && cat.sura;
+    document.querySelectorAll('[data-i18n-name]').forEach(function(node){
+      var ar=node.dataset.i18nName;
+      node.textContent = (suraDict && suraDict[ar]) || ar;
+    });
+    var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=NAMES[current]||NAMES.ar;
+  }
+
+  function set(code){
+    current = (code==='ar' || catalogs[code]) ? code : 'ar';
+    try{ localStorage.setItem(STORAGE_KEY, current); }catch(e){}
+    render();
+  }
+
+  render(); // أول عرض عند تحميل الصفحة، بحسب ما كان محفوظًا سابقًا (أو العربية افتراضيًا)
+
+  return { get current(){ return current; }, set: set, t: t, render: render, NAMES: NAMES, DIRS: DIRS };
+})();
+window.Locale=Locale;
+/* توافق خلفي: بقية الشيفرة (وربما ملحقات مستقبلية) تنادي t() مباشرة */
+function t(key){ return Locale.t(key); }
 (function(){
   var btn=document.getElementById('langBtn'), panel=document.getElementById('langPanel');
   if(!btn||!panel) return;
   var closePanel=function(){ panel.hidden=true; btn.setAttribute('aria-expanded','false'); };
-  var saved='ar';
-  try{ saved=localStorage.getItem(LANG_KEY)||'ar'; }catch(e){}
-  applyLang(saved);
   panel.querySelectorAll('.lang-opt').forEach(function(o){
     o.addEventListener('click',function(){
-      var lang=o.dataset.lang;
-      try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
-      applyLang(lang);
+      Locale.set(o.dataset.lang);
       closePanel();
     });
   });

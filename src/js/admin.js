@@ -53,29 +53,33 @@ function wsHTML(ws){
       '<h3>'+escA(t)+'</h3><span class="rule"></span></div><div class="qlist"></div></section>';
   }).join('');
   var ayaListAttr = ' data-ayalist="'+segs.map(function(s,i){return start+i;}).join(',')+'"';
+  var nameM=ws.name.match(/^سورة (.+?)(?: — (.+))?$/);
+  var nameHtml = nameM
+    ? '<span data-i18n="surahWord">سورة</span> <span data-i18n-name="'+escA(nameM[1])+'">'+escA(nameM[1])+'</span>'+(nameM[2]?' — '+escA(nameM[2]):'')
+    : escA(ws.name);
   return '<details class="ws-item ws-custom" id="w-'+ws.id+'" style="--ac:var('+(ws.hue||'--teal')+')" data-cat="'+ws.cat+'" data-name="'+escA(ws.name)+'" data-words="'+words+'"'+
     (ws.num?' data-surano="'+ws.num+'"':'')+(ws.ayat?' data-ayat="'+ws.ayat+'"':'')+(ws.cat==='ayah'&&ws.aya?' data-ayano="'+start+'"':'')+(endMark?' data-ayaend="1"':'')+ayaListAttr+'>'+
     '<summary class="card">'+
-      '<div class="tagrow"><span class="tag">'+(ws.cat==='surah'?'سورة كاملة':'آية مختارة')+'</span>'+
+      '<div class="tagrow"><span class="tag" data-i18n="'+(ws.cat==='surah'?'tagSurah':'tagAyah')+'">'+(ws.cat==='surah'?'سورة كاملة':'آية مختارة')+'</span>'+
       (ltag?'<span class="loc-tag">📍 '+escA(ltag)+'</span>':'')+'<span class="loc-tag new">جديدة</span></div>'+
-      '<h3>'+escA(ws.name)+'</h3>'+
+      '<h3>'+nameHtml+'</h3>'+
       '<div class="vpeek">﴿ '+vHTML+' ﴾</div>'+
-      '<div class="cmeta"><span class="prog-mini">0 سؤالًا</span><span class="go">افتح الورقة ▾</span></div>'+
+      '<div class="cmeta"><span class="prog-mini" data-i18n-tpl="{} سؤالًا" data-i18n-word="٠">0 سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
     '</summary>'+
     '<div class="ws">'+
       '<div class="ws-top">'+
-        '<button class="act close" data-close="'+ws.id+'">▲ إغلاق</button><div class="spacer"></div>'+
-        '<button class="act reset" data-reset="'+ws.id+'">تفريغ الإجابات</button>'+
-        '<button class="act print" data-print="'+ws.id+'">🖨️ طباعة الورقة</button>'+
+        '<button class="act close" data-close="'+ws.id+'" data-i18n="closeWs">▲ إغلاق</button><div class="spacer"></div>'+
+        '<button class="act reset" data-reset="'+ws.id+'" data-i18n="resetWs">تفريغ الإجابات</button>'+
+        '<button class="act print" data-print="'+ws.id+'" data-i18n="printWs">🖨️ طباعة الورقة</button>'+
       '</div>'+
       '<article class="sheet">'+
         '<header class="sheet-head"><div class="lab-line">التحليل اللغوي المجهري</div>'+
-          '<h2>'+escA(ws.name)+'</h2>'+
-          '<div class="info">'+escA(ws.info||'')+'</div>'+
+          '<h2>'+nameHtml+'</h2>'+
+          '<div class="info" data-i18n-tpl="'+escA(ws.info||'')+'">'+escA(ws.info||'')+'</div>'+
           (loc?'<div class="loc">📍 '+escA(loc)+'</div>':'')+
         '</header>'+
         '<div class="verse-wrap">'+
-          '<button class="act audio-play js-only" data-audio="'+ws.id+'" hidden>🔊 استماع للتلاوة</button>'+
+          '<button class="act audio-play js-only" data-audio="'+ws.id+'" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>'+
           '<div class="verse"><p>﴿ '+vHTML+' ﴾</p></div>'+
         '</div>'+
         '<div class="progress js-only"><div class="pbar"><i data-pfill="'+ws.id+'" style="width:0%"></i></div>'+
@@ -84,7 +88,7 @@ function wsHTML(ws){
         '<footer class="sheet-foot"><div class="fv">'+escA(ws.footV||'')+'</div>'+
           (ws.footM?'<div class="fm">'+escA(ws.footM)+'</div>':'')+'</footer>'+
       '</article>'+
-      '<div class="ws-close"><button class="act" data-close="'+ws.id+'">▲ إغلاق الورقة</button></div>'+
+      '<div class="ws-close"><button class="act" data-close="'+ws.id+'" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>'+
     '</div></details>';
 }
 /* إدراج الأوراق المضافة في الشبكة وتهيئتها */
@@ -99,6 +103,7 @@ function renderCustomWs(){
     if(window.bindAudio) window.bindAudio(det);
     if(window.refreshAudioButtons) window.refreshAudioButtons();
   });
+  if(window.Locale) window.Locale.render(); /* تطبيق اللغة الحالية على أي ورقة/سؤال أُدرج للتو */
   refreshStats();
 }
 /* تحديث أرقام الصفحة الرئيسية بعد الإضافة */
@@ -345,7 +350,11 @@ function qHTML(item,key,n){
       '<input type="hidden" data-k="'+key+'" data-ui="text"'+ansAttr+showAttr+'>';
   } else field='<input type="text" data-k="'+key+'" data-ui="text"'+ansAttr+dynAttr+showAttr+modeAttr+' placeholder="اكتب إجابتك...">';
   var lv=rateItem(item);
-  return '<div class="q custom" data-lvl="'+lv+'"><span class="num">'+n+'</span><div class="body"><div class="txt">'+escA(item.t)+
+  var qm=item.t.match(/\(([^)]*)\)/);
+  var qTplAttr = qm
+    ? ' data-i18n-tpl="'+escA(item.t.slice(0,qm.index)+'({})'+item.t.slice(qm.index+qm[0].length))+'" data-i18n-word="'+escA(qm[1])+'"'
+    : ' data-i18n-tpl="'+escA(item.t)+'"';
+  return '<div class="q custom" data-lvl="'+lv+'"><span class="num">'+n+'</span><div class="body"><div class="txt"><span class="qtxt"'+qTplAttr+'>'+escA(item.t)+'</span>'+
     ' <span class="lvl lvl-'+lv+'">'+LVL_LABELS[lv-1]+'</span></div>'+field+'<div class="hint" hidden></div></div></div>';
 }
 function bindQ(root){
@@ -386,10 +395,12 @@ function renderCustomAll(){
     });
     renumberQuestions(det);
     bindQ(det); updateProg(ws);
-    var pm=det.querySelector('.prog-mini'); if(pm) pm.textContent=det.querySelectorAll('.q').length+' سؤالًا';
+    var pm=det.querySelector('.prog-mini');
+    if(pm){ var qn=det.querySelectorAll('.q').length; pm.dataset.i18nTpl='{} سؤالًا'; pm.dataset.i18nWord=toArD(qn); }
   });
   renderAdmList();
   if(window.applyLvlFilter) window.applyLvlFilter();
+  if(window.Locale) window.Locale.render(); /* يطبّق الترجمة على أي نص أُعيد بناؤه للتو (عدّاد الأسئلة وغيره) */
 }
 /* ---------- duplicate check ---------- */
 function isDup(ws,text){
