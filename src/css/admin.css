@@ -16,7 +16,7 @@
 .admin-list .row .bw-lvls{display:flex;gap:4px;flex-wrap:wrap}
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:12px}
 .admin-grid label{display:flex;flex-direction:column;gap:5px;font-size:.85rem;color:var(--ink-soft);font-weight:600}
-.admin-grid input,.admin-grid select,.admin-grid textarea{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-family:inherit;font-size:.95rem;background:var(--surface);max-width:100%}
+.admin-grid input,.admin-grid select,.admin-grid textarea{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-family:inherit;font-size:.95rem;background:var(--surface);color:var(--ink);max-width:100%}
 .admin-grid input[readonly]{background:var(--paper2);color:var(--ink);font-weight:700}
 .admin-actions{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
 .admin-preview{background:var(--surface);border:1px dashed var(--gold);border-radius:10px;padding:10px 14px;margin:10px 0;font-weight:600;color:var(--ink);overflow-wrap:anywhere}

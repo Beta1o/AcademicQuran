@@ -706,7 +706,15 @@ const blocks=W.map((w,wi)=>{
       } else {
         field=`<input type="text" data-k="${key}" data-ui="text"${ansAttr}${dynAttr}${showAttr}${modeAttr} placeholder="اكتب إجابتك...">`;
       }
-      return `<div class="q" data-lvl="${lvl}"><span class="num">${n}</span><div class="body"><div class="txt">${esc(q)} <span class="lvl lvl-${lvl}">${LEVELS[lvl-1]}</span></div>${field}<div class="hint" hidden></div></div></div>`;
+      /* دعم الترجمة: نفصل الكلمة/الحرف القرآني (بين قوسين) عن صيغة السؤال المحيطة بها،
+         فتبقى الكلمة عربية كما وردت حرفيًا في نص السؤال الأصلي (لا تُعاد كتابتها أبدًا)،
+         بينما تُترجَم الصيغة المحيطة بها عبر قاموس القوالب إذا توفرت ترجمة له. تُعزَل
+         الترجمة في span مستقل خاص بها كي لا يمسح استبدال النص شارة المستوى المجاورة. */
+      const qm=q.match(/\(([^)]*)\)/);
+      const qTplAttr = qm
+        ? ` data-i18n-tpl="${esc(q.slice(0,qm.index)+'({})'+q.slice(qm.index+qm[0].length))}" data-i18n-word="${esc(qm[1])}"`
+        : ` data-i18n-tpl="${esc(q)}"`;
+      return `<div class="q" data-lvl="${lvl}"><span class="num">${n}</span><div class="body"><div class="txt"><span class="qtxt"${qTplAttr}>${esc(q)}</span> <span class="lvl lvl-${lvl}">${LEVELS[lvl-1]}</span></div>${field}<div class="hint" hidden></div></div></div>`;
     }).join('\n');
     return `<section class="sec"><div class="sec-head"><span class="lens-badge">${['١','٢','٣'][si]||si+1}</span><h3>${esc(s.t)}</h3><span class="rule"></span></div><div class="qlist">${items}</div></section>`;
   }).join('\n');
@@ -826,7 +834,7 @@ ${responsiveCss}</style>
     <div class="audio-settings js-only">
       <button type="button" class="act" id="pubAudioBtn" aria-haspopup="true" aria-expanded="false">🔊 <span data-i18n="audioSettingsBtn">إعدادات التلاوة</span></button>
       <div id="pubAudioPanel" class="audio-settings-panel" hidden>
-        <label class="admin-field" data-i18n="reciterLabel">القارئ
+        <label class="admin-field"><span data-i18n="reciterLabel">القارئ</span>
           <select id="pubAudioReciter">
             <option value="1">مشاري راشد العفاسي</option>
             <option value="2">أبو بكر الشاطري</option>

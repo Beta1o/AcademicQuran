@@ -345,6 +345,16 @@ function applyLang(lang){
     var k=el.dataset.i18nPh;
     el.setAttribute('placeholder', dict ? (dict[k]||AR_DEFAULTS['ph:'+k]) : AR_DEFAULTS['ph:'+k]);
   });
+  /* أسئلة الأوراق: نص السؤال يُترجَم عبر قاموس القوالب مع إبقاء الكلمة/الحرف
+     القرآني (بين قوسين) عربيًا كما ورد حرفيًا في نص السؤال الأصلي — لا يُعاد
+     كتابته أبدًا، فيُستبعد أي احتمال خطأ في نقله. الأسئلة التي لا تملك ترجمة
+     قالب معروفة تبقى بعربيتها الأصلية تلقائيًا (تدهور سلس، لا نص مفقود). */
+  var tpl = dict && dict.tpl;
+  document.querySelectorAll('[data-i18n-tpl]').forEach(function(el){
+    var key=el.dataset.i18nTpl, word=el.dataset.i18nWord;
+    var phrase = (tpl && tpl[key]) || key;
+    el.textContent = word!==undefined ? phrase.replace('{}', word) : phrase;
+  });
   var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=LANG_NAMES[lang]||LANG_NAMES.ar;
 }
 (function(){
