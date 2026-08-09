@@ -19,6 +19,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +49,7 @@ jobs:
       # (أول تشغيل قبل إضافة الأسرار) يُنشئ Bubblewrap مفتاحًا مؤقتًا تلقائيًا
       # يصلح للتجربة والتثبيت اليدوي فقط، لا للنشر الرسمي على متجر Play.
       - name: Restore signing keystore (if configured)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.HAS_KEYSTORE == 'true' }}
         working-directory: android/app
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android.keystore
 
