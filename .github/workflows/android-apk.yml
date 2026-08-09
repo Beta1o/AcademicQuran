@@ -5,12 +5,21 @@ name: Build Android APK (TWA)
 # محليًا مضمَّنة، فيبقى متزامنًا تلقائيًا مع كل تحديث للموقع دون الحاجة
 # لإعادة بناء التطبيق. يعمل هذا فقط على عدّاد GitHub (فيه Java وAndroid SDK
 # جاهزان مسبقًا)، لا داخل بيئة العمل المحلية التي لا تملكهما.
+#
+# ملاحظة: `bubblewrap init` و`bubblewrap build` أدوات تفاعلية بالأساس (تسألان
+# عشرات الأسئلة ولا تملكان خيارًا لتخطّيها بالكامل)، فتتجمّدان بلا استجابة في
+# بيئة CI. لذلك تُستخدم هنا مكتبة @bubblewrap/core مباشرة (عبر
+# android/scripts/init-project.js) لتوليد المشروع من twa-manifest.json الجاهز
+# مسبقًا دون أي سؤال تفاعلي، وتُمرَّر كلمات مرور التوقيع عبر متغيّرات البيئة
+# الرسمية (BUBBLEWRAP_KEYSTORE_PASSWORD/BUBBLEWRAP_KEY_PASSWORD) بدل الإدخال
+# التفاعلي.
 on:
   workflow_dispatch: {}
   push:
     paths:
       - 'android/twa-manifest.json'
       - 'android/icons/**'
+      - 'android/scripts/**'
       - '.github/workflows/android-apk.yml'
 
 permissions:
@@ -35,52 +44,47 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
-      - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
+      - name: Install Bubblewrap (local, so scripts/init-project.js can require it)
+        working-directory: android
+        run: npm install
 
-      # يهيّئ ملف إعداد Bubblewrap مباشرةً بمسارَي JDK وAndroid SDK الجاهزين
-      # مسبقًا على العدّاد. لم ينفع تمرير --jdkPath/--androidSdkPath إلى الأمر
-      # `updateConfig` نفسه: ذلك الأمر يستدعي داخليًا نفس منطق الإعداد التفاعلي
-      # طالما لا يوجد ملف إعداد بعد، فيسأل ولا يوجد من يجيب في CI ويتوقف
-      # التشغيل. كتابة الملف مباشرة (بنفس مساره وبنيته التي يقرأها Bubblewrap:
-      # ~/.bubblewrap/config.json) يتفادى الاستدعاء التفاعلي من أصله.
-      - name: Pre-configure Bubblewrap (skip interactive JDK/SDK setup)
+      # ملف إعداد Bubblewrap يُكتب مباشرة بمسارَي JDK وAndroid SDK الجاهزين
+      # على العدّاد — تفادي أي استدعاء تفاعلي عند أول قراءة لهذا الملف.
+      - name: Pre-configure Bubblewrap (JDK/Android SDK paths)
         run: |
           mkdir -p "$HOME/.bubblewrap"
           printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "$ANDROID_HOME" > "$HOME/.bubblewrap/config.json"
-          cat "$HOME/.bubblewrap/config.json"
 
-      - name: Initialize the TWA Android project
+      - name: Generate the Android project (non-interactive)
         working-directory: android
-        # يُنشئ مجلد الإخراج مسبقًا كي لا يسأل bubblewrap تفاعليًا عن إنشائه
-        run: |
-          mkdir -p ./app
-          bubblewrap init --manifest=./twa-manifest.json --directory=./app --skipPwaValidation
+        run: node scripts/init-project.js ./app
 
       # مفتاح توقيع ثابت عبر أسرار المستودع يحافظ على هوية التطبيق نفسها بين
       # الإصدارات (ضروري لقبول أي تحديث لاحق على نفس التثبيت). في حال غيابه
-      # (أول تشغيل قبل إضافة الأسرار) يُنشئ Bubblewrap مفتاحًا مؤقتًا تلقائيًا
-      # يصلح للتجربة والتثبيت اليدوي فقط، لا للنشر الرسمي على متجر Play.
-      - name: Restore signing keystore (if configured)
-        if: ${{ env.HAS_KEYSTORE == 'true' }}
-        working-directory: android/app
-        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android.keystore
-
-      - name: Build the signed APK
+      # يُنشأ مفتاح توقيع ذاتي مؤقت هنا فقط — يصلح للتجربة والتثبيت اليدوي،
+      # لا للنشر الرسمي على متجر Play (راجع android/SETUP.md).
+      - name: Restore or generate the signing keystore
         working-directory: android/app
         run: |
-          if [ -f android.keystore ]; then
-            printf '%s\n%s\n' "$KS_PASS" "$KEY_PASS" | bubblewrap build --skipPwaValidation \
-              --signingKeyPath=android.keystore \
-              --signingKeyAlias="$KEY_ALIAS"
+          if [ "$HAS_KEYSTORE" = "true" ]; then
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android.keystore
           else
-            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret set - building with a fresh throwaway key. Fine for sideload-testing this run's APK, but every future build will be signed differently until a persistent keystore secret is added (see android/SETUP.md)."
-            bubblewrap build --skipPwaValidation
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret set - generating a throwaway signing key. Fine for sideload-testing this run's APK, but every future build will be signed differently until a persistent keystore secret is added (see android/SETUP.md)."
+            keytool -genkeypair -noprompt -keystore android.keystore -alias android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$KS_PASS" -keypass "$KEY_PASS" \
+              -dname "CN=AcademicQuran, OU=CI, O=Beta1o, L=NA, ST=NA, C=US"
           fi
         env:
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'android' }}
+
+      - name: Build the signed APK
+        working-directory: android/app
+        run: npx bubblewrap build --skipPwaValidation
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

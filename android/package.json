@@ -1,0 +1,8 @@
+{
+  "name": "academicquran-android-twa",
+  "private": true,
+  "description": "TWA (Trusted Web Activity) project generator/build config for the Android app wrapping the AcademicQuran site.",
+  "dependencies": {
+    "@bubblewrap/cli": "^1.25.0"
+  }
+}
