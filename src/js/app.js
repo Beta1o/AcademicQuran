@@ -371,11 +371,16 @@ var Locale = (function(){
        السؤال الأصلي — لا يُعاد كتابته أبدًا مهما كانت اللغة، فيُستبعد أي
        احتمال خطأ في نقله. ما لا يملك ترجمة قالب معروفة يبقى بعربيته الأصلية
        تلقائيًا (تدهور سلس، لا نص مفقود). */
-    var tpl = cat && cat.tpl;
+    var tpl = cat && cat.tpl, terms = cat && cat.term;
     document.querySelectorAll('[data-i18n-tpl]').forEach(function(node){
       var key=node.dataset.i18nTpl, word=node.dataset.i18nWord;
       var phrase = (tpl && tpl[key]) || key;
-      node.textContent = word!==undefined ? phrase.replace('{}', word) : phrase;
+      /* بعض الكلمات بين القوسين ليست منقولة من نص الآية بل مصطلحات لغوية عامة
+         (كـ«شدّة» أو «تنوين ضم») يمكن ترجمتها كسائر النص؛ تُترجَم هذه فقط إن
+         وُجدت في قاموس المصطلحات المعروف — أي كلمة أخرى غير مدرَجة فيه تُعامَل
+         بحذر بصفتها كلمة قرآنية فعلية وتبقى عربية حرفيًا كما وردت. */
+      var out = word!==undefined ? phrase.replace('{}', (terms && terms[word]) || word) : phrase;
+      node.textContent = out;
     });
     /* أسماء السور داخل عنوان الورقة — على عكس كلمات الأسئلة، اسم السورة نفسه
        يُترجَم (له اسم معروف بكل لغة)، فقط نص القرآن وكلماته يبقى عربيًا دائمًا. */

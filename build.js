@@ -707,13 +707,13 @@ const blocks=W.map((w,wi)=>{
       } else if(c.ui==='check'){
         field=`<div class="checkrow"><label><input type="checkbox" data-k="${key}"> تم ✓</label></div>`;
       } else if(c.ui==='check2'){
-        field=`<div class="checkrow"><label><input type="checkbox" data-k="${key}"> تم التحويط على الورقة ✓</label></div>`;
+        field=`<div class="checkrow"><label><input type="checkbox" data-k="${key}"> <span data-i18n="checkDone">تم التحويط على الورقة ✓</span></label></div>`;
       } else if(c.ui==='seg'){
-        field=`<input type="text" class="seg" data-k="${key}" data-ui="seg" data-parts="${c.parts.join(',')}"${ansAttr}${showAttr} placeholder="اكتب الحروف — تُفصَل بـ + تلقائيًا" autocomplete="off">`;
+        field=`<input type="text" class="seg" data-k="${key}" data-ui="seg" data-parts="${c.parts.join(',')}"${ansAttr}${showAttr} placeholder="اكتب الحروف — تُفصَل بـ + تلقائيًا" data-i18n-ph="segPh" autocomplete="off">`;
       } else if(c.ui==='num'){
-        field=`<input type="text" data-k="${key}" data-ui="num" inputmode="numeric"${ansAttr}${showAttr} placeholder="اكتب العدد...">`;
+        field=`<input type="text" data-k="${key}" data-ui="num" inputmode="numeric"${ansAttr}${showAttr} placeholder="اكتب العدد..." data-i18n-ph="numPh">`;
       } else {
-        field=`<input type="text" data-k="${key}" data-ui="text"${ansAttr}${dynAttr}${showAttr}${modeAttr} placeholder="اكتب إجابتك...">`;
+        field=`<input type="text" data-k="${key}" data-ui="text"${ansAttr}${dynAttr}${showAttr}${modeAttr} placeholder="اكتب إجابتك..." data-i18n-ph="textPh">`;
       }
       /* دعم الترجمة: نفصل الكلمة/الحرف القرآني (بين قوسين) عن صيغة السؤال المحيطة بها،
          فتبقى الكلمة عربية كما وردت حرفيًا في نص السؤال الأصلي (لا تُعاد كتابتها أبدًا)،
@@ -723,11 +723,11 @@ const blocks=W.map((w,wi)=>{
       const qTplAttr = qm
         ? ` data-i18n-tpl="${esc(q.slice(0,qm.index)+'({})'+q.slice(qm.index+qm[0].length))}" data-i18n-word="${esc(qm[1])}"`
         : ` data-i18n-tpl="${esc(q)}"`;
-      return `<div class="q" data-lvl="${lvl}"><span class="num">${n}</span><div class="body"><div class="txt"><span class="qtxt"${qTplAttr}>${esc(q)}</span> <span class="lvl lvl-${lvl}">${LEVELS[lvl-1]}</span></div>${field}<div class="hint" hidden></div></div></div>`;
+      return `<div class="q" data-lvl="${lvl}"><span class="num">${n}</span><div class="body"><div class="txt"><span class="qtxt"${qTplAttr}>${esc(q)}</span> <span class="lvl lvl-${lvl}" data-i18n="lvl${lvl}">${LEVELS[lvl-1]}</span></div>${field}<div class="hint" hidden></div></div></div>`;
     }).join('\n');
     return `<section class="sec"><div class="sec-head"><span class="lens-badge">${['١','٢','٣'][si]||si+1}</span><h3 data-i18n-tpl="${esc(s.t)}">${esc(s.t)}</h3><span class="rule"></span></div><div class="qlist">${items}</div></section>`;
   }).join('\n');
-  const lvlLegend=LEVELS.map((L,i)=>lvlCount[i]?`<span class="lvl lvl-${i+1}">${L} ${toAr(lvlCount[i])}</span>`:'').filter(Boolean).join('');
+  const lvlLegend=LEVELS.map((L,i)=>lvlCount[i]?`<span class="lvl lvl-${i+1}"><span data-i18n="lvl${i+1}">${L}</span> ${toAr(lvlCount[i])}</span>`:'').filter(Boolean).join('');
   const total=w.secs.reduce((a,s)=>a+s.q.length,0);
   const loc=locText(w), ltag=locTag(w);
   /* قائمة أرقام الآيات الفعلية المعروضة نصًّا — تُستخدم لجلب صوت التلاوة، فتُطابق

@@ -342,20 +342,20 @@ function qHTML(item,key,n){
   var showAttr=item.show?' data-show="'+escA(item.show)+'"':'';
   var modeAttr=item.mode?' data-mode="'+item.mode+'"':'';
   var field='';
-  if(item.ui==='seg') field='<input type="text" class="seg" data-k="'+key+'" data-ui="seg" data-parts="'+item.parts.join(',')+'"'+ansAttr+showAttr+' placeholder="اكتب الحروف — تُفصَل بـ + تلقائيًا" autocomplete="off">';
-  else if(item.ui==='num') field='<input type="text" data-k="'+key+'" data-ui="num" inputmode="numeric"'+ansAttr+showAttr+' placeholder="اكتب العدد...">';
+  if(item.ui==='seg') field='<input type="text" class="seg" data-k="'+key+'" data-ui="seg" data-parts="'+item.parts.join(',')+'"'+ansAttr+showAttr+' placeholder="اكتب الحروف — تُفصَل بـ + تلقائيًا" data-i18n-ph="segPh" autocomplete="off">';
+  else if(item.ui==='num') field='<input type="text" data-k="'+key+'" data-ui="num" inputmode="numeric"'+ansAttr+showAttr+' placeholder="اكتب العدد..." data-i18n-ph="numPh">';
   else if(item.ui==='check') field='<div class="checkrow"><label><input type="checkbox" data-k="'+key+'"> تم ✓</label></div>';
   else if(item.ui==='mcq'){
     field='<div class="mcqopts">'+item.opts.map(function(o,i){return '<label><input type="radio" name="'+key+'" value="'+i+'"> '+escA(o)+'</label>';}).join('')+'</div>'+
       '<input type="hidden" data-k="'+key+'" data-ui="text"'+ansAttr+showAttr+'>';
-  } else field='<input type="text" data-k="'+key+'" data-ui="text"'+ansAttr+dynAttr+showAttr+modeAttr+' placeholder="اكتب إجابتك...">';
+  } else field='<input type="text" data-k="'+key+'" data-ui="text"'+ansAttr+dynAttr+showAttr+modeAttr+' placeholder="اكتب إجابتك..." data-i18n-ph="textPh">';
   var lv=rateItem(item);
   var qm=item.t.match(/\(([^)]*)\)/);
   var qTplAttr = qm
     ? ' data-i18n-tpl="'+escA(item.t.slice(0,qm.index)+'({})'+item.t.slice(qm.index+qm[0].length))+'" data-i18n-word="'+escA(qm[1])+'"'
     : ' data-i18n-tpl="'+escA(item.t)+'"';
   return '<div class="q custom" data-lvl="'+lv+'"><span class="num">'+n+'</span><div class="body"><div class="txt"><span class="qtxt"'+qTplAttr+'>'+escA(item.t)+'</span>'+
-    ' <span class="lvl lvl-'+lv+'">'+LVL_LABELS[lv-1]+'</span></div>'+field+'<div class="hint" hidden></div></div></div>';
+    ' <span class="lvl lvl-'+lv+'" data-i18n="lvl'+lv+'">'+LVL_LABELS[lv-1]+'</span></div>'+field+'<div class="hint" hidden></div></div></div>';
 }
 function bindQ(root){
   root.querySelectorAll('[data-k]').forEach(function(el){
