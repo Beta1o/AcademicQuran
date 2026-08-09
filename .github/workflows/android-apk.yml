@@ -38,11 +38,17 @@ jobs:
       - name: Install Bubblewrap CLI
         run: npm install -g @bubblewrap/cli
 
-      # يهيّئ ملف إعداد Bubblewrap بمسارَي JDK وAndroid SDK الجاهزين مسبقًا
-      # على العدّاد، فلا يحاول lاحقًا تثبيتهما تفاعليًا (بيئة CI بلا طرفية تفاعلية،
-      # وأي سؤال تفاعلي هناك يوقف التشغيل فورًا لعدم وجود مُدخِل يجيب عليه).
+      # يهيّئ ملف إعداد Bubblewrap مباشرةً بمسارَي JDK وAndroid SDK الجاهزين
+      # مسبقًا على العدّاد. لم ينفع تمرير --jdkPath/--androidSdkPath إلى الأمر
+      # `updateConfig` نفسه: ذلك الأمر يستدعي داخليًا نفس منطق الإعداد التفاعلي
+      # طالما لا يوجد ملف إعداد بعد، فيسأل ولا يوجد من يجيب في CI ويتوقف
+      # التشغيل. كتابة الملف مباشرة (بنفس مساره وبنيته التي يقرأها Bubblewrap:
+      # ~/.bubblewrap/config.json) يتفادى الاستدعاء التفاعلي من أصله.
       - name: Pre-configure Bubblewrap (skip interactive JDK/SDK setup)
-        run: bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$ANDROID_HOME"
+        run: |
+          mkdir -p "$HOME/.bubblewrap"
+          printf '{"jdkPath":"%s","androidSdkPath":"%s"}\n' "$JAVA_HOME" "$ANDROID_HOME" > "$HOME/.bubblewrap/config.json"
+          cat "$HOME/.bubblewrap/config.json"
 
       - name: Initialize the TWA Android project
         working-directory: android
