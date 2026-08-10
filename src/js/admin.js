@@ -57,7 +57,8 @@ function wsHTML(ws){
     ? (ws.num?'<span data-i18n-tpl="السورة {}" data-i18n-word="'+toArD2(ws.num)+'">السورة '+toArD2(ws.num)+'</span>':'')
     : (ws.aya?'<span data-i18n-tpl="الآية {}" data-i18n-word="'+toArD2(ws.aya)+'">الآية '+toArD2(ws.aya)+'</span>':'');
   var secs=(ws.secs||[]).map(function(t,i){
-    return '<section class="sec"><div class="sec-head"><span class="lens-badge">'+(['١','٢','٣'][i]||(i+1))+'</span>'+
+    var secNum=(['١','٢','٣'][i]||toArD2(i+1));
+    return '<section class="sec"><div class="sec-head"><span class="lens-badge" data-i18n-num="'+secNum+'">'+secNum+'</span>'+
       '<h3>'+escA(t)+'</h3><span class="rule"></span></div><div class="qlist"></div></section>';
   }).join('');
   var ayaListAttr = ' data-ayalist="'+segs.map(function(s,i){return start+i;}).join(',')+'"';

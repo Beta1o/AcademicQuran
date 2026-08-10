@@ -367,5 +367,9 @@
  "segPh": "Harfleri yazın — otomatik olarak + ile ayrılır",
  "numPh": "Sayıyı yazın...",
  "textPh": "Cevabınızı yazın...",
- "checkDone": "Kağıtta tamamlandı ✓"
+ "checkDone": "Kağıtta tamamlandı ✓",
+ "scoreCorrect": "Doğru: {}",
+ "scoreWrong": " — Yanlış: {}",
+ "drawPh": "Çizimini burada tarif et... (veya baskı sayfasına çiz)",
+ "drawBox": "✏️ Çizim alanı — basılı kopyada"
 }

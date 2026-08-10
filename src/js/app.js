@@ -84,7 +84,8 @@ function revealBtn(q,el,label){
   b.className='ansbtn'; b.type='button'; b.textContent=label;
   b.addEventListener('click',function(){
     var h=q.querySelector('.hint');
-    h.textContent=t('answerPrefix')+el.dataset.show; h.hidden=false; b.remove();
+    var shown=Locale.isDigits(el.dataset.show)?Locale.num(el.dataset.show):el.dataset.show;
+    h.textContent=t('answerPrefix')+shown; h.hidden=false; b.remove();
   });
   el.insertAdjacentElement('afterend', b);
 }
@@ -129,10 +130,12 @@ function updateProg(wsId){
     if(q.classList.contains('ok')) okc++;
     if(q.classList.contains('bad')) badc++;
   });
-  var f=page.querySelector('[data-pfill]'), t=page.querySelector('[data-ptxt]'), sc=page.querySelector('[data-score]');
+  var f=page.querySelector('[data-pfill]'), ptxt=page.querySelector('[data-ptxt]'), sc=page.querySelector('[data-score]');
   if(f) f.style.width=(els.length?100*done/els.length:0)+'%';
-  if(t) t.textContent=done+' / '+els.length;
-  if(sc) sc.textContent = (okc||badc)? ('صحيح: '+okc+(badc?' — خطأ: '+badc:'')) : '';
+  if(ptxt) ptxt.textContent=Locale.num(done)+' / '+Locale.num(els.length);
+  if(sc) sc.textContent = (okc||badc)
+    ? (Locale.t('scoreCorrect').replace('{}',Locale.num(okc)) + (badc?Locale.t('scoreWrong').replace('{}',Locale.num(badc)):''))
+    : '';
 }
 var noAutoScroll=false;
 function bindControls(root){
@@ -351,34 +354,44 @@ var Locale = (function(){
   var STORAGE_KEY = 'tahleel-locale';
   var NAMES = {ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe',ug:'ئۇيغۇرچە'};
   var DIRS  = {ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr',ug:'rtl'};
-  var catalogs = {}; // {en:{...}, ur:{...}, tr:{...}, ug:{...}} — كل شيء عدا العربية (الافتراضية المطبوعة في الصفحة أصلًا)
+  /* خمس لغات، بلا استثناء ولا حالة خاصة للعربية: كل لغة — العربية أيضًا —
+     قاموسها الكامل في src/data/i18n/<code>.json، يُقرأ من هنا فقط. لا نص
+     احتياطي مُكوَّد يدويًا في الشيفرة، ولا نص يُلتقَط من الصفحة وقت التحميل؛
+     مصدر الحقيقة الوحيد لأي نص مترجَم هو ملفات JSON هذه، فلا يفوتها شيء. */
+  var catalogs = {}; // {ar:{...}, en:{...}, ur:{...}, tr:{...}, ug:{...}}
   try{ var el=document.getElementById('i18nData'); if(el) catalogs=JSON.parse(el.textContent||'{}')||{}; }catch(e){ catalogs={}; }
-  var arStrings = {revealModel:'إظهار الإجابة النموذجية',revealCorrect:'إظهار الإجابة الصحيحة',answerPrefix:'الإجابة: ',openWsToggle:'افتح الورقة ▾',closeWsToggle:'إغلاق الورقة ▴'};
-  var arDefaults = {}; // النصوص العربية الأصلية كما طُبعت في الصفحة، تُستعاد عند العودة للعربية
-  document.querySelectorAll('[data-i18n]').forEach(function(node){ var k=node.dataset.i18n; if(!(k in arDefaults)) arDefaults[k]=node.textContent; });
-  document.querySelectorAll('[data-i18n-ph]').forEach(function(node){ var k=node.dataset.i18nPh; if(!(k in arDefaults)) arDefaults['ph:'+k]=node.getAttribute('placeholder'); });
 
   var current = 'ar';
   try{ current = localStorage.getItem(STORAGE_KEY) || 'ar'; }catch(e){}
 
   /* ترجمة نص واجهة يُنشأ ديناميكيًا وقت التشغيل (مثل زر إظهار الإجابة) — لا علاقة له بكلمات القرآن */
   function t(key){
-    var cat = catalogs[current];
-    return (cat && cat[key]) || arStrings[key] || key;
+    var cat = catalogs[current] || catalogs.ar || {};
+    return cat[key] || key;
   }
+  /* الأرقام قياسية عبر التطبيق كله حسب اللغة المختارة — عربية بأرقام هندية
+     (١٢٣) وأي لغة أخرى بأرقام غربية (123)، تمامًا كأي نص آخر تترجمه Locale؛
+     الاستثناء الوحيد الثابت يبقى نص القرآن وكلماته، لا الأرقام المحيطة به. */
+  var AR_DIGITS='٠١٢٣٤٥٦٧٨٩';
+  function toWestern(s){ return String(s).replace(/[٠-٩]/g,function(d){return String(AR_DIGITS.indexOf(d));}); }
+  function num(s){ return current==='ar' ? String(s) : toWestern(s); }
+  /* أهي سلسلة أرقام هندية بحتة (لا حرف عربي فيها)؟ فقط حينئذٍ يجوز تحويلها —
+     أي كلمة قرآنية فعلية بين القوسين (تُحفظ حرفيًا) لن تطابق هذا أبدًا */
+  function isDigits(s){ return /^[٠-٩]+$/.test(s); }
 
   function render(){
-    var isArabic = current==='ar';
-    var cat = isArabic ? null : (catalogs[current]||{});
+    /* كل لغة — بما فيها العربية — تُقرأ من نفس catalogs[code]؛ الوقوع على
+       العربية إن غاب قاموس لغة ما (لن يحدث فعليًا، الخمسة مُضمَّنة دائمًا) */
+    var cat = catalogs[current] || catalogs.ar || {};
     document.documentElement.setAttribute('lang', current);
     document.documentElement.setAttribute('dir', DIRS[current]||'rtl');
     document.querySelectorAll('[data-i18n]').forEach(function(node){
       var k=node.dataset.i18n;
-      node.textContent = cat ? (cat[k]||arDefaults[k]) : arDefaults[k];
+      if(cat[k]) node.textContent = cat[k];
     });
     document.querySelectorAll('[data-i18n-ph]').forEach(function(node){
       var k=node.dataset.i18nPh;
-      node.setAttribute('placeholder', cat ? (cat[k]||arDefaults['ph:'+k]) : arDefaults['ph:'+k]);
+      if(cat[k]) node.setAttribute('placeholder', cat[k]);
     });
     /* أسئلة الأوراق (وعناوين الأقسام والمعلومات وعدد الأسئلة، المدمَجة في نفس
        القاموس): تُترجَم الصياغة المحيطة عبر قاموس القوالب، بينما تبقى الكلمة/
@@ -395,8 +408,12 @@ var Locale = (function(){
          ترجمتها كسائر النص؛ تُترجَم هذه فقط إن وُجدت في قاموس معروف — أي كلمة
          أخرى غير مدرَجة فيهما تُعامَل بحذر بصفتها كلمة قرآنية فعلية وتبقى
          عربية حرفيًا كما وردت. */
-      var out = word!==undefined ? phrase.replace('{}', (terms && terms[word]) || (suraDict && suraDict[word]) || word) : phrase;
-      node.textContent = out;
+      var sub = word!==undefined ? ((terms && terms[word]) || (suraDict && suraDict[word]) || (isDigits(word) ? num(word) : word)) : null;
+      node.textContent = word!==undefined ? phrase.replace('{}', sub) : phrase;
+    });
+    /* أي رقم عرضته الصفحة وقت البناء (شارات الأقسام، عدّاد المستويات...) */
+    document.querySelectorAll('[data-i18n-num]').forEach(function(node){
+      node.textContent = num(node.dataset.i18nNum);
     });
     /* أسماء السور داخل عنوان الورقة — على عكس كلمات الأسئلة، اسم السورة نفسه
        يُترجَم (له اسم معروف بكل لغة)، فقط نص القرآن وكلماته يبقى عربيًا دائمًا. */
@@ -415,7 +432,7 @@ var Locale = (function(){
 
   render(); // أول عرض عند تحميل الصفحة، بحسب ما كان محفوظًا سابقًا (أو العربية افتراضيًا)
 
-  return { get current(){ return current; }, set: set, t: t, render: render, NAMES: NAMES, DIRS: DIRS };
+  return { get current(){ return current; }, set: set, t: t, render: render, num: num, isDigits: isDigits, NAMES: NAMES, DIRS: DIRS };
 })();
 window.Locale=Locale;
 /* توافق خلفي: بقية الشيفرة (وربما ملحقات مستقبلية) تنادي t() مباشرة */

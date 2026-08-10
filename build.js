@@ -74,7 +74,7 @@ const ANSWERS=JSON.parse(R('src/data/answers.json'));
 /* نص القرآن الكريم كاملًا (١١٤ سورة) — لتعبئة صفحة المدير تلقائيًا عند اختيار سورة */
 const QURAN_FULL=R('src/data/quran-full.json');
 /* قاموس ترجمة واجهة الموقع (الأزرار والتسميات فقط) — النصوص القرآنية والأسئلة تبقى عربية دائمًا */
-const I18N_LANGS=['en','ur','tr','ug'];
+const I18N_LANGS=['ar','en','ur','tr','ug'];
 const I18N=JSON.stringify(Object.fromEntries(I18N_LANGS.map(l=>[l,JSON.parse(R('src/data/i18n/'+l+'.json'))])));
 /* أسماء سور القرآن بالترتيب — لأسئلة «السورة السابقة/التالية» ورقم السورة */
 const SURA_NAMES=['الفاتحة','البقرة','آل عمران','النساء','المائدة','الأنعام','الأعراف','الأنفال','التوبة','يونس','هود','يوسف','الرعد','إبراهيم','الحجر','النحل','الإسراء','الكهف','مريم','طه','الأنبياء','الحج','المؤمنون','النور','الفرقان','الشعراء','النمل','القصص','العنكبوت','الروم','لقمان','السجدة','الأحزاب','سبأ','فاطر','يس','الصافات','ص','الزمر','غافر','فصلت','الشورى','الزخرف','الدخان','الجاثية','الأحقاف','محمد','الفتح','الحجرات','ق','الذاريات','الطور','النجم','القمر','الرحمن','الواقعة','الحديد','المجادلة','الحشر','الممتحنة','الصف','الجمعة','المنافقون','التغابن','الطلاق','التحريم','الملك','القلم','الحاقة','المعارج','نوح','الجن','المزمل','المدثر','القيامة','الإنسان','المرسلات','النبأ','النازعات','عبس','التكوير','الانفطار','المطففين','الانشقاق','البروج','الطارق','الأعلى','الغاشية','الفجر','البلد','الشمس','الليل','الضحى','الشرح','التين','العلق','القدر','البينة','الزلزلة','العاديات','القارعة','التكاثر','العصر','الهمزة','الفيل','قريش','الماعون','الكوثر','الكافرون','النصر','المسد','الإخلاص','الفلق','الناس'];
@@ -729,7 +729,7 @@ const blocks=W.map((w,wi)=>{
       if(c.ui==='act'){
         field=`<div class="checkrow"><label><input type="checkbox" data-k="${key}"> أدّيتُ النشاط ✓</label></div>`;
       } else if(c.ui==='draw'){
-        field=`<input type="text" data-k="${key}" placeholder="صف رسمتك هنا... (أو ارسم على الورقة المطبوعة)"><div class="drawbox">✏️ مساحة الرسم — على النسخة المطبوعة</div>`;
+        field=`<input type="text" data-k="${key}" placeholder="صف رسمتك هنا... (أو ارسم على الورقة المطبوعة)" data-i18n-ph="drawPh"><div class="drawbox" data-i18n="drawBox">✏️ مساحة الرسم — على النسخة المطبوعة</div>`;
       } else if(c.ui==='check'){
         field=`<div class="checkrow"><label><input type="checkbox" data-k="${key}"> تم ✓</label></div>`;
       } else if(c.ui==='check2'){
@@ -751,9 +751,10 @@ const blocks=W.map((w,wi)=>{
         : ` data-i18n-tpl="${esc(q)}"`;
       return `<div class="q" data-lvl="${lvl}"><span class="num">${n}</span><div class="body"><div class="txt"><span class="qtxt"${qTplAttr}>${esc(q)}</span> <span class="lvl lvl-${lvl}" data-i18n="lvl${lvl}">${LEVELS[lvl-1]}</span></div>${field}<div class="hint" hidden></div></div></div>`;
     }).join('\n');
-    return `<section class="sec"><div class="sec-head"><span class="lens-badge">${['١','٢','٣'][si]||si+1}</span><h3 data-i18n-tpl="${esc(s.t)}">${esc(s.t)}</h3><span class="rule"></span></div><div class="qlist">${items}</div></section>`;
+    const secNum=['١','٢','٣'][si]||toAr(si+1);
+    return `<section class="sec"><div class="sec-head"><span class="lens-badge" data-i18n-num="${secNum}">${secNum}</span><h3 data-i18n-tpl="${esc(s.t)}">${esc(s.t)}</h3><span class="rule"></span></div><div class="qlist">${items}</div></section>`;
   }).join('\n');
-  const lvlLegend=LEVELS.map((L,i)=>lvlCount[i]?`<span class="lvl lvl-${i+1}"><span data-i18n="lvl${i+1}">${L}</span> ${toAr(lvlCount[i])}</span>`:'').filter(Boolean).join('');
+  const lvlLegend=LEVELS.map((L,i)=>lvlCount[i]?`<span class="lvl lvl-${i+1}"><span data-i18n="lvl${i+1}">${L}</span> <span data-i18n-num="${toAr(lvlCount[i])}">${toAr(lvlCount[i])}</span></span>`:'').filter(Boolean).join('');
   const total=w.secs.reduce((a,s)=>a+s.q.length,0);
   const loc=locText(w), ltag=locTag(w);
   /* قائمة أرقام الآيات الفعلية المعروضة نصًّا — تُستخدم لجلب صوت التلاوة، فتُطابق
@@ -922,7 +923,7 @@ ${blocks}
 </main>
 ${adminHtml}
 <footer class="site-foot">
-  <div>﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</div>
+  <div dir="rtl">﴿ وَقُل رَّبِّ زِدْنِي عِلْمًا ﴾</div>
   <span class="ver">التحليل اللغوي المجهري — الإصدار ${VERSION} · بُني بتاريخ ${BUILD_DATE} · ${W.length} ورقة · ${totQ} سؤالًا</span>
 </footer>
 <script type="application/json" id="customws">[]</script>

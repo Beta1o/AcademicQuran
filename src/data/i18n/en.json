@@ -367,5 +367,9 @@
  "segPh": "Type the letters — separated by + automatically",
  "numPh": "Type the number...",
  "textPh": "Type your answer...",
- "checkDone": "Done on the paper ✓"
+ "checkDone": "Done on the paper ✓",
+ "scoreCorrect": "Correct: {}",
+ "scoreWrong": " — Wrong: {}",
+ "drawPh": "Describe your drawing here... (or draw on the printed page)",
+ "drawBox": "✏️ Drawing space — on the printed copy"
 }
