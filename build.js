@@ -75,7 +75,25 @@ const ANSWERS=JSON.parse(R('src/data/answers.json'));
 const QURAN_FULL=R('src/data/quran-full.json');
 /* قاموس ترجمة واجهة الموقع (الأزرار والتسميات فقط) — النصوص القرآنية والأسئلة تبقى عربية دائمًا */
 const I18N_LANGS=['ar','en','ur','tr','ug'];
-const I18N=JSON.stringify(Object.fromEntries(I18N_LANGS.map(l=>[l,JSON.parse(R('src/data/i18n/'+l+'.json'))])));
+/* معرّف قالب مستقر ومحايد اللغة، يُشتق من نص القالب العربي وقت البناء فقط —
+   لا يبقى أي نص عربي حرفي كمفتاح بحث وقت التشغيل، فلا صلة بين "المفتاح"
+   وأي لغة بعينها. src/data/i18n/*.json تبقى مقروءة بمفاتيح عربية (سهلة على
+   المترجم)، ويُعاد ترقيمها إلى هذه المعرّفات هنا فقط عند التضمين في الصفحة. */
+function tid(s){
+  var h=5381;
+  for(var i=0;i<s.length;i++){ h=((h*33)^s.charCodeAt(i))>>>0; }
+  return 't'+h.toString(36);
+}
+function rekeyTpl(cat){
+  var out=Object.assign({},cat);
+  ['tpl','term','sura'].forEach(function(section){
+    if(!cat[section]) return;
+    out[section]={};
+    Object.keys(cat[section]).forEach(function(k){ out[section][tid(k)]=cat[section][k]; });
+  });
+  return out;
+}
+const I18N=JSON.stringify(Object.fromEntries(I18N_LANGS.map(l=>[l,rekeyTpl(JSON.parse(R('src/data/i18n/'+l+'.json')))])));
 /* أسماء سور القرآن بالترتيب — لأسئلة «السورة السابقة/التالية» ورقم السورة */
 const SURA_NAMES=['الفاتحة','البقرة','آل عمران','النساء','المائدة','الأنعام','الأعراف','الأنفال','التوبة','يونس','هود','يوسف','الرعد','إبراهيم','الحجر','النحل','الإسراء','الكهف','مريم','طه','الأنبياء','الحج','المؤمنون','النور','الفرقان','الشعراء','النمل','القصص','العنكبوت','الروم','لقمان','السجدة','الأحزاب','سبأ','فاطر','يس','الصافات','ص','الزمر','غافر','فصلت','الشورى','الزخرف','الدخان','الجاثية','الأحقاف','محمد','الفتح','الحجرات','ق','الذاريات','الطور','النجم','القمر','الرحمن','الواقعة','الحديد','المجادلة','الحشر','الممتحنة','الصف','الجمعة','المنافقون','التغابن','الطلاق','التحريم','الملك','القلم','الحاقة','المعارج','نوح','الجن','المزمل','المدثر','القيامة','الإنسان','المرسلات','النبأ','النازعات','عبس','التكوير','الانفطار','المطففين','الانشقاق','البروج','الطارق','الأعلى','الغاشية','الفجر','البلد','الشمس','الليل','الضحى','الشرح','التين','العلق','القدر','البينة','الزلزلة','العاديات','القارعة','التكاثر','العصر','الهمزة','الفيل','قريش','الماعون','الكوثر','الكافرون','النصر','المسد','الإخلاص','الفلق','الناس'];
 /* أسماء الحروف → الحرف نفسه */
@@ -120,15 +138,15 @@ function locHTML(w){
   const n=SURA_NO[w.id];
   if(w.cat==='surah'){
     const parts=[];
-    if(n) parts.push(`<span data-i18n-tpl="السورة رقم {} في المصحف" data-i18n-word="${toAr(n)}">السورة رقم ${toAr(n)} في المصحف</span>`);
-    if(AYAT[w.id]) parts.push(`<span data-i18n-tpl="عدد آياتها {}" data-i18n-word="${toAr(AYAT[w.id])}">عدد آياتها ${toAr(AYAT[w.id])}</span>`);
+    if(n) parts.push(`<span data-i18n-tpl="${tid('السورة رقم {} في المصحف')}" data-i18n-word="${toAr(n)}">السورة رقم ${toAr(n)} في المصحف</span>`);
+    if(AYAT[w.id]) parts.push(`<span data-i18n-tpl="${tid('عدد آياتها {}')}" data-i18n-word="${toAr(AYAT[w.id])}">عدد آياتها ${toAr(AYAT[w.id])}</span>`);
     return parts.join(' · ');
   }
   const parts=[];
   if(AYA_TXT[w.id]) parts.push(esc(AYA_TXT[w.id]));
-  else if(AYA_NUM[w.id]) parts.push(`<span data-i18n-tpl="الآية {}" data-i18n-word="${toAr(AYA_NUM[w.id])}">الآية ${toAr(AYA_NUM[w.id])}</span>`);
-  if(SURA_OF[w.id]) parts.push(`<span data-i18n-tpl="من سورة {}" data-i18n-word="${esc(SURA_OF[w.id])}">من سورة ${esc(SURA_OF[w.id])}</span>`);
-  if(n) parts.push(`(<span data-i18n-tpl="السورة رقم {} في المصحف" data-i18n-word="${toAr(n)}">السورة رقم ${toAr(n)} في المصحف</span>)`);
+  else if(AYA_NUM[w.id]) parts.push(`<span data-i18n-tpl="${tid('الآية {}')}" data-i18n-word="${toAr(AYA_NUM[w.id])}">الآية ${toAr(AYA_NUM[w.id])}</span>`);
+  if(SURA_OF[w.id]) parts.push(`<span data-i18n-tpl="${tid('من سورة {}')}" data-i18n-word="${esc(SURA_OF[w.id])}">من سورة ${esc(SURA_OF[w.id])}</span>`);
+  if(n) parts.push(`(<span data-i18n-tpl="${tid('السورة رقم {} في المصحف')}" data-i18n-word="${toAr(n)}">السورة رقم ${toAr(n)} في المصحف</span>)`);
   return parts.join(' ');
 }
 /* اسم الورقة قابل للترجمة جزئيًا: "سورة X" أو "سورة X — Y" — تُترجَم كلمة
@@ -148,7 +166,7 @@ function locTag(w){
 /* بطاقة الموقع المختصرة على الغلاف — مقسّمة لمقاطع قابلة للترجمة كسابقتها */
 function locTagHTML(w){
   const n=SURA_NO[w.id];
-  if(w.cat==='surah') return n?`<span data-i18n-tpl="السورة {}" data-i18n-word="${toAr(n)}">السورة ${toAr(n)}</span>`:'';
+  if(w.cat==='surah') return n?`<span data-i18n-tpl="${tid('السورة {}')}" data-i18n-word="${toAr(n)}">السورة ${toAr(n)}</span>`:'';
   const a=AYA_NUM[w.id];
   const suraPart = SURA_OF[w.id] ? `<span data-i18n-name="${esc(SURA_OF[w.id])}">${esc(SURA_OF[w.id])}</span>` : '';
   return suraPart+(a?' '+toAr(a):'');
@@ -747,12 +765,12 @@ const blocks=W.map((w,wi)=>{
          الترجمة في span مستقل خاص بها كي لا يمسح استبدال النص شارة المستوى المجاورة. */
       const qm=q.match(/\(([^)]*)\)/);
       const qTplAttr = qm
-        ? ` data-i18n-tpl="${esc(q.slice(0,qm.index)+'({})'+q.slice(qm.index+qm[0].length))}" data-i18n-word="${esc(qm[1])}"`
-        : ` data-i18n-tpl="${esc(q)}"`;
+        ? ` data-i18n-tpl="${tid(q.slice(0,qm.index)+'({})'+q.slice(qm.index+qm[0].length))}" data-i18n-word="${esc(qm[1])}"`
+        : ` data-i18n-tpl="${tid(q)}"`;
       return `<div class="q" data-lvl="${lvl}"><span class="num">${n}</span><div class="body"><div class="txt"><span class="qtxt"${qTplAttr}>${esc(q)}</span> <span class="lvl lvl-${lvl}" data-i18n="lvl${lvl}">${LEVELS[lvl-1]}</span></div>${field}<div class="hint" hidden></div></div></div>`;
     }).join('\n');
     const secNum=['١','٢','٣'][si]||toAr(si+1);
-    return `<section class="sec"><div class="sec-head"><span class="lens-badge" data-i18n-num="${secNum}">${secNum}</span><h3 data-i18n-tpl="${esc(s.t)}">${esc(s.t)}</h3><span class="rule"></span></div><div class="qlist">${items}</div></section>`;
+    return `<section class="sec"><div class="sec-head"><span class="lens-badge" data-i18n-num="${secNum}">${secNum}</span><h3 data-i18n-tpl="${tid(s.t)}">${esc(s.t)}</h3><span class="rule"></span></div><div class="qlist">${items}</div></section>`;
   }).join('\n');
   const lvlLegend=LEVELS.map((L,i)=>lvlCount[i]?`<span class="lvl lvl-${i+1}"><span data-i18n="lvl${i+1}">${L}</span> <span data-i18n-num="${toAr(lvlCount[i])}">${toAr(lvlCount[i])}</span></span>`:'').filter(Boolean).join('');
   const total=w.secs.reduce((a,s)=>a+s.q.length,0);
@@ -773,7 +791,7 @@ const blocks=W.map((w,wi)=>{
     </div>
     <h3>${nameHTML(w)}</h3>
     <div class="vpeek">﴿ ${verseHTML(w)} ﴾</div>
-    <div class="cmeta"><span class="prog-mini" data-i18n-tpl="{} سؤالًا" data-i18n-word="${toAr(total)}">${total} سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>
+    <div class="cmeta"><span class="prog-mini" data-i18n-tpl="${tid('{} سؤالًا')}" data-i18n-word="${toAr(total)}">${total} سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>
   </summary>
   <div class="ws">
     <div class="ws-top">
@@ -786,7 +804,7 @@ const blocks=W.map((w,wi)=>{
       <header class="sheet-head">
         <div class="lab-line">${esc(w.lab)}</div>
         <h2>${nameHTML(w)}</h2>
-        <div class="info" data-i18n-tpl="${esc(w.info)}">${esc(w.info)}</div>
+        <div class="info" data-i18n-tpl="${tid(w.info)}">${esc(w.info)}</div>
         ${loc?`<div class="loc">📍 ${locHTML(w)}</div>`:''}
         <div class="lvl-legend"><span data-i18n="lvlLegendLabel">مستويات الأسئلة:</span> ${lvlLegend}</div>
       </header>
@@ -796,7 +814,7 @@ const blocks=W.map((w,wi)=>{
       </div>
       <div class="progress js-only"><div class="pbar"><i data-pfill="${w.id}" style="width:0%"></i></div><b data-ptxt="${w.id}">0 / ${total}</b><b class="score" data-score="${w.id}"></b></div>
       ${secs}
-      <footer class="sheet-foot"><div class="fv">${esc(w.footV)}</div>${w.footM?`<div class="fm" data-i18n-tpl="${esc(w.footM)}">${esc(w.footM)}</div>`:''}</footer>
+      <footer class="sheet-foot"><div class="fv">${esc(w.footV)}</div>${w.footM?`<div class="fm" data-i18n-tpl="${tid(w.footM)}">${esc(w.footM)}</div>`:''}</footer>
     </article>
     <div class="ws-close"><button class="act" data-close="${w.id}" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>
   </div>

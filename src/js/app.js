@@ -352,8 +352,16 @@ var Popover=(function(){
    لأنها منسوخة حرفيًا من الآية نفسها لا "مترجمة". ---------------------- */
 var Locale = (function(){
   var STORAGE_KEY = 'tahleel-locale';
-  var NAMES = {ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe',ug:'ئۇيغۇرچە'};
-  var DIRS  = {ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr',ug:'rtl'};
+  /* اللغة الافتراضية عند غياب اختيار محفوظ أو عند طلب كود لغة غير موجود —
+     قيمة إعداد واحدة، لا حالة خاصة مكرّرة في كل دالة. */
+  var DEFAULT_LOCALE = 'ar';
+  var NAMES  = {ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe',ug:'ئۇيغۇرچە'};
+  var DIRS   = {ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr',ug:'rtl'};
+  /* رقم كل لغة الخاص بها — عشرة أرقام مرتّبة ٠..٩؛ العربية وحدها تستخدم
+     الأرقام الهندية، وباقي اللغات غربية، لكن التحويل أدناه لا يفضّل أيًّا
+     منها: يُترجَم دومًا إلى مجموعة رقم current الحالية أيًّا كانت. */
+  var DIGIT_SETS = {ar:'٠١٢٣٤٥٦٧٨٩',en:'0123456789',ur:'0123456789',tr:'0123456789',ug:'0123456789'};
+  var SRC_DIGITS = DIGIT_SETS.ar; // كل الأرقام في نص القوالب واردة بهذه الصورة أصلًا
   /* خمس لغات، بلا استثناء ولا حالة خاصة للعربية: كل لغة — العربية أيضًا —
      قاموسها الكامل في src/data/i18n/<code>.json، يُقرأ من هنا فقط. لا نص
      احتياطي مُكوَّد يدويًا في الشيفرة، ولا نص يُلتقَط من الصفحة وقت التحميل؛
@@ -361,8 +369,8 @@ var Locale = (function(){
   var catalogs = {}; // {ar:{...}, en:{...}, ur:{...}, tr:{...}, ug:{...}}
   try{ var el=document.getElementById('i18nData'); if(el) catalogs=JSON.parse(el.textContent||'{}')||{}; }catch(e){ catalogs={}; }
 
-  var current = 'ar';
-  try{ current = localStorage.getItem(STORAGE_KEY) || 'ar'; }catch(e){}
+  var current = DEFAULT_LOCALE;
+  try{ current = localStorage.getItem(STORAGE_KEY) || DEFAULT_LOCALE; }catch(e){}
 
   /* القاموس الحالي — متغيّر واحد عام يُشتق من اللغة المختارة فقط (current)،
      لا تفضيل ثابت لأي لغة بعينها بما فيها العربية؛ كل قراءة نص في التطبيق
@@ -373,22 +381,33 @@ var Locale = (function(){
   function t(key){
     return catalog()[key] || key;
   }
-  /* الأرقام قياسية عبر التطبيق كله حسب اللغة المختارة — عربية بأرقام هندية
-     (١٢٣) وأي لغة أخرى بأرقام غربية (123)، تمامًا كأي نص آخر تترجمه Locale؛
+  /* الأرقام قياسية عبر التطبيق كله حسب اللغة المختارة — تُحوَّل دومًا إلى
+     مجموعة رقم current من DIGIT_SETS، بلا أي فرع خاص بأي لغة بعينها؛
      الاستثناء الوحيد الثابت يبقى نص القرآن وكلماته، لا الأرقام المحيطة به. */
-  var AR_DIGITS='٠١٢٣٤٥٦٧٨٩';
-  function toWestern(s){ return String(s).replace(/[٠-٩]/g,function(d){return String(AR_DIGITS.indexOf(d));}); }
-  function num(s){ return current==='ar' ? String(s) : toWestern(s); }
+  function num(s){
+    var target = DIGIT_SETS[current] || DIGIT_SETS[DEFAULT_LOCALE];
+    return String(s).replace(/[٠-٩]/g,function(d){ return target[SRC_DIGITS.indexOf(d)]; });
+  }
   /* أهي سلسلة أرقام هندية بحتة (لا حرف عربي فيها)؟ فقط حينئذٍ يجوز تحويلها —
      أي كلمة قرآنية فعلية بين القوسين (تُحفظ حرفيًا) لن تطابق هذا أبدًا */
   function isDigits(s){ return /^[٠-٩]+$/.test(s); }
+  /* معرّف مستقر ومحايد اللغة، مُشتق من أي نص عربي (قالب سؤال، مصطلح، اسم سورة) —
+     نفس خوارزمية tid في build.js حرفيًا؛ يُستخدَم كمفتاح بحث في tpl/term/sura
+     بدل النص العربي نفسه، فلا يبقى نص عربي كمفتاح بحث وقت التشغيل. يعمل
+     بالتساوي على الكلمات المُضافة وقت البناء أو المُضافة لاحقًا من صفحة المدير،
+     لأن الحساب يتم هنا وقت العرض لا وقت البناء فقط. */
+  function tid(s){
+    var h=5381;
+    for(var i=0;i<s.length;i++){ h=((h*33)^s.charCodeAt(i))>>>0; }
+    return 't'+h.toString(36);
+  }
 
   function render(){
     /* كل لغة — بما فيها العربية — تُقرأ من نفس catalog() العامة، لا تفضيل
        لأي لغة بعينها في منطق القراءة نفسه */
     var cat = catalog();
     document.documentElement.setAttribute('lang', current);
-    document.documentElement.setAttribute('dir', DIRS[current]||'rtl');
+    document.documentElement.setAttribute('dir', DIRS[current]||DIRS[DEFAULT_LOCALE]);
     document.querySelectorAll('[data-i18n]').forEach(function(node){
       var k=node.dataset.i18n;
       if(cat[k]) node.textContent = cat[k];
@@ -404,15 +423,26 @@ var Locale = (function(){
        احتمال خطأ في نقله. ما لا يملك ترجمة قالب معروفة يبقى بعربيته الأصلية
        تلقائيًا (تدهور سلس، لا نص مفقود). */
     var tpl = cat && cat.tpl, terms = cat && cat.term, suraDict = cat && cat.sura;
+    /* قاموس اللغة الافتراضية، يُستخدَم فقط حين لا تملك اللغة الحالية ترجمة
+       لمعرّف بعينه (نادر عمليًا) — بديل معروض، لا نص عربي مكتوب مباشرة في
+       الشيفرة، فيبقى المصدر الوحيد للنص هو ملفات JSON دومًا. */
+    var fallbackCat = catalogs[DEFAULT_LOCALE] || {};
+    var fbTpl = fallbackCat.tpl, fbTerms = fallbackCat.term, fbSura = fallbackCat.sura;
     document.querySelectorAll('[data-i18n-tpl]').forEach(function(node){
       var key=node.dataset.i18nTpl, word=node.dataset.i18nWord;
-      var phrase = (tpl && tpl[key]) || key;
+      var phrase = (tpl && tpl[key]) || (fbTpl && fbTpl[key]);
+      /* لا ترجمة معروفة لهذا القالب في أي قاموس (لا الحالي ولا الافتراضي) —
+         يبقى النص العربي المطبوع وقت البناء كما هو دون تغيير، بدل عرض معرّف
+         مجرّد لا معنى له للمستخدم؛ تدهور سلس حقيقي، لا نص مفقود ولا نص مكسور. */
+      if(!phrase) return;
       /* بعض الكلمات بين القوسين ليست منقولة من نص الآية بل مصطلحات لغوية عامة
          (كـ«شدّة» أو «تنوين ضم») أو اسم سورة (كموقع الآية "من سورة X") يمكن
-         ترجمتها كسائر النص؛ تُترجَم هذه فقط إن وُجدت في قاموس معروف — أي كلمة
+         ترجمتها كسائر النص؛ تُترجَم هذه فقط إن وُجدت في قاموس معروف (بحثًا
+         بمعرّف مشتق من الكلمة عبر tid، لا بالكلمة العربية نفسها) — أي كلمة
          أخرى غير مدرَجة فيهما تُعامَل بحذر بصفتها كلمة قرآنية فعلية وتبقى
          عربية حرفيًا كما وردت. */
-      var sub = word!==undefined ? ((terms && terms[word]) || (suraDict && suraDict[word]) || (isDigits(word) ? num(word) : word)) : null;
+      var wid = word!==undefined ? tid(word) : null;
+      var sub = word!==undefined ? ((terms && terms[wid]) || (suraDict && suraDict[wid]) || (isDigits(word) ? num(word) : word)) : null;
       node.textContent = word!==undefined ? phrase.replace('{}', sub) : phrase;
     });
     /* أي رقم عرضته الصفحة وقت البناء (شارات الأقسام، عدّاد المستويات...) */
@@ -422,21 +452,21 @@ var Locale = (function(){
     /* أسماء السور داخل عنوان الورقة — على عكس كلمات الأسئلة، اسم السورة نفسه
        يُترجَم (له اسم معروف بكل لغة)، فقط نص القرآن وكلماته يبقى عربيًا دائمًا. */
     document.querySelectorAll('[data-i18n-name]').forEach(function(node){
-      var ar=node.dataset.i18nName;
-      node.textContent = (suraDict && suraDict[ar]) || ar;
+      var ar=node.dataset.i18nName, nid=tid(ar);
+      node.textContent = (suraDict && suraDict[nid]) || (fbSura && fbSura[nid]) || ar;
     });
-    var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=NAMES[current]||NAMES.ar;
+    var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=NAMES[current]||NAMES[DEFAULT_LOCALE];
   }
 
   function set(code){
-    current = (code==='ar' || catalogs[code]) ? code : 'ar';
+    current = catalogs[code] ? code : DEFAULT_LOCALE;
     try{ localStorage.setItem(STORAGE_KEY, current); }catch(e){}
     render();
   }
 
   render(); // أول عرض عند تحميل الصفحة، بحسب ما كان محفوظًا سابقًا (أو العربية افتراضيًا)
 
-  return { get current(){ return current; }, set: set, t: t, render: render, num: num, isDigits: isDigits, NAMES: NAMES, DIRS: DIRS };
+  return { get current(){ return current; }, set: set, t: t, render: render, num: num, isDigits: isDigits, tid: tid, NAMES: NAMES, DIRS: DIRS };
 })();
 window.Locale=Locale;
 /* توافق خلفي: بقية الشيفرة (وربما ملحقات مستقبلية) تنادي t() مباشرة */

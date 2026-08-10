@@ -49,17 +49,17 @@ function wsHTML(ws){
     : [ws.aya?'الآية '+toArD2(ws.aya):'', ws.num?'(السورة رقم '+toArD2(ws.num)+' في المصحف)':''].filter(Boolean).join(' ');
   var ltag = ws.cat==='surah' ? (ws.num?'السورة '+toArD2(ws.num):'') : (ws.aya?'الآية '+toArD2(ws.aya):'');
   var locHTML = ws.cat==='surah'
-    ? [ws.num?'<span data-i18n-tpl="السورة رقم {} في المصحف" data-i18n-word="'+toArD2(ws.num)+'">السورة رقم '+toArD2(ws.num)+' في المصحف</span>':'',
-       ws.ayat?'<span data-i18n-tpl="عدد آياتها {}" data-i18n-word="'+toArD2(ws.ayat)+'">عدد آياتها '+toArD2(ws.ayat)+'</span>':''].filter(Boolean).join(' · ')
-    : [ws.aya?'<span data-i18n-tpl="الآية {}" data-i18n-word="'+toArD2(ws.aya)+'">الآية '+toArD2(ws.aya)+'</span>':'',
-       ws.num?'(<span data-i18n-tpl="السورة رقم {} في المصحف" data-i18n-word="'+toArD2(ws.num)+'">السورة رقم '+toArD2(ws.num)+' في المصحف</span>)':''].filter(Boolean).join(' ');
+    ? [ws.num?'<span data-i18n-tpl="'+Locale.tid('السورة رقم {} في المصحف')+'" data-i18n-word="'+toArD2(ws.num)+'">السورة رقم '+toArD2(ws.num)+' في المصحف</span>':'',
+       ws.ayat?'<span data-i18n-tpl="'+Locale.tid('عدد آياتها {}')+'" data-i18n-word="'+toArD2(ws.ayat)+'">عدد آياتها '+toArD2(ws.ayat)+'</span>':''].filter(Boolean).join(' · ')
+    : [ws.aya?'<span data-i18n-tpl="'+Locale.tid('الآية {}')+'" data-i18n-word="'+toArD2(ws.aya)+'">الآية '+toArD2(ws.aya)+'</span>':'',
+       ws.num?'(<span data-i18n-tpl="'+Locale.tid('السورة رقم {} في المصحف')+'" data-i18n-word="'+toArD2(ws.num)+'">السورة رقم '+toArD2(ws.num)+' في المصحف</span>)':''].filter(Boolean).join(' ');
   var ltagHTML = ws.cat==='surah'
-    ? (ws.num?'<span data-i18n-tpl="السورة {}" data-i18n-word="'+toArD2(ws.num)+'">السورة '+toArD2(ws.num)+'</span>':'')
-    : (ws.aya?'<span data-i18n-tpl="الآية {}" data-i18n-word="'+toArD2(ws.aya)+'">الآية '+toArD2(ws.aya)+'</span>':'');
+    ? (ws.num?'<span data-i18n-tpl="'+Locale.tid('السورة {}')+'" data-i18n-word="'+toArD2(ws.num)+'">السورة '+toArD2(ws.num)+'</span>':'')
+    : (ws.aya?'<span data-i18n-tpl="'+Locale.tid('الآية {}')+'" data-i18n-word="'+toArD2(ws.aya)+'">الآية '+toArD2(ws.aya)+'</span>':'');
   var secs=(ws.secs||[]).map(function(t,i){
     var secNum=(['١','٢','٣'][i]||toArD2(i+1));
     return '<section class="sec"><div class="sec-head"><span class="lens-badge" data-i18n-num="'+secNum+'">'+secNum+'</span>'+
-      '<h3>'+escA(t)+'</h3><span class="rule"></span></div><div class="qlist"></div></section>';
+      '<h3 data-i18n-tpl="'+Locale.tid(t)+'">'+escA(t)+'</h3><span class="rule"></span></div><div class="qlist"></div></section>';
   }).join('');
   var ayaListAttr = ' data-ayalist="'+segs.map(function(s,i){return start+i;}).join(',')+'"';
   var nameM=ws.name.match(/^سورة (.+?)(?: — (.+))?$/);
@@ -73,7 +73,7 @@ function wsHTML(ws){
       (ltag?'<span class="loc-tag">📍 '+ltagHTML+'</span>':'')+'<span class="loc-tag new">جديدة</span></div>'+
       '<h3>'+nameHtml+'</h3>'+
       '<div class="vpeek">﴿ '+vHTML+' ﴾</div>'+
-      '<div class="cmeta"><span class="prog-mini" data-i18n-tpl="{} سؤالًا" data-i18n-word="٠">0 سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
+      '<div class="cmeta"><span class="prog-mini" data-i18n-tpl="'+Locale.tid('{} سؤالًا')+'" data-i18n-word="٠">0 سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
     '</summary>'+
     '<div class="ws">'+
       '<div class="ws-top">'+
@@ -84,7 +84,7 @@ function wsHTML(ws){
       '<article class="sheet">'+
         '<header class="sheet-head"><div class="lab-line">التحليل اللغوي المجهري</div>'+
           '<h2>'+nameHtml+'</h2>'+
-          '<div class="info" data-i18n-tpl="'+escA(ws.info||'')+'">'+escA(ws.info||'')+'</div>'+
+          '<div class="info" data-i18n-tpl="'+Locale.tid(ws.info||'')+'">'+escA(ws.info||'')+'</div>'+
           (loc?'<div class="loc">📍 '+locHTML+'</div>':'')+
         '</header>'+
         '<div class="verse-wrap">'+
@@ -95,7 +95,7 @@ function wsHTML(ws){
           '<b data-ptxt="'+ws.id+'">0 / 0</b><b class="score" data-score="'+ws.id+'"></b></div>'+
         secs+
         '<footer class="sheet-foot"><div class="fv">'+escA(ws.footV||'')+'</div>'+
-          (ws.footM?'<div class="fm" data-i18n-tpl="'+escA(ws.footM)+'">'+escA(ws.footM)+'</div>':'')+'</footer>'+
+          (ws.footM?'<div class="fm" data-i18n-tpl="'+Locale.tid(ws.footM)+'">'+escA(ws.footM)+'</div>':'')+'</footer>'+
       '</article>'+
       '<div class="ws-close"><button class="act" data-close="'+ws.id+'" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>'+
     '</div></details>';
@@ -361,8 +361,8 @@ function qHTML(item,key,n){
   var lv=rateItem(item);
   var qm=item.t.match(/\(([^)]*)\)/);
   var qTplAttr = qm
-    ? ' data-i18n-tpl="'+escA(item.t.slice(0,qm.index)+'({})'+item.t.slice(qm.index+qm[0].length))+'" data-i18n-word="'+escA(qm[1])+'"'
-    : ' data-i18n-tpl="'+escA(item.t)+'"';
+    ? ' data-i18n-tpl="'+Locale.tid(item.t.slice(0,qm.index)+'({})'+item.t.slice(qm.index+qm[0].length))+'" data-i18n-word="'+escA(qm[1])+'"'
+    : ' data-i18n-tpl="'+Locale.tid(item.t)+'"';
   return '<div class="q custom" data-lvl="'+lv+'"><span class="num">'+n+'</span><div class="body"><div class="txt"><span class="qtxt"'+qTplAttr+'>'+escA(item.t)+'</span>'+
     ' <span class="lvl lvl-'+lv+'" data-i18n="lvl'+lv+'">'+LVL_LABELS[lv-1]+'</span></div>'+field+'<div class="hint" hidden></div></div></div>';
 }
