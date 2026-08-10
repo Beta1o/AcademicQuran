@@ -274,6 +274,29 @@ function bindAudio(root){
 bindAudio(document);
 window.bindAudio=bindAudio;
 refreshAudioButtons();
+/* ---------- قوائم منبثقة (القارئ/اللغة): حاجز خلفي مشترك واحد لكل التطبيق —
+   يُظهره أي زر يفتح قائمة، ويُغلقها النقر عليه، فتبدو كل قائمة منبثقة نافذة
+   تطبيق حقيقية بدل قائمة منسدلة عادية، ولا حاجة لتكرار هذا لكل قائمة جديدة. */
+var Popover=(function(){
+  var backdrop=document.getElementById('popoverBackdrop');
+  var current=null;
+  function open(panel,btn){
+    if(current && current!==panel) close();
+    panel.hidden=false; btn.setAttribute('aria-expanded','true');
+    if(backdrop) backdrop.hidden=false;
+    current=panel;
+  }
+  function close(){
+    if(!current) return;
+    current.hidden=true;
+    var btn=document.querySelector('[aria-expanded="true"]'); if(btn) btn.setAttribute('aria-expanded','false');
+    if(backdrop) backdrop.hidden=true;
+    current=null;
+  }
+  if(backdrop) backdrop.addEventListener('click', close);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+  return {open:open, close:close};
+})();
 /* ---------- إعدادات التلاوة العامة: متاحة لكل زائر من شريط الموقع، وليست حكرًا على المدير ---------- */
 (function(){
   var btn=document.getElementById('pubAudioBtn'), panel=document.getElementById('pubAudioPanel');
@@ -281,22 +304,14 @@ refreshAudioButtons();
   if(!btn||!panel||!sel) return;
   var cur=audioSettings();
   sel.value=cur.reciter;
-  var closePanel=function(){ panel.hidden=true; btn.setAttribute('aria-expanded','false'); };
   var save=function(){
     try{ localStorage.setItem(AUDIO_KEY, JSON.stringify({reciter:+sel.value||1})); }catch(e){}
     refreshAudioButtons();
-    setTimeout(closePanel, 450); /* يُغلَق تلقائيًا بعد ضبط الإعداد */
+    setTimeout(Popover.close, 450); /* يُغلَق تلقائيًا بعد ضبط الإعداد */
   };
   sel.addEventListener('change',save);
   btn.addEventListener('click',function(){
-    var open=panel.hidden;
-    panel.hidden=!open; btn.setAttribute('aria-expanded',String(open));
-  });
-  document.addEventListener('click',function(e){
-    if(!panel.hidden && !panel.contains(e.target) && e.target!==btn) closePanel();
-  });
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape' && !panel.hidden) closePanel();
+    if(panel.hidden) Popover.open(panel,btn); else Popover.close();
   });
 })();
 /* ---------- تبديل الوضع الداكن/الفاتح يدويًا (فوق الاعتماد التلقائي على إعداد الجهاز) ---------- */
@@ -408,22 +423,14 @@ function t(key){ return Locale.t(key); }
 (function(){
   var btn=document.getElementById('langBtn'), panel=document.getElementById('langPanel');
   if(!btn||!panel) return;
-  var closePanel=function(){ panel.hidden=true; btn.setAttribute('aria-expanded','false'); };
   panel.querySelectorAll('.lang-opt').forEach(function(o){
     o.addEventListener('click',function(){
       Locale.set(o.dataset.lang);
-      closePanel();
+      Popover.close();
     });
   });
   btn.addEventListener('click',function(){
-    var open=panel.hidden;
-    panel.hidden=!open; btn.setAttribute('aria-expanded',String(open));
-  });
-  document.addEventListener('click',function(e){
-    if(!panel.hidden && !panel.contains(e.target) && e.target!==btn) closePanel();
-  });
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape' && !panel.hidden) closePanel();
+    if(panel.hidden) Popover.open(panel,btn); else Popover.close();
   });
 })();
 /* ---------- شريط علوي لاصق: قياس ارتفاعه الفعلي لضبط الإزاحات ---------- */

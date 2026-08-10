@@ -38,6 +38,10 @@ body{
 body.no-scroll{overflow:hidden}
 img,svg{max-width:100%;height:auto}
 a{color:inherit;text-decoration:none}
+/* يزيل تأخير 300ms قبل تسجيل النقر على اللمس (سبب شائع لعدم استجابة الزر من
+   أول لمسة على الجوال/تطبيق أندرويد) — يشمل كل عنصر تفاعلي في الموقع دفعة
+   واحدة، فلا حاجة لإصلاحه عنصرًا بعنصر لاحقًا */
+a,button,select,input,label,[role="button"],.q,.ws-item summary{touch-action:manipulation}
 button{font-family:inherit;cursor:pointer}
 input,textarea{font-family:inherit;color:var(--ink)}
 ::placeholder{color:#B4AB97}
@@ -52,30 +56,41 @@ input,textarea{font-family:inherit;color:var(--ink)}
 .brand .lens{width:34px;height:34px;border-radius:50%;border:3px solid var(--teal);position:relative;background:radial-gradient(circle at 35% 35%, #fff 0 30%, #CDE6E1 70%)}
 .brand .lens::after{content:"";position:absolute;bottom:-7px;left:50%;width:3px;height:9px;background:var(--teal);transform:translateX(-50%) rotate(35deg);border-radius:2px}
 .topbar .spacer{flex:1}
-#themeToggle{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;width:38px;height:38px;font-size:1rem;line-height:1;transition:.18s}
+#themeToggle{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;width:44px;height:44px;font-size:1rem;line-height:1;transition:.18s}
 #themeToggle:hover{border-color:var(--teal)}
 .lang-switch{position:relative}
-.lang-switch #langBtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:.18s}
+.lang-switch #langBtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;min-height:44px;padding:8px 16px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:.18s}
 .lang-switch #langBtn:hover,.lang-switch #langBtn[aria-expanded="true"]{border-color:var(--teal);color:var(--teal)}
 .lang-switch .audio-settings-panel{padding:8px;gap:2px}
-.lang-opt{display:block;width:100%;text-align:start;border:none;background:none;border-radius:10px;padding:9px 12px;font-weight:700;font-size:.9rem;color:var(--ink)}
+.lang-opt{display:flex;align-items:center;min-height:44px;width:100%;text-align:start;border:none;background:none;border-radius:10px;padding:9px 12px;font-weight:700;font-size:.9rem;color:var(--ink)}
 .lang-opt:hover{background:color-mix(in srgb, var(--teal) 10%, transparent);color:var(--teal)}
 .audio-settings{position:relative}
-.audio-settings #pubAudioBtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 18px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:.18s}
+.audio-settings #pubAudioBtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;min-height:44px;padding:8px 18px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:.18s}
 .audio-settings #pubAudioBtn:hover,.audio-settings #pubAudioBtn[aria-expanded="true"]{border-color:var(--teal);color:var(--teal)}
+/* موضع ثابت بالنسبة لنافذة العرض (لا للزر المُشغِّل) — يمنع خروج القائمة عن
+   حدود الشاشة نهائيًا مهما كان مكان الزر (قريبًا من حافة الشاشة، أو ضمن شريط
+   علوي ضيّق على الجوال)، ويُطبَّق تلقائيًا على أي قائمة منبثقة تستخدم هذا
+   الصنف — إصلاح واحد يغطي قائمتي القارئ واللغة معًا، ولا حاجة لتكراره لاحقًا. */
+.popover-backdrop{position:fixed;inset:0;background:rgba(20,26,24,.32);z-index:190}
+.popover-backdrop[hidden]{display:none}
+@keyframes popoverIn{from{opacity:0;transform:translate(-50%,-6px)}to{opacity:1;transform:translate(-50%,0)}}
 .audio-settings-panel{
-  position:absolute;top:calc(100% + 10px);left:0;z-index:60;width:min(320px,88vw);
+  position:fixed;top:calc(var(--topbar-h, 60px) + 10px);
+  left:50%;transform:translateX(-50%);
+  z-index:200;width:min(320px,92vw);max-height:calc(100vh - var(--topbar-h, 60px) - 20px);
+  overflow-y:auto;
   background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:18px;
-  box-shadow:0 14px 40px rgba(38,49,58,.14);display:flex;flex-direction:column;gap:12px;
+  box-shadow:0 18px 50px rgba(20,26,24,.22);display:flex;flex-direction:column;gap:12px;
+  animation:popoverIn .16s ease-out;
 }
 .audio-settings-panel[hidden]{display:none}
+@media (prefers-reduced-motion: reduce){ .audio-settings-panel{animation:none} }
 .audio-settings-panel .switch-row{display:flex;align-items:flex-start;gap:8px;font-weight:700;color:var(--ink);font-size:.88rem;cursor:pointer;line-height:1.5}
 .audio-settings-panel .switch-row input{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--teal)}
 .audio-settings-panel .admin-field{display:flex;flex-direction:column;gap:6px;font-size:.83rem;font-weight:700;color:var(--ink-soft)}
 .audio-settings-panel .admin-field select{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.9rem;color:var(--ink);background:var(--surface)}
 .audio-settings-panel .admin-field select:focus{outline:none;border-color:var(--teal)}
 .audio-settings-panel .admin-hint{font-size:.78rem;color:var(--ink-soft);line-height:1.6}
-@media (max-width:640px){ .audio-settings-panel{left:auto;right:0} }
 .topnav{display:flex;gap:8px;flex-wrap:wrap}
 .chip-btn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 16px;font-size:.86rem;font-weight:600;color:var(--ink-soft);transition:.18s}
 .chip-btn:hover{border-color:var(--teal);color:var(--teal)}

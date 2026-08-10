@@ -849,6 +849,7 @@ ${adminCss}
 ${responsiveCss}</style>
 </head>
 <body>
+<div id="popoverBackdrop" class="popover-backdrop" hidden></div>
 <header class="topbar">
   <div class="topbar-in">
     <div class="brand" id="brandKey" title="التحليل اللغوي المجهري">
