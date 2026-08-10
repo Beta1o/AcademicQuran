@@ -1231,5 +1231,8 @@
  "drawPh": "Çizimini burada tarif et... (veya baskı sayfasına çiz)",
  "drawBox": "✏️ Çizim alanı — basılı kopyada",
  "checkSimple": "Tamamlandı ✓",
- "checkActivity": "Etkinliği yaptım ✓"
+ "checkActivity": "Etkinliği yaptım ✓",
+ "nuzulWhy": "Neden Mekkî veya Medenî?",
+ "nuzulClose": "Kapat",
+ "nuzulSourceLabel": "Kaynak"
 }

@@ -87,6 +87,11 @@ function tid(s){
   return 't'+h.toString(36);
 }
 const I18N=JSON.stringify(Object.fromEntries(I18N_LANGS.map(l=>[l,JSON.parse(R('src/data/i18n/'+l+'.json'))])));
+/* أسباب تصنيف السورة مكية/مدنية — مصدرها تفسير معتمد (تفهيم القرآن لأبي الأعلى المودودي)،
+   مُترجمة للغات الخمس ومُضمَّنة هنا وقت البناء (لا استدعاء شبكي وقت التشغيل، يبقى الموقع
+   يعمل بلا اتصال)، مع رابط للمصدر الحي على quran.com للتحقق المباشر من كل قارئ. */
+const NUZUL_REASONS=JSON.parse(R('src/data/nuzul-reasons.json'));
+const NUZUL_JSON=JSON.stringify(NUZUL_REASONS);
 /* أسماء سور القرآن بالترتيب — لأسئلة «السورة السابقة/التالية» ورقم السورة */
 const SURA_NAMES=['الفاتحة','البقرة','آل عمران','النساء','المائدة','الأنعام','الأعراف','الأنفال','التوبة','يونس','هود','يوسف','الرعد','إبراهيم','الحجر','النحل','الإسراء','الكهف','مريم','طه','الأنبياء','الحج','المؤمنون','النور','الفرقان','الشعراء','النمل','القصص','العنكبوت','الروم','لقمان','السجدة','الأحزاب','سبأ','فاطر','يس','الصافات','ص','الزمر','غافر','فصلت','الشورى','الزخرف','الدخان','الجاثية','الأحقاف','محمد','الفتح','الحجرات','ق','الذاريات','الطور','النجم','القمر','الرحمن','الواقعة','الحديد','المجادلة','الحشر','الممتحنة','الصف','الجمعة','المنافقون','التغابن','الطلاق','التحريم','الملك','القلم','الحاقة','المعارج','نوح','الجن','المزمل','المدثر','القيامة','الإنسان','المرسلات','النبأ','النازعات','عبس','التكوير','الانفطار','المطففين','الانشقاق','البروج','الطارق','الأعلى','الغاشية','الفجر','البلد','الشمس','الليل','الضحى','الشرح','التين','العلق','القدر','البينة','الزلزلة','العاديات','القارعة','التكاثر','العصر','الهمزة','الفيل','قريش','الماعون','الكوثر','الكافرون','النصر','المسد','الإخلاص','الفلق','الناس'];
 /* أسماء الحروف → الحرف نفسه */
@@ -797,7 +802,7 @@ const blocks=W.map((w,wi)=>{
       <header class="sheet-head">
         <div class="lab-line" data-i18n-tpl="${tid(w.lab)}">${esc(w.lab)}</div>
         <h2>${nameHTML(w)}</h2>
-        <div class="info" data-i18n-tpl="${tid(w.info)}">${esc(w.info)}</div>
+        <div class="info-row"><div class="info" data-i18n-tpl="${tid(w.info)}">${esc(w.info)}</div>${SURA_NO[w.id]?`<button class="nuzul-btn" type="button" data-surano="${SURA_NO[w.id]}" aria-label="لماذا هذه السورة مكية أو مدنية؟" data-i18n-aria="nuzulWhy">ⓘ</button>`:''}</div>
         ${loc?`<div class="loc">📍 ${locHTML(w)}</div>`:''}
         <div class="lvl-legend"><span data-i18n="lvlLegendLabel">مستويات الأسئلة:</span> ${lvlLegend}</div>
       </header>
@@ -899,6 +904,11 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
   </label>
   <span class="admin-hint" data-i18n="audioHint">يعمل تلقائيًا مع أي ورقة سورة أو آية كاملة.</span>
 </div>
+<div id="nuzulPanel" class="audio-settings-panel nuzul-panel" hidden>
+  <button type="button" class="nuzul-close" aria-label="إغلاق" data-i18n-aria="nuzulClose">✕</button>
+  <div class="nuzul-body"></div>
+  <a class="nuzul-src" href="#" target="_blank" rel="noopener noreferrer"></a>
+</div>
 <header class="topbar">
   <div class="topbar-in">
     <div class="brand" id="brandKey" title="التحليل اللغوي المجهري">
@@ -941,6 +951,7 @@ ${adminHtml}
 <script type="application/json" id="customq">{}</script>
 <script type="application/json" id="quranfull">${QURAN_FULL}</script>
 <script type="application/json" id="i18nData">${I18N}</script>
+<script type="application/json" id="nuzulData">${NUZUL_JSON}</script>
 <script>
 ${js}
 </script>

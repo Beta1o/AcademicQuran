@@ -86,6 +86,16 @@ input,textarea{font-family:inherit;color:var(--ink)}
 .audio-settings-panel[hidden]{display:none}
 @media (prefers-reduced-motion: reduce){ .audio-settings-panel{animation:none} }
 .audio-settings-panel .switch-row{display:flex;align-items:flex-start;gap:8px;font-weight:700;color:var(--ink);font-size:.88rem;cursor:pointer;line-height:1.5}
+/* زر ⓘ بجوار سطر «النزول: مكية/مدنية» — سبب التصنيف من تفسير معتمد، منبثق عند الضغط */
+.info-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.nuzul-btn{border:none;background:none;color:var(--teal);font-size:1rem;line-height:1;cursor:pointer;min-width:28px;min-height:28px;border-radius:999px;flex-shrink:0}
+.nuzul-btn:hover,.nuzul-btn:focus-visible{background:color-mix(in srgb, var(--teal) 12%, transparent)}
+.nuzul-panel{gap:10px}
+.nuzul-panel .nuzul-close{align-self:flex-end;border:none;background:none;color:var(--ink-soft);font-size:1.1rem;cursor:pointer;min-width:32px;min-height:32px;border-radius:999px}
+.nuzul-panel .nuzul-close:hover{color:var(--teal)}
+.nuzul-body{color:var(--ink);font-size:.92rem;line-height:1.7}
+.nuzul-src{font-size:.78rem;color:var(--ink-soft);text-decoration:underline}
+.nuzul-src:hover{color:var(--teal)}
 .audio-settings-panel .switch-row input{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--teal)}
 .audio-settings-panel .admin-field{display:flex;flex-direction:column;gap:6px;font-size:.83rem;font-weight:700;color:var(--ink-soft)}
 .audio-settings-panel .admin-field select{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.9rem;color:var(--ink);background:var(--surface)}

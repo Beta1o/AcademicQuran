@@ -1231,5 +1231,8 @@
  "drawPh": "Describe your drawing here... (or draw on the printed page)",
  "drawBox": "✏️ Drawing space — on the printed copy",
  "checkSimple": "Done ✓",
- "checkActivity": "I did the activity ✓"
+ "checkActivity": "I did the activity ✓",
+ "nuzulWhy": "Why Meccan or Medinan?",
+ "nuzulClose": "Close",
+ "nuzulSourceLabel": "Source"
 }
