@@ -364,10 +364,14 @@ var Locale = (function(){
   var current = 'ar';
   try{ current = localStorage.getItem(STORAGE_KEY) || 'ar'; }catch(e){}
 
+  /* القاموس الحالي — متغيّر واحد عام يُشتق من اللغة المختارة فقط (current)،
+     لا تفضيل ثابت لأي لغة بعينها بما فيها العربية؛ كل قراءة نص في التطبيق
+     (t، render، وأي كود مستقبلي) تمر عبر هذه الدالة فقط. */
+  function catalog(){ return catalogs[current] || {}; }
+
   /* ترجمة نص واجهة يُنشأ ديناميكيًا وقت التشغيل (مثل زر إظهار الإجابة) — لا علاقة له بكلمات القرآن */
   function t(key){
-    var cat = catalogs[current] || catalogs.ar || {};
-    return cat[key] || key;
+    return catalog()[key] || key;
   }
   /* الأرقام قياسية عبر التطبيق كله حسب اللغة المختارة — عربية بأرقام هندية
      (١٢٣) وأي لغة أخرى بأرقام غربية (123)، تمامًا كأي نص آخر تترجمه Locale؛
@@ -380,9 +384,9 @@ var Locale = (function(){
   function isDigits(s){ return /^[٠-٩]+$/.test(s); }
 
   function render(){
-    /* كل لغة — بما فيها العربية — تُقرأ من نفس catalogs[code]؛ الوقوع على
-       العربية إن غاب قاموس لغة ما (لن يحدث فعليًا، الخمسة مُضمَّنة دائمًا) */
-    var cat = catalogs[current] || catalogs.ar || {};
+    /* كل لغة — بما فيها العربية — تُقرأ من نفس catalog() العامة، لا تفضيل
+       لأي لغة بعينها في منطق القراءة نفسه */
+    var cat = catalog();
     document.documentElement.setAttribute('lang', current);
     document.documentElement.setAttribute('dir', DIRS[current]||'rtl');
     document.querySelectorAll('[data-i18n]').forEach(function(node){
