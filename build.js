@@ -843,12 +843,23 @@ ${SITE_URL?`<meta property="og:url" content="${SITE_URL}/">`:''}
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Baloo+Bhaijaan+2:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script type="application/ld+json">${jsonLd}</script>
-<style>${css}
+<style>
+/* تمنع "الوميض": تبقى الصفحة مخفية حتى يُطبَّق السكربت اللغة والوضع الداكن/
+   الفاتح المحفوظين بالكامل (آخر سطر في app.js يزيل هذا بوسم data-ready على
+   <html>) — فلا يُعرض المحتوى الافتراضي (عربي/فاتح) للحظة قبل استبداله. */
+html:not([data-ready]) body{visibility:hidden}
+${css}
 ${extraCSS}
 ${adminCss}
 ${responsiveCss}</style>
 </head>
 <body>
+<noscript><style>body{visibility:visible!important}</style></noscript>
+<script>
+/* شبكة أمان: لو تعطّل السكربت الرئيسي بخطأ قبل بلوغ سطر الإظهار في آخره،
+   لا تبقى الصفحة مخفية إلى الأبد — تظهر تلقائيًا بعد ثانية واحدة كحدّ أقصى. */
+setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); },1000);
+</script>
 <div id="popoverBackdrop" class="popover-backdrop" hidden></div>
 <!-- القائمتان المنبثقتان هنا خارج <header> عمدًا، رغم أن زرَّيهما داخله: أي
      عنصر position:fixed محصور داخل عنصر أب ينشئ سياق تكديس خاصًّا به (كما
