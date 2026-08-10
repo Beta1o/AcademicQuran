@@ -61,7 +61,7 @@ input,textarea{font-family:inherit;color:var(--ink)}
 .lang-switch{position:relative}
 .lang-switch #langBtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;min-height:44px;padding:8px 16px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:.18s}
 .lang-switch #langBtn:hover,.lang-switch #langBtn[aria-expanded="true"]{border-color:var(--teal);color:var(--teal)}
-.lang-switch .audio-settings-panel{padding:8px;gap:2px}
+#langPanel.audio-settings-panel{padding:8px;gap:2px}
 .lang-opt{display:flex;align-items:center;min-height:44px;width:100%;text-align:start;border:none;background:none;border-radius:10px;padding:9px 12px;font-weight:700;font-size:.9rem;color:var(--ink)}
 .lang-opt:hover{background:color-mix(in srgb, var(--teal) 10%, transparent);color:var(--teal)}
 .audio-settings{position:relative}

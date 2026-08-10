@@ -850,6 +850,32 @@ ${responsiveCss}</style>
 </head>
 <body>
 <div id="popoverBackdrop" class="popover-backdrop" hidden></div>
+<!-- القائمتان المنبثقتان هنا خارج <header> عمدًا، رغم أن زرَّيهما داخله: أي
+     عنصر position:fixed محصور داخل عنصر أب ينشئ سياق تكديس خاصًّا به (كما
+     يفعل .topbar بـ position:sticky + z-index) يبقى z-index الخاص به محليًّا
+     ضمن ذلك الأب فقط، فلا يتفوّق على الحاجز الخلفي الواقع خارج .topbar مهما
+     كانت قيمته — وهذا بالضبط ما كان يجعل الحاجز يُظلِّل القائمة ويلتقط النقر
+     المقصود لأحد خياراتها بدلًا منها. القائمتان الآن أبناء مباشرون لـ body،
+     في نفس سياق التكديس الجذري الذي يقارَن فيه z-index فعليًا. -->
+<div id="langPanel" class="audio-settings-panel" hidden>
+  <button type="button" class="lang-opt" data-lang="ar">العربية</button>
+  <button type="button" class="lang-opt" data-lang="en">English</button>
+  <button type="button" class="lang-opt" data-lang="ur">اردو</button>
+  <button type="button" class="lang-opt" data-lang="tr">Türkçe</button>
+  <button type="button" class="lang-opt" data-lang="ug">ئۇيغۇرچە</button>
+</div>
+<div id="pubAudioPanel" class="audio-settings-panel" hidden>
+  <label class="admin-field"><span data-i18n="reciterLabel">القارئ</span>
+    <select id="pubAudioReciter">
+      <option value="1">مشاري راشد العفاسي</option>
+      <option value="2">أبو بكر الشاطري</option>
+      <option value="3">ناصر القطامي</option>
+      <option value="4">ياسر الدوسري</option>
+      <option value="5">هاني الرفاعي</option>
+    </select>
+  </label>
+  <span class="admin-hint" data-i18n="audioHint">يعمل تلقائيًا مع أي ورقة سورة أو آية كاملة.</span>
+</div>
 <header class="topbar">
   <div class="topbar-in">
     <div class="brand" id="brandKey" title="التحليل اللغوي المجهري">
@@ -859,29 +885,10 @@ ${responsiveCss}</style>
     <div class="spacer"></div>
     <div class="lang-switch">
       <button type="button" class="act" id="langBtn" aria-haspopup="true" aria-expanded="false">🌐 <span id="langBtnLabel">العربية</span></button>
-      <div id="langPanel" class="audio-settings-panel" hidden>
-        <button type="button" class="lang-opt" data-lang="ar">العربية</button>
-        <button type="button" class="lang-opt" data-lang="en">English</button>
-        <button type="button" class="lang-opt" data-lang="ur">اردو</button>
-        <button type="button" class="lang-opt" data-lang="tr">Türkçe</button>
-        <button type="button" class="lang-opt" data-lang="ug">ئۇيغۇرچە</button>
-      </div>
     </div>
     <button type="button" class="act" id="themeToggle" title="الوضع الداكن/الفاتح" aria-label="تبديل الوضع الداكن/الفاتح">🌙</button>
     <div class="audio-settings js-only">
       <button type="button" class="act" id="pubAudioBtn" aria-haspopup="true" aria-expanded="false">🔊 <span data-i18n="audioSettingsBtn">إعدادات التلاوة</span></button>
-      <div id="pubAudioPanel" class="audio-settings-panel" hidden>
-        <label class="admin-field"><span data-i18n="reciterLabel">القارئ</span>
-          <select id="pubAudioReciter">
-            <option value="1">مشاري راشد العفاسي</option>
-            <option value="2">أبو بكر الشاطري</option>
-            <option value="3">ناصر القطامي</option>
-            <option value="4">ياسر الدوسري</option>
-            <option value="5">هاني الرفاعي</option>
-          </select>
-        </label>
-        <span class="admin-hint" data-i18n="audioHint">يعمل تلقائيًا مع أي ورقة سورة أو آية كاملة.</span>
-      </div>
     </div>
   </div>
 </header>
