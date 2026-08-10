@@ -1111,7 +1111,11 @@
   "t1dpgjvg": "Bu sureye neden ({}) deniyor?",
   "tpssixo": "({}) suresinde geçen Allah'ın üç sıfatını say",
   "t1evkd51": "Allah surede ({}) sözünü neden iki kez tekrarladı?",
-  "t4b2ju2": "({}) tekrarından çıkarılan ders nedir?"
+  "t4b2ju2": "({}) tekrarından çıkarılan ders nedir?",
+  "tm1sasi": "Mikroskobik Dilbilimsel Analiz",
+  "tuu1mbd": "Sure Analiz Laboratuvarı",
+  "t16ca38s": "Dilbilimsel Analiz Laboratuvarı",
+  "t1w9gbrp": "Tefekkür Mihrabı — Mikroskobik Bir Yolculuk"
  },
  "revealModel": "Örnek cevabı göster",
  "revealCorrect": "Doğru cevabı göster",
@@ -1225,5 +1229,7 @@
  "scoreCorrect": "Doğru: {}",
  "scoreWrong": " — Yanlış: {}",
  "drawPh": "Çizimini burada tarif et... (veya baskı sayfasına çiz)",
- "drawBox": "✏️ Çizim alanı — basılı kopyada"
+ "drawBox": "✏️ Çizim alanı — basılı kopyada",
+ "checkSimple": "Tamamlandı ✓",
+ "checkActivity": "Etkinliği yaptım ✓"
 }

@@ -738,11 +738,11 @@ const blocks=W.map((w,wi)=>{
       const modeAttr= c.mode? ` data-mode="${c.mode}"`:'';
       if(c.ans!==undefined||c.dyn) graded++;
       if(c.ui==='act'){
-        field=`<div class="checkrow"><label><input type="checkbox" data-k="${key}"> أدّيتُ النشاط ✓</label></div>`;
+        field=`<div class="checkrow"><label><input type="checkbox" data-k="${key}"> <span data-i18n="checkActivity">أدّيتُ النشاط ✓</span></label></div>`;
       } else if(c.ui==='draw'){
         field=`<input type="text" data-k="${key}" placeholder="صف رسمتك هنا... (أو ارسم على الورقة المطبوعة)" data-i18n-ph="drawPh"><div class="drawbox" data-i18n="drawBox">✏️ مساحة الرسم — على النسخة المطبوعة</div>`;
       } else if(c.ui==='check'){
-        field=`<div class="checkrow"><label><input type="checkbox" data-k="${key}"> تم ✓</label></div>`;
+        field=`<div class="checkrow"><label><input type="checkbox" data-k="${key}"> <span data-i18n="checkSimple">تم ✓</span></label></div>`;
       } else if(c.ui==='check2'){
         field=`<div class="checkrow"><label><input type="checkbox" data-k="${key}"> <span data-i18n="checkDone">تم التحويط على الورقة ✓</span></label></div>`;
       } else if(c.ui==='seg'){
@@ -795,7 +795,7 @@ const blocks=W.map((w,wi)=>{
     </div>
     <article class="sheet">
       <header class="sheet-head">
-        <div class="lab-line">${esc(w.lab)}</div>
+        <div class="lab-line" data-i18n-tpl="${tid(w.lab)}">${esc(w.lab)}</div>
         <h2>${nameHTML(w)}</h2>
         <div class="info" data-i18n-tpl="${tid(w.info)}">${esc(w.info)}</div>
         ${loc?`<div class="loc">📍 ${locHTML(w)}</div>`:''}

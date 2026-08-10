@@ -1111,7 +1111,11 @@
   "t1dpgjvg": "Why is this surah called ({})?",
   "tpssixo": "Name three attributes of Allah mentioned in surah ({})",
   "t1evkd51": "Why did Allah mention ({}) twice in the surah?",
-  "t4b2ju2": "What is the lesson learned from the repetition of ({})?"
+  "t4b2ju2": "What is the lesson learned from the repetition of ({})?",
+  "tm1sasi": "Microscopic Linguistic Analysis",
+  "tuu1mbd": "Surah Analysis Lab",
+  "t16ca38s": "Linguistic Analysis Lab",
+  "t1w9gbrp": "The Mihrab of Reflection — A Microscopic Journey"
  },
  "revealModel": "Show model answer",
  "revealCorrect": "Show correct answer",
@@ -1225,5 +1229,7 @@
  "scoreCorrect": "Correct: {}",
  "scoreWrong": " — Wrong: {}",
  "drawPh": "Describe your drawing here... (or draw on the printed page)",
- "drawBox": "✏️ Drawing space — on the printed copy"
+ "drawBox": "✏️ Drawing space — on the printed copy",
+ "checkSimple": "Done ✓",
+ "checkActivity": "I did the activity ✓"
 }

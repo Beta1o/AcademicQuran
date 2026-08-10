@@ -82,7 +82,7 @@ function wsHTML(ws){
         '<button class="act print" data-print="'+ws.id+'" data-i18n="printWs">🖨️ طباعة الورقة</button>'+
       '</div>'+
       '<article class="sheet">'+
-        '<header class="sheet-head"><div class="lab-line">التحليل اللغوي المجهري</div>'+
+        '<header class="sheet-head"><div class="lab-line" data-i18n-tpl="'+Locale.tid('التحليل اللغوي المجهري')+'">التحليل اللغوي المجهري</div>'+
           '<h2>'+nameHtml+'</h2>'+
           '<div class="info" data-i18n-tpl="'+Locale.tid(ws.info||'')+'">'+escA(ws.info||'')+'</div>'+
           (loc?'<div class="loc">📍 '+locHTML+'</div>':'')+
@@ -353,7 +353,7 @@ function qHTML(item,key,n){
   var field='';
   if(item.ui==='seg') field='<input type="text" class="seg" data-k="'+key+'" data-ui="seg" data-parts="'+item.parts.join(',')+'"'+ansAttr+showAttr+' placeholder="اكتب الحروف — تُفصَل بـ + تلقائيًا" data-i18n-ph="segPh" autocomplete="off">';
   else if(item.ui==='num') field='<input type="text" data-k="'+key+'" data-ui="num" inputmode="numeric"'+ansAttr+showAttr+' placeholder="اكتب العدد..." data-i18n-ph="numPh">';
-  else if(item.ui==='check') field='<div class="checkrow"><label><input type="checkbox" data-k="'+key+'"> تم ✓</label></div>';
+  else if(item.ui==='check') field='<div class="checkrow"><label><input type="checkbox" data-k="'+key+'"> <span data-i18n="checkSimple">تم ✓</span></label></div>';
   else if(item.ui==='mcq'){
     field='<div class="mcqopts">'+item.opts.map(function(o,i){return '<label><input type="radio" name="'+key+'" value="'+i+'"> '+escA(o)+'</label>';}).join('')+'</div>'+
       '<input type="hidden" data-k="'+key+'" data-ui="text"'+ansAttr+showAttr+'>';
