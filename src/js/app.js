@@ -223,16 +223,35 @@ function needsBasmala(det){
 /* تُشغَّل الآيات كملفات منفصلة بالتتابع (لا كصوت سورة كاملة واحد) كي يمكن تمييز الآية الحالية أثناء الاستماع لمساعدة الحفظ */
 function playAyaList(items,btn,det){
   if(!items.length){ btn.textContent='🔊 لا يوجد صوت'; setTimeout(function(){ btn.textContent='🔊 استماع للتلاوة'; },1500); return; }
-  var i=0;
+  var i=0, preloaded=null; /* {idx, audio} — ملف الآية التالية يُحمَّل مسبقًا أثناء تشغيل الحالية */
   curAudio=new Audio(); curBtn=btn; curDet=det; btn.textContent='⏸️ إيقاف التلاوة'; btn.classList.add('playing');
+  function bindEvents(a){ a.addEventListener('ended', next); a.addEventListener('error', next); }
+  /* كل آية تُقرأ كاملة من بدايتها لنهايتها ثم تنتقل تلقائيًا للتالية (حدث ended) —
+     هذا سلوك مقصود، لا عطل. العطل الحقيقي هو توقّف التلاوة كلها بسبب تعثّر آية
+     واحدة فقط (شبكة بطيئة، انقطاع لحظي...)، فتخطّي تلك الآية والمتابعة للتي
+     تليها أفضل من إيقاف الاستماع بالكامل. تلاوة حقيقية بلا فجوات محسوسة تتطلب
+     تحميل ملف الآية التالية مسبقًا في الخلفية أثناء تشغيل الحالية (preload)،
+     بدل بدء الجلب فقط بعد انتهاء الآية الحالية — فيبدأ الانتقال فورًا لا بعد
+     تأخر شبكي جديد في كل مرة. */
+  function preloadNext(idx){
+    if(idx>=items.length) return;
+    var a=new Audio(); bindEvents(a); a.preload='auto'; a.src=items[idx].url;
+    try{ a.load(); }catch(e){}
+    preloaded={idx:idx, audio:a};
+  }
   function next(){
     if(!curAudio||i>=items.length){ stopAudio(); return; }
-    var it=items[i]; i++;
+    var it=items[i];
+    var use = (preloaded && preloaded.idx===i) ? preloaded.audio : curAudio;
+    i++;
     markReading(it.aya);
-    curAudio.src=it.url;
-    curAudio.play().catch(function(){ stopAudio(); });
+    if(use!==curAudio){ curAudio.pause(); curAudio=use; }
+    else { curAudio.src=it.url; }
+    curAudio.play().catch(next);
+    preloaded=null;
+    preloadNext(i); /* حمِّل الآية التي تلي هذه فورًا، بينما هذه قيد التشغيل */
   }
-  curAudio.addEventListener('ended', next);
+  bindEvents(curAudio);
   next();
 }
 function refreshAudioButtons(){

@@ -33,6 +33,13 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
+        // الصفحة محمَّلة من file:// — WebView يفرض قيودًا افتراضية على طلبات
+        // fetch() الصادرة من أصل file:// نحو نطاقات https:// خارجية (تلاوة
+        // القرآن عبر quranapi.pages.dev)، فيفشل التحميل رغم صلاحية الشبكة
+        // وعمل الموقع نفسه في متصفح عادي؛ هذان الإعدادان يرفعان هذا القيد
+        // خصيصًا لصفحات file:// (لا يؤثران على أي تصفح آخر داخل التطبيق).
+        s.setAllowFileAccessFromFileURLs(true);
+        s.setAllowUniversalAccessFromFileURLs(true);
         // الأوراق تحوي جداول وشارات صغيرة (علامات الآيات، شارات المستوى) — يسمح
         // بتكبير/تصغير بإيماءتين دون أزرار تكبير عائمة تغطي الواجهة
         s.setSupportZoom(true);
