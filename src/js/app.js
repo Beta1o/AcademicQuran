@@ -626,5 +626,19 @@ window.addEventListener('afterprint',function(){
    بالكامل (Locale.render() والوضع أُعدّا بالفعل أعلاه في هذا السكربت نفسه).
    قبل هذا السطر بقيت الصفحة مخفية عبر القاعدة في <head> (منع "الوميض" —
    عرض المحتوى الافتراضي (عربي/فاتح) للحظة ثم استبداله باللغة/الوضع
-   المحفوظين، وهو بالضبط ما كان يظهر كصفحتين متتاليتين عند إعادة التحميل). */
-document.documentElement.setAttribute('data-ready','1');
+   المحفوظين، وهو بالضبط ما كان يظهر كصفحتين متتاليتين عند إعادة التحميل).
+   نفس المبدأ يمتد للخطوط: Google Fonts تُحمَّل بـ display=swap، أي أن
+   المتصفح يعرض خط النظام الاحتياطي فورًا ثم "يستبدله" بالخط الحقيقي فور
+   اكتمال تحميله — وهذا بالضبط ما كان يبدو وكأن "ملف CSS آخر" يُطبَّق بعد
+   التحديث (خصوصًا حين لا تكون الخطوط في ذاكرة التخزين المؤقت بعد). ننتظر
+   جهوزية الخطوط (document.fonts.ready) قبل الكشف عن الصفحة أيضًا، بحدّ
+   أقصى قصير كي لا تتجمّد الصفحة إن تعذّر تحميل الخطوط لأي سبب. */
+function reveal(){ document.documentElement.setAttribute('data-ready','1'); }
+if(document.fonts && document.fonts.ready){
+  var revealed=false;
+  var doReveal=function(){ if(revealed) return; revealed=true; reveal(); };
+  document.fonts.ready.then(doReveal).catch(doReveal);
+  setTimeout(doReveal, 400); /* لا تنتظر أكثر من هذا حتى لا يبدو التطبيق بطيئًا */
+} else {
+  reveal();
+}
