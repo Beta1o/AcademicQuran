@@ -74,7 +74,7 @@ const ANSWERS=JSON.parse(R('src/data/answers.json'));
 /* نص القرآن الكريم كاملًا (١١٤ سورة) — لتعبئة صفحة المدير تلقائيًا عند اختيار سورة */
 const QURAN_FULL=R('src/data/quran-full.json');
 /* قاموس ترجمة واجهة الموقع (الأزرار والتسميات فقط) — النصوص القرآنية والأسئلة تبقى عربية دائمًا */
-const I18N_LANGS=['ar','en','ur','tr','ug'];
+const I18N_LANGS=['ar','en','ur','tr','ug','id','fr','bn','ha'];
 /* معرّف قالب مستقر ومحايد اللغة، يُشتق من نص القالب العربي وقت البناء —
    لا يبقى أي نص عربي حرفي كمفتاح بحث وقت التشغيل، فلا صلة بين "المفتاح"
    وأي لغة بعينها. src/data/i18n/*.json نفسها مُرقَّمة بهذه المعرّفات مسبقًا
@@ -891,6 +891,10 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
   <button type="button" class="lang-opt" data-lang="ur">اردو</button>
   <button type="button" class="lang-opt" data-lang="tr">Türkçe</button>
   <button type="button" class="lang-opt" data-lang="ug">ئۇيغۇرچە</button>
+  <button type="button" class="lang-opt" data-lang="id">Bahasa Indonesia</button>
+  <button type="button" class="lang-opt" data-lang="fr">Français</button>
+  <button type="button" class="lang-opt" data-lang="bn">বাংলা</button>
+  <button type="button" class="lang-opt" data-lang="ha">Hausa</button>
 </div>
 <div id="pubAudioPanel" class="audio-settings-panel" hidden>
   <label class="admin-field"><span data-i18n="reciterLabel">القارئ</span>
