@@ -1115,7 +1115,8 @@
   "tm1sasi": "Mikroskobik Dilbilimsel Analiz",
   "tuu1mbd": "Sure Analiz Laboratuvarı",
   "t16ca38s": "Dilbilimsel Analiz Laboratuvarı",
-  "t1w9gbrp": "Tefekkür Mihrabı — Mikroskobik Bir Yolculuk"
+  "t1w9gbrp": "Tefekkür Mihrabı — Mikroskobik Bir Yolculuk",
+  "tk8cd4g": "{} bölüm"
  },
  "revealModel": "Örnek cevabı göster",
  "revealCorrect": "Doğru cevabı göster",
@@ -1231,5 +1232,7 @@
  "drawPh": "Çizimini burada tarif et... (veya baskı sayfasına çiz)",
  "drawBox": "✏️ Çizim alanı — basılı kopyada",
  "checkSimple": "Tamamlandı ✓",
- "checkActivity": "Etkinliği yaptım ✓"
+ "checkActivity": "Etkinliği yaptım ✓",
+ "revMeccan": "Mekkî",
+ "revMedinan": "Medenî"
 }

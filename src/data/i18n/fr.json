@@ -1115,7 +1115,8 @@
   "tm1sasi": "Analyse Linguistique Microscopique",
   "tuu1mbd": "Laboratoire d'Analyse de Sourate",
   "t16ca38s": "Laboratoire d'Analyse Linguistique",
-  "t1w9gbrp": "Le Mihrab de la Réflexion — Un Voyage Microscopique"
+  "t1w9gbrp": "Le Mihrab de la Réflexion — Un Voyage Microscopique",
+  "tk8cd4g": "{} parties"
  },
  "revealModel": "Afficher la réponse modèle",
  "revealCorrect": "Afficher la bonne réponse",
@@ -1231,5 +1232,7 @@
  "drawPh": "Décris ton dessin ici... (ou dessine sur la copie imprimée)",
  "drawBox": "✏️ Espace de dessin — sur la copie imprimée",
  "checkSimple": "Fait ✓",
- "checkActivity": "J'ai fait l'activité ✓"
+ "checkActivity": "J'ai fait l'activité ✓",
+ "revMeccan": "Mecquoise",
+ "revMedinan": "Médinoise"
 }

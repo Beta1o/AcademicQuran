@@ -88,6 +88,10 @@ function tid(s){
 }
 const I18N=JSON.stringify(Object.fromEntries(I18N_LANGS.map(l=>[l,JSON.parse(R('src/data/i18n/'+l+'.json'))])));
 /* أسماء سور القرآن بالترتيب — لأسئلة «السورة السابقة/التالية» ورقم السورة */
+/* تصنيف كل سورة مكية أو مدنية — بترتيب المصحف (١ فاتحة ← ١١٤ ناس)، مصدره
+   بيانات quran.com الرسمية (revelation_place)؛ حرف واحد لكل سورة: م=مكية، د=مدنية. */
+const REV_PLACE='م د د د د م م د د م م م د م م م م م م م م د م د م م م م م م م م د م م م م م م م م م م م م م د د د م م م م م د م د د د د د د د د د د م م م م م م م م م د م م م م م م م م م م م م م م م م م م م م م د د م م م م م م م م م م د م م م م'.split(' ');
+function revPlaceOf(id){ const n=SURA_NO[id]; return n?REV_PLACE[n-1]:null; }
 const SURA_NAMES=['الفاتحة','البقرة','آل عمران','النساء','المائدة','الأنعام','الأعراف','الأنفال','التوبة','يونس','هود','يوسف','الرعد','إبراهيم','الحجر','النحل','الإسراء','الكهف','مريم','طه','الأنبياء','الحج','المؤمنون','النور','الفرقان','الشعراء','النمل','القصص','العنكبوت','الروم','لقمان','السجدة','الأحزاب','سبأ','فاطر','يس','الصافات','ص','الزمر','غافر','فصلت','الشورى','الزخرف','الدخان','الجاثية','الأحقاف','محمد','الفتح','الحجرات','ق','الذاريات','الطور','النجم','القمر','الرحمن','الواقعة','الحديد','المجادلة','الحشر','الممتحنة','الصف','الجمعة','المنافقون','التغابن','الطلاق','التحريم','الملك','القلم','الحاقة','المعارج','نوح','الجن','المزمل','المدثر','القيامة','الإنسان','المرسلات','النبأ','النازعات','عبس','التكوير','الانفطار','المطففين','الانشقاق','البروج','الطارق','الأعلى','الغاشية','الفجر','البلد','الشمس','الليل','الضحى','الشرح','التين','العلق','القدر','البينة','الزلزلة','العاديات','القارعة','التكاثر','العصر','الهمزة','الفيل','قريش','الماعون','الكوثر','الكافرون','النصر','المسد','الإخلاص','الفلق','الناس'];
 /* أسماء الحروف → الحرف نفسه */
 const LETTER_NAMES={'الألف':'ا','الباء':'ب','التاء':'ت','الثاء':'ث','الجيم':'ج','الحاء':'ح','الخاء':'خ','الدال':'د','الذال':'ذ','الراء':'ر','الزاي':'ز','السين':'س','الشين':'ش','الصاد':'ص','الضاد':'ض','الطاء':'ط','الظاء':'ظ','العين':'ع','الغين':'غ','الفاء':'ف','القاف':'ق','الكاف':'ك','اللام':'ل','الميم':'م','النون':'ن','الهاء':'ه','الواو':'و','الياء':'ي'};
@@ -106,9 +110,19 @@ const SURA_NO={
   qadr:97, humaza:104, maun:107, tariq:86, infitar:82, yusuf4:12, qasas7:28,
   fajr:89, nur35:24, kahf9:18,
   adam30:2, nar69:21, hudhud20:27, jalut249:2, ayyub83:21, zakariya2:19,
-  naba:78, naziat:79, abasa:80, mutaffifin:83, inshiqaq:84, buruj:85, aala:87, sharh:94,
-  baqara_j1:2, baqara_j2:2, baqara_j3:2
+  naba:78, naziat:79, abasa:80, mutaffifin:83, inshiqaq:84, buruj:85, aala:87, sharh:94
 };
+/* أوراق مقسَّمة تلقائيًا (سور طويلة مجزّأة إلى أجزاء ≤٢٠ آية) تحمل بيانات
+   موقعها داخل كائن الورقة نفسه (suraNo/ayaFrom/ayat/suraOf/ayaEndMark) بدل
+   تكرارها يدويًا هنا لكل جزء جديد — تُدمَج هذه القيم مرة واحدة في نفس
+   الخرائط أعلاه، فيستمر كل الكود اللاحق بالعمل عليها كالمعتاد دون أي تعديل. */
+W.forEach(w=>{
+  if(w.suraNo && !SURA_NO[w.id]) SURA_NO[w.id]=w.suraNo;
+  if(w.ayaFrom && !AYA_NUM[w.id]) AYA_NUM[w.id]=toAr(w.ayaFrom);
+  if(w.suraOf && !SURA_OF[w.id]) SURA_OF[w.id]=w.suraOf;
+  if(w.ayaCount && !AYAT[w.id]) AYAT[w.id]=w.ayaCount;
+  if(w.ayaEndMark && !AYA_END[w.id]) AYA_END[w.id]=1;
+});
 /* سطر الموقع المعروض في رأس الورقة وعلى البطاقة (نص عربي خام، للبحث/التصدير) */
 function locText(w){
   const n=SURA_NO[w.id];
@@ -712,7 +726,7 @@ const nS=W.filter(w=>w.cat==='surah').length, nA=W.filter(w=>w.cat==='ayah').len
 let graded=0, withKey=0;
 const lvlTotals=[0,0,0,0,0];
 
-const blocks=W.map((w,wi)=>{
+const blockHTMLs=W.map((w,wi)=>{
   let n=0;
   const lvlCount=[0,0,0,0,0];
   const wordsJson=esc(JSON.stringify(verseWordsOrig(w).map(o=>[o,norm(o)])));
@@ -781,6 +795,7 @@ const blocks=W.map((w,wi)=>{
   <summary class="card">
     <div class="tagrow">
       <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':'tagAyah'}">${w.cat==='surah'?'سورة كاملة':'آية مختارة'}</span>
+      ${revPlaceOf(w.id)?`<span class="tag rev-tag" data-i18n="${revPlaceOf(w.id)==='م'?'revMeccan':'revMedinan'}">${revPlaceOf(w.id)==='م'?'مكية':'مدنية'}</span>`:''}
       ${ltag?`<span class="loc-tag">📍 ${locTagHTML(w)}</span>`:''}
     </div>
     <h3>${nameHTML(w)}</h3>
@@ -811,6 +826,28 @@ const blocks=W.map((w,wi)=>{
       <footer class="sheet-foot"><div class="fv">${esc(w.footV)}</div>${w.footM?`<div class="fm" data-i18n-tpl="${tid(w.footM)}">${esc(w.footM)}</div>`:''}</footer>
     </article>
     <div class="ws-close"><button class="act" data-close="${w.id}" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>
+  </div>
+</details>`;
+});
+/* السور الطويلة المجزَّأة (group على كل ورقة جزء) تُجمَع بصريًا هنا تحت بطاقة
+   واحدة قابلة للطي بدل تشتّت أجزائها كبطاقات مستقلة في الشبكة الرئيسة —
+   كل جزء يبقى <details class="ws-item"> عاديًا تمامًا داخلها (لا تغيير على
+   آلياته: التصحيح، الصوت، الطباعة)، فقط غلافه الظاهر في الشبكة يتغيّر. */
+const seenGroups=new Set();
+const blocks=W.map((w,wi)=>{
+  const html=blockHTMLs[wi];
+  if(!w.group) return html;
+  if(seenGroups.has(w.group)) return ''; /* أُدرِج بالفعل ضمن بطاقة المجموعة عند أول ظهور لها */
+  seenGroups.add(w.group);
+  const members=W.map((x,xi)=>({x,xi})).filter(({x})=>x.group===w.group);
+  const groupItems=members.map(({xi})=>blockHTMLs[xi]).join('\n');
+  return `<details class="ws-group">
+  <summary class="ws-group-head">
+    <span class="ws-group-title">📖 <span data-i18n="surahWord">سورة</span> <span data-i18n-name="${esc(w.suraOf)}">${esc(w.suraOf)}</span></span>
+    <span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span>
+  </summary>
+  <div class="ws-group-items">
+${groupItems}
   </div>
 </details>`;
 }).join('\n');

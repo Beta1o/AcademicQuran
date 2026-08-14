@@ -1115,7 +1115,8 @@
   "tm1sasi": "Microscopic Linguistic Analysis",
   "tuu1mbd": "Surah Analysis Lab",
   "t16ca38s": "Linguistic Analysis Lab",
-  "t1w9gbrp": "The Mihrab of Reflection — A Microscopic Journey"
+  "t1w9gbrp": "The Mihrab of Reflection — A Microscopic Journey",
+  "tk8cd4g": "{} parts"
  },
  "revealModel": "Show model answer",
  "revealCorrect": "Show correct answer",
@@ -1231,5 +1232,7 @@
  "drawPh": "Describe your drawing here... (or draw on the printed page)",
  "drawBox": "✏️ Drawing space — on the printed copy",
  "checkSimple": "Done ✓",
- "checkActivity": "I did the activity ✓"
+ "checkActivity": "I did the activity ✓",
+ "revMeccan": "Meccan",
+ "revMedinan": "Medinan"
 }

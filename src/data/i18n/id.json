@@ -1115,7 +1115,8 @@
   "tm1sasi": "Analisis Linguistik Mikroskopis",
   "tuu1mbd": "Laboratorium Analisis Surah",
   "t16ca38s": "Laboratorium Analisis Linguistik",
-  "t1w9gbrp": "Mihrab Tadabur — Perjalanan Mikroskopis"
+  "t1w9gbrp": "Mihrab Tadabur — Perjalanan Mikroskopis",
+  "tk8cd4g": "{} bagian"
  },
  "revealModel": "Tampilkan jawaban model",
  "revealCorrect": "Tampilkan jawaban benar",
@@ -1231,5 +1232,7 @@
  "drawPh": "Jelaskan gambar Anda di sini... (atau gambar di lembar cetak)",
  "drawBox": "✏️ Ruang gambar — pada salinan cetak",
  "checkSimple": "Selesai ✓",
- "checkActivity": "Saya telah melakukan aktivitas ini ✓"
+ "checkActivity": "Saya telah melakukan aktivitas ini ✓",
+ "revMeccan": "Makkiyah",
+ "revMedinan": "Madaniyah"
 }

@@ -555,6 +555,12 @@ function applyFilter(){
     var ok=catOk&&(!q||c.dataset.name.indexOf(q.trim())>-1);
     c.style.display=ok?'':'none';
   });
+  /* سورة طويلة مجزّأة: أخفِ بطاقة المجموعة نفسها إن اختفت كل أجزائها بالتصفية،
+     كي لا يبقى إطار فارغ لا يحوي أي جزء مطابق للبحث/الفئة المختارة */
+  document.querySelectorAll('.grid .ws-group').forEach(function(g){
+    var anyVisible=Array.prototype.some.call(g.querySelectorAll('.ws-item'),function(c){ return c.style.display!=='none'; });
+    g.style.display=anyVisible?'':'none';
+  });
 }
 document.querySelectorAll('.tabs:not(.lvl-tabs) button').forEach(function(b){
   b.addEventListener('click',function(){
