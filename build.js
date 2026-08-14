@@ -808,7 +808,7 @@ const blockHTMLs=W.map((w,wi)=>{
   return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${endMark?` data-ayaend="1"`:''}${juzNo?` data-juz="${juzNo}"`:''}${ayaListAttr}>
   <summary class="card">
     <div class="tagrow">
-      <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':'tagAyah'}">${w.cat==='surah'?'سورة كاملة':'آية مختارة'}</span>
+      <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':(w.group?'tagPart':'tagAyah')}">${w.cat==='surah'?'سورة كاملة':(w.group?'جزء من سورة':'آية مختارة')}</span>
       ${revPlaceOf(w.id)?`<span class="tag rev-tag" data-i18n="${revPlaceOf(w.id)==='م'?'revMeccan':'revMedinan'}">${revPlaceOf(w.id)==='م'?'مكية':'مدنية'}</span>`:''}
       ${ltag?`<span class="loc-tag">📍 ${locTagHTML(w)}</span>`:''}
     </div>
@@ -847,15 +847,30 @@ const blockHTMLs=W.map((w,wi)=>{
    واحدة قابلة للطي بدل تشتّت أجزائها كبطاقات مستقلة في الشبكة الرئيسة —
    كل جزء يبقى <details class="ws-item"> عاديًا تمامًا داخلها (لا تغيير على
    آلياته: التصحيح، الصوت، الطباعة)، فقط غلافه الظاهر في الشبكة يتغيّر. */
+/* ترتيب الشبكة الرئيسة يتبع تسلسل المصحف الفعلي (رقم السورة ثم رقم الآية)
+   بدل ترتيب الإدراج في الملف — كل سورة طويلة مجزَّأة تظهر ببطاقتها المجمَّعة
+   في موضعها الصحيح ضمن هذا التسلسل، لا مبعثرة حسب متى أُضيف كل جزء. */
 const seenGroups=new Set();
-const blocks=W.map((w,wi)=>{
-  const html=blockHTMLs[wi];
-  if(!w.group) return html;
-  if(seenGroups.has(w.group)) return ''; /* أُدرِج بالفعل ضمن بطاقة المجموعة عند أول ظهور لها */
+const topEntries=[]; // {key:[suraNo, ayaFrom], html}
+W.forEach((w,wi)=>{
+  const suraNo=SURA_NO[w.id]||999;
+  const ayaFrom=w.ayaFrom||(AYA_NUM[w.id]?arNum(AYA_NUM[w.id]):0);
+  if(!w.group){
+    topEntries.push({key:[suraNo,ayaFrom,wi], html:blockHTMLs[wi]});
+    return;
+  }
+  if(seenGroups.has(w.group)) return; /* أُدرِج بالفعل ضمن بطاقة المجموعة عند أول ظهور لها */
   seenGroups.add(w.group);
-  const members=W.map((x,xi)=>({x,xi})).filter(({x})=>x.group===w.group);
+  const members=W.map((x,xi)=>({x,xi}))
+    .filter(({x})=>x.group===w.group)
+    .sort((a,b)=>{
+      const af=a.x.ayaFrom||(AYA_NUM[a.x.id]?arNum(AYA_NUM[a.x.id]):0);
+      const bf=b.x.ayaFrom||(AYA_NUM[b.x.id]?arNum(AYA_NUM[b.x.id]):0);
+      return af-bf;
+    });
   const groupItems=members.map(({xi})=>blockHTMLs[xi]).join('\n');
-  return `<details class="ws-group">
+  const groupMinAya=members.length?(members[0].x.ayaFrom||(AYA_NUM[members[0].x.id]?arNum(AYA_NUM[members[0].x.id]):0)):0;
+  topEntries.push({key:[suraNo,groupMinAya,wi], html:`<details class="ws-group">
   <summary class="ws-group-head">
     <span class="ws-group-title">📖 <span data-i18n="surahWord">سورة</span> <span data-i18n-name="${esc(w.suraOf)}">${esc(w.suraOf)}</span></span>
     <span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span>
@@ -863,8 +878,10 @@ const blocks=W.map((w,wi)=>{
   <div class="ws-group-items">
 ${groupItems}
   </div>
-</details>`;
-}).join('\n');
+</details>`});
+});
+topEntries.sort((a,b)=> a.key[0]-b.key[0] || a.key[1]-b.key[1] || a.key[2]-b.key[2]);
+const blocks=topEntries.map(e=>e.html).join('\n');
 
 
 const extraCSS = extraCSSFile;
