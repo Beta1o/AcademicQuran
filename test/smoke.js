@@ -6,7 +6,7 @@ const dom=new JSDOM(html,{runScripts:'dangerously',url:'https://x.test/'});
 const w=dom.window, doc=w.document;
 const errs=[]; w.addEventListener('error',e=>errs.push(e.message));
 
-const WS=58, QS=3480, PASS=process.env.ADMIN_PASS||'change-me-set-ADMIN_PASS-env-var';
+const WS=61, QS=3510, PASS=process.env.ADMIN_PASS||'change-me-set-ADMIN_PASS-env-var';
 
 setTimeout(()=>{
   let fails=0;

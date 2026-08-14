@@ -319,29 +319,6 @@ var Popover=(function(){
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
   return {open:open, close:close};
 })();
-/* ---------- سبب تصنيف السورة مكية/مدنية: نافذة منبثقة عند الضغط على زر ⓘ ---------- */
-(function(){
-  var panel=document.getElementById('nuzulPanel');
-  if(!panel) return;
-  var body=panel.querySelector('.nuzul-body');
-  var srcLink=panel.querySelector('.nuzul-src');
-  var closeBtn=panel.querySelector('.nuzul-close');
-  var NUZUL={};
-  try{ var el=document.getElementById('nuzulData'); if(el) NUZUL=JSON.parse(el.textContent||'{}')||{}; }catch(e){ NUZUL={}; }
-  closeBtn.addEventListener('click', Popover.close);
-  document.addEventListener('click', function(e){
-    var btn=e.target.closest('.nuzul-btn');
-    if(!btn) return;
-    var n=btn.dataset.surano, entry=NUZUL[n];
-    if(!entry) return;
-    var lang=Locale.current;
-    var text=entry[lang] || entry.en || entry.ar || '';
-    body.textContent=text;
-    srcLink.href=entry.sourceUrl || '#';
-    srcLink.textContent=(t('nuzulSourceLabel')+': '+(entry.source||''));
-    Popover.open(panel, btn);
-  });
-})();
 /* ---------- إعدادات التلاوة العامة: متاحة لكل زائر من شريط الموقع، وليست حكرًا على المدير ---------- */
 (function(){
   var btn=document.getElementById('pubAudioBtn'), panel=document.getElementById('pubAudioPanel');

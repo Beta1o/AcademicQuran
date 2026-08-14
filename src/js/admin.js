@@ -84,8 +84,7 @@ function wsHTML(ws){
       '<article class="sheet">'+
         '<header class="sheet-head"><div class="lab-line" data-i18n-tpl="'+Locale.tid('التحليل اللغوي المجهري')+'">التحليل اللغوي المجهري</div>'+
           '<h2>'+nameHtml+'</h2>'+
-          '<div class="info-row"><div class="info" data-i18n-tpl="'+Locale.tid(ws.info||'')+'">'+escA(ws.info||'')+'</div>'+
-            (ws.num?'<button class="nuzul-btn" type="button" data-surano="'+ws.num+'" aria-label="لماذا هذه السورة مكية أو مدنية؟" data-i18n-aria="nuzulWhy">ⓘ</button>':'')+'</div>'+
+          '<div class="info" data-i18n-tpl="'+Locale.tid(ws.info||'')+'">'+escA(ws.info||'')+'</div>'+
           (loc?'<div class="loc">📍 '+locHTML+'</div>':'')+
         '</header>'+
         '<div class="verse-wrap">'+

@@ -1231,8 +1231,5 @@
  "drawPh": "Décris ton dessin ici... (ou dessine sur la copie imprimée)",
  "drawBox": "✏️ Espace de dessin — sur la copie imprimée",
  "checkSimple": "Fait ✓",
- "checkActivity": "J'ai fait l'activité ✓",
- "nuzulWhy": "Pourquoi mecquoise ou médinoise ?",
- "nuzulClose": "Fermer",
- "nuzulSourceLabel": "Source"
+ "checkActivity": "J'ai fait l'activité ✓"
 }

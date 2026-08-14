@@ -1231,8 +1231,5 @@
  "drawPh": "Jelaskan gambar Anda di sini... (atau gambar di lembar cetak)",
  "drawBox": "✏️ Ruang gambar — pada salinan cetak",
  "checkSimple": "Selesai ✓",
- "checkActivity": "Saya telah melakukan aktivitas ini ✓",
- "nuzulWhy": "Mengapa Makkiyah atau Madaniyah?",
- "nuzulClose": "Tutup",
- "nuzulSourceLabel": "Sumber"
+ "checkActivity": "Saya telah melakukan aktivitas ini ✓"
 }
