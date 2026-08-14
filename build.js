@@ -1,7 +1,12 @@
 const fs=require('fs');
 const path=require('path');
 const R=p=>fs.readFileSync(path.join(__dirname,p),'utf8');
-const W=JSON.parse(R('src/data/worksheets.json'));
+/* بيانات الأوراق مقسّمة إلى ملفات فرعية أخف وأسرع للتحرير والفحص من ملف
+   واحد ضخم (كانت تتجاوز ٣ ميغابايت) — تُدمَج هنا بترتيب أسماء الملفات في
+   نفس المصفوفة W كما كانت، فلا يتأثر أي منطق لاحق يعتمد عليها. */
+const WS_DIR=path.join(__dirname,'src/data/worksheets');
+const W=fs.readdirSync(WS_DIR).filter(f=>f.endsWith('.json')).sort()
+  .reduce((acc,f)=>acc.concat(JSON.parse(fs.readFileSync(path.join(WS_DIR,f),'utf8'))), []);
 const css=R('src/css/main.css');
 const extraCSSFile=R('src/css/ui.css');
 const adminCss=R('src/css/admin.css');
@@ -50,6 +55,12 @@ function ayaNumbers(w,count){
 /* أوراق الآيات التي ينتهي نصّها عند نهاية الآية (تُختم بعلامة مرقّمة)،
    أما ما ينتهي في وسط الآية (كمطلع آية الكرسي) فلا علامة ختام له. */
 const AYA_END={fatiha1:1,baqara201:1,sharh56:1,ibrahim7:1,hadid3:1,hashr22:1,nahl90:1,anbiya87:1,kahf9:1,adam30:1,nar69:1,hudhud20:1,jalut249:1,ayyub83:1,zakariya2:1};
+/* لا تُغلَّف كلمات الآيات بـ span مستقل لكل كلمة وقت البناء — كان هذا يُضاعف
+   وزن الصفحة تضاعفًا كبيرًا (٦٨٧ ورقة × عشرات الكلمات لكل منها، كلها مضمَّنة
+   دومًا في الصفحة الواحدة سواء فُتحت الورقة أم لا)، فأبطأ التطبيق كثيرًا.
+   التغليف الآن يتم وقت التشغيل فقط، ولحظيًّا فقط للآية التي تُقرأ فعلًا
+   (انظر wrapSegWords في app.js) — نفس تمييز الكلمة أثناء الاستماع، بلا أي
+   كلفة على البقية غير المفتوحة أبدًا. */
 function verseHTML(w){
   const segs=esc(w.verse).split('۝').map(p=>p.trim()).filter(Boolean);
   const nums=ayaNumbers(w,segs.length);
@@ -71,7 +82,7 @@ const ANSWERS=JSON.parse(R('src/data/answers.json'));
 /* نص القرآن الكريم كاملًا (١١٤ سورة) — لتعبئة صفحة المدير تلقائيًا عند اختيار سورة */
 const QURAN_FULL=R('src/data/quran-full.json');
 /* قاموس ترجمة واجهة الموقع (الأزرار والتسميات فقط) — النصوص القرآنية والأسئلة تبقى عربية دائمًا */
-const I18N_LANGS=['ar','en','ur','tr','ug','id','fr','bn','ha'];
+const I18N_LANGS=['ar','en','ur','tr','ug','id','fr','bn','ha','fa','ml','sw','hi'];
 /* معرّف قالب مستقر ومحايد اللغة، يُشتق من نص القالب العربي وقت البناء —
    لا يبقى أي نص عربي حرفي كمفتاح بحث وقت التشغيل، فلا صلة بين "المفتاح"
    وأي لغة بعينها. src/data/i18n/*.json نفسها مُرقَّمة بهذه المعرّفات مسبقًا
@@ -83,7 +94,13 @@ function tid(s){
   for(var i=0;i<s.length;i++){ h=((h*33)^s.charCodeAt(i))>>>0; }
   return 't'+h.toString(36);
 }
-const I18N=JSON.stringify(Object.fromEntries(I18N_LANGS.map(l=>[l,JSON.parse(R('src/data/i18n/'+l+'.json'))])));
+/* قواميس الترجمة الكاملة لكل لغة ثقيلة (تضم كل قوالب الأسئلة وأسماء السور) —
+   تضمينها كلها في الصفحة يُحمِّل كل زائر بيانات ٩ لغات مهما كانت لغته
+   الفعلية. تبقى العربية فقط مضمَّنة مباشرة (أول عرض فوري بلا طلب شبكة)،
+   وتُنشَر بقية اللغات كملفات API منفصلة (dist/api/i18n/<code>.json) يجلبها
+   المتصفح عند التبديل إليها فقط — عبر src/js/app.js's Locale.set(). */
+const I18N_CATALOGS=Object.fromEntries(I18N_LANGS.map(l=>[l,JSON.parse(R('src/data/i18n/'+l+'.json'))]));
+const I18N=JSON.stringify({ar:I18N_CATALOGS.ar});
 /* أسماء سور القرآن بالترتيب — لأسئلة «السورة السابقة/التالية» ورقم السورة */
 /* تصنيف كل سورة مكية أو مدنية — بترتيب المصحف (١ فاتحة ← ١١٤ ناس)، مصدره
    بيانات quran.com الرسمية (revelation_place)؛ حرف واحد لكل سورة: م=مكية، د=مدنية. */
@@ -806,7 +823,7 @@ const blockHTMLs=W.map((w,wi)=>{
   <summary class="card">
     <div class="tagrow">
       <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':(w.group?'tagPart':'tagAyah')}">${w.cat==='surah'?'سورة كاملة':(w.group?'جزء من سورة':'آية مختارة')}</span>
-      ${revPlaceOf(w.id)?`<span class="tag rev-tag" data-i18n="${revPlaceOf(w.id)==='م'?'revMeccan':'revMedinan'}">${revPlaceOf(w.id)==='م'?'مكية':'مدنية'}</span>`:''}
+      ${(!w.group && revPlaceOf(w.id))?`<span class="tag rev-tag" data-i18n="${revPlaceOf(w.id)==='م'?'revMeccan':'revMedinan'}">${revPlaceOf(w.id)==='م'?'مكية':'مدنية'}</span>`:''}
       ${ltag?`<span class="loc-tag">📍 ${locTagHTML(w)}</span>`:''}
     </div>
     <h3>${nameHTML(w)}</h3>
@@ -830,6 +847,7 @@ const blockHTMLs=W.map((w,wi)=>{
       </header>
       <div class="verse-wrap">
         <button class="act audio-play js-only" data-audio="${w.id}" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>
+        <button class="act repeat-toggle js-only" data-repeat="${w.id}" hidden data-i18n="repeatToggle">🔁 تكرار</button>
         <div class="verse"><p>﴿ ${verseHTML(w)} ﴾</p></div>
       </div>
       <div class="progress js-only"><div class="pbar"><i data-pfill="${w.id}" style="width:0%"></i></div><b data-ptxt="${w.id}">0 / ${total}</b><b class="score" data-score="${w.id}"></b></div>
@@ -866,11 +884,21 @@ W.forEach((w,wi)=>{
       return af-bf;
     });
   const groupItems=members.map(({xi})=>blockHTMLs[xi]).join('\n');
-  const groupMinAya=members.length?(members[0].x.ayaFrom||(AYA_NUM[members[0].x.id]?arNum(AYA_NUM[members[0].x.id]):0)):0;
+  const first=members.length?members[0].x:w;
+  const groupMinAya=members.length?(first.ayaFrom||(AYA_NUM[first.id]?arNum(AYA_NUM[first.id]):0)):0;
+  const groupTotalQ=members.reduce((a,{x})=>a+x.secs.reduce((s,sec)=>s+sec.q.length,0),0);
+  const groupRev=revPlaceOf(first.id);
+  const groupJuz=juzOf(SURA_NO[first.id], AYA_NUM[first.id]?arNum(AYA_NUM[first.id]):1);
   topEntries.push({key:[suraNo,groupMinAya,wi], html:`<details class="ws-group">
-  <summary class="ws-group-head">
-    <span class="ws-group-title">📖 <span data-i18n="surahWord">سورة</span> <span data-i18n-name="${esc(w.suraOf)}">${esc(w.suraOf)}</span></span>
-    <span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span>
+  <summary class="ws-group-head card">
+    <div class="tagrow">
+      <span class="tag" data-i18n="tagSurah">سورة كاملة</span>
+      ${groupRev?`<span class="tag rev-tag" data-i18n="${groupRev==='م'?'revMeccan':'revMedinan'}">${groupRev==='م'?'مكية':'مدنية'}</span>`:''}
+      ${groupJuz?`<span class="loc-tag">📍 <span data-i18n-tpl="${tid('الجزء {}')}" data-i18n-word="${toAr(groupJuz)}">الجزء ${toAr(groupJuz)}</span></span>`:''}
+    </div>
+    <h3><span class="ws-group-icon">📖</span> <span data-i18n="surahWord">سورة</span> <span data-i18n-name="${esc(w.suraOf)}">${esc(w.suraOf)}</span></h3>
+    <div class="vpeek">﴿ ${verseHTML(first)} ﴾</div>
+    <div class="cmeta"><span class="prog-mini" data-i18n-tpl="${tid('{} سؤالًا')}" data-i18n-word="${toAr(groupTotalQ)}">${toAr(groupTotalQ)} سؤالًا</span><span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>
   </summary>
   <div class="ws-group-items">
 ${groupItems}
@@ -896,6 +924,31 @@ const html=`<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
 <meta charset="UTF-8">
+<script>
+/* إضافة class="js" على <html> فورًا هنا — لا في نهاية app.js كما كانت —
+   فتظهر عناصر .js-only (التصفية، الصوت...) منذ أول رسم للصفحة بدل ومضة
+   "عارية" قبل اكتمال تحميل app.js في نهاية الصفحة. */
+document.documentElement.classList.add('js');
+/* تطبيق الوضع الداكن/الفاتح المحفوظ فورًا هنا — قبل أي CSS أو رسم للصفحة —
+   بدل انتظار app.js في نهاية الصفحة؛ كان التأخير يُسبِّب ومضة (FOUC) تُظهر
+   الوضع الافتراضي (يتبع إعداد الجهاز) للحظة قبل تصحيحه، فتبدو الصفحة كأنها
+   "عادت" لوضع مختلف عمّا اختاره المستخدم صراحةً عند كل إعادة تحميل. */
+try{
+  var __t=localStorage.getItem('tahleel-theme');
+  if(__t) document.documentElement.setAttribute('data-theme',__t);
+}catch(e){}
+/* بدء جلب قاموس اللغة غير العربية المحفوظة فورًا هنا (لا الانتظار حتى نهاية
+   الصفحة) — يقلّل مدة ظهور النص العربي قبل تبدّله للغة المختارة عند إعادة
+   التحميل؛ Locale في app.js تعيد استخدام نفس الطلب (نفس الرابط) بدل تكراره. */
+try{
+  var __L=localStorage.getItem('tahleel-locale');
+  if(__L && __L!=='ar'){
+    var __lk=document.createElement('link');
+    __lk.rel='preload'; __lk.as='fetch'; __lk.href='api/i18n/'+__L+'.json'; __lk.crossOrigin='anonymous';
+    document.head.appendChild(__lk);
+  }
+}catch(e){}
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>التحليل اللغوي المجهري — مختبر تحليل السور والآيات</title>
 <meta name="description" content="${DESC}">
@@ -952,10 +1005,14 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
   <button type="button" class="lang-opt" data-lang="ur">اردو</button>
   <button type="button" class="lang-opt" data-lang="tr">Türkçe</button>
   <button type="button" class="lang-opt" data-lang="ug">ئۇيغۇرچە</button>
-  <button type="button" class="lang-opt" data-lang="id">Bahasa Indonesia</button>
+  <button type="button" class="lang-opt" data-lang="id">Bahasa Indonesia/Melayu</button>
   <button type="button" class="lang-opt" data-lang="fr">Français</button>
   <button type="button" class="lang-opt" data-lang="bn">বাংলা</button>
   <button type="button" class="lang-opt" data-lang="ha">Hausa</button>
+  <button type="button" class="lang-opt" data-lang="fa">فارسی</button>
+  <button type="button" class="lang-opt" data-lang="ml">മലയാളം</button>
+  <button type="button" class="lang-opt" data-lang="sw">Kiswahili</button>
+  <button type="button" class="lang-opt" data-lang="hi">हिन्दी</button>
 </div>
 <div id="pubAudioPanel" class="audio-settings-panel" hidden>
   <label class="admin-field"><span data-i18n="reciterLabel">القارئ</span>
@@ -993,9 +1050,10 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
     <p class="sub" data-i18n="heroSub">ضع آيات القرآن الكريم تحت المجهر — اضغط أي بطاقة لفتح ورقة العمل، واكتب إجاباتك: الأسئلة القابلة للتصحيح تُصحَّح تلقائيًا (✓ صحيح / ✗ حاول مجددًا)، ويمكن طباعة أي ورقة كما هي.</p>
   </section>
   <div class="controls js-only">
-    <div class="tabs"><button class="on" data-f="all" data-i18n="fAll">الكل</button><button data-f="surah" data-i18n="fSurah">السور الكاملة</button></div>
+    <div class="tabs"><button class="on" data-f="all" data-i18n="fAll">كل الأوراق</button><button data-f="surah" data-i18n="fSurah">السور</button><button data-f="ayah" data-i18n="fAyah">آيات مختارة</button></div>
+    <div class="flat-hint" id="flatHint" hidden data-i18n="flatHint">الأجزاء معروضة منفصلة الآن — اضغط "آيات مختارة" مجددًا أو اختر "كل الأوراق" للعودة إلى تجميعها.</div>
     <div class="juz-filter">
-      <select id="juzFilter"><option value="0" data-i18n="fJuzAll">كل الأجزاء</option>${Array.from({length:30},(_,i)=>`<option value="${i+1}" data-i18n-tpl="${tid('الجزء {}')}" data-i18n-word="${toAr(i+1)}">الجزء ${toAr(i+1)}</option>`).join('')}</select>
+      <select id="juzFilter"><option value="0" data-i18n="fJuzAll">اختر جزءًا</option>${Array.from({length:30},(_,i)=>`<option value="${i+1}" data-i18n-tpl="${tid('الجزء {}')}" data-i18n-word="${toAr(i+1)}">الجزء ${toAr(i+1)}</option>`).join('')}</select>
     </div>
     <div class="tabs lvl-tabs"><button class="on" data-lf="all" data-i18n="lvlAll">كل المستويات</button>${LEVELS.map((L,i)=>`<button data-lf="${i+1}" class="lvl-tab lvl-${i+1}" data-i18n="lvl${i+1}">${L}</button>`).join('')}</div>
     <div class="search"><input id="q" type="text" placeholder="ابحث عن سورة أو آية..." data-i18n-ph="searchPh"></div>
@@ -1070,6 +1128,10 @@ function writeStaticAssets(){
     }))
   }));
   fs.mkdirSync(path.join(__dirname,'dist/api'), {recursive:true});
+  fs.mkdirSync(path.join(__dirname,'dist/api/i18n'), {recursive:true});
+  I18N_LANGS.forEach(l=>{
+    fs.writeFileSync(path.join(__dirname,'dist/api/i18n/'+l+'.json'), JSON.stringify(I18N_CATALOGS[l]));
+  });
   fs.writeFileSync(path.join(__dirname,'dist/api/worksheets.json'), JSON.stringify(apiWorksheets));
   fs.writeFileSync(path.join(__dirname,'dist/api/meta.json'), JSON.stringify({
     version: VERSION, buildDate: BUILD_DATE,

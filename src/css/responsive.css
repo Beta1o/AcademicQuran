@@ -159,14 +159,9 @@
   .admin-grid input,.admin-grid select,.admin-grid textarea,.adm-gate input{font-size:16px}
 }
 
-/* ---------- الطباعة (تعمل من الحاسب والجوال) ---------- */
+/* ---------- الطباعة (تعمل من الحاسب والجوال) — القواعد الأساسية في main.css،
+   هنا فقط ما يخص عمل الطباعة من الجوال تحديدًا ---------- */
 @media print{
-  @page{margin:12mm}
-  .grid{display:block!important;max-width:100%;padding:0;margin:0;gap:0}
   .ws-item[open]{grid-column:auto}
-  .ws-item[open] summary{display:none!important}
-  .ws{max-width:100%;padding:0}
-  .ws-top,.ws-close,.adm-gate{display:none!important}
-  .sheet{break-inside:auto}
-  .sheet-head,.verse-wrap,.sec,.sheet-foot{padding-left:0;padding-right:0}
+  .adm-gate{display:none!important}
 }

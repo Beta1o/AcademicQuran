@@ -1,4 +1,8 @@
-document.body.classList.add('js');
+/* الوسم document.documentElement.classList.add('js') انتقل إلى سكربت مبكر
+   في <head> (انظر build.js) — إضافته هنا (نهاية الصفحة كما كانت) كانت تعني
+   ظهور عناصر .js-only (أشرطة التصفية، أزرار الصوت...) متأخرًا بعد رسم الصفحة
+   كاملة أول مرة، فتظهر ومضة صفحة "عارية" قبل اكتمالها — بالضبط ما اشتكى منه
+   المستخدم عند كل إعادة تحميل. */
 var SUN='تثدذرزسشصضطظلن';
 var DIAC=/[\u064B-\u0652\u0670\u0640\u06D6-\u06ED]/g;
 function norm(s){return String(s).replace(DIAC,'').replace(/[﴿﴾«»()،:؟\.!+\-]/g,'').replace(/[ٱآأإ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').trim();}
@@ -190,9 +194,30 @@ function fetchJson(url){
   audioCache[url]=fetch(url).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; });
   return audioCache[url];
 }
-var curAudio=null, curBtn=null, curDet=null;
+var curAudio=null, curBtn=null, curDet=null, curSeg=null, curWords=null, curBounds=null;
+var curEstStart=null, curEstDuration=null, curRAF=null;
+/* تكرار: يُعيد تشغيل نفس قائمة الآيات الحالية من جديد بدل التوقف عند
+   نهايتها — يفيد ترديد آية واحدة (أو الورقة كلها) مرارًا أثناء الحفظ،
+   بدل الضغط يدويًا في كل مرة. حالة عامة واحدة كافية، لأن ورقة واحدة فقط
+   تُشغَّل صوتيًا في أي وقت. */
+var repeatMode=false, repeatBtn=null;
+function bindRepeatToggle(root){
+  root.querySelectorAll('[data-repeat]').forEach(function(b){
+    if(isBound(b)) return;
+    b.addEventListener('click', function(){
+      repeatMode=!repeatMode;
+      document.querySelectorAll('[data-repeat]').forEach(function(x){ x.classList.toggle('on', repeatMode && x===b); });
+      repeatBtn = repeatMode ? b : null;
+    });
+  });
+}
+bindRepeatToggle(document);
+window.bindRepeatToggle=bindRepeatToggle;
 function clearReading(){
   if(curDet) curDet.querySelectorAll('.sheet .verse .aya-seg.reading').forEach(function(el){ el.classList.remove('reading'); });
+  if(curWords) curWords.forEach(function(w){ w.classList.remove('reading'); });
+  curSeg=null; curWords=null; curBounds=null; curEstStart=null; curEstDuration=null;
+  if(curRAF){ cancelAnimationFrame(curRAF); curRAF=null; }
 }
 function stopAudio(onlyIfDet){
   if(onlyIfDet && curDet!==onlyIfDet) return; /* أغلقت ورقة أخرى غير التي تُقرأ حاليًا */
@@ -200,13 +225,112 @@ function stopAudio(onlyIfDet){
   if(curBtn){ curBtn.textContent='🔊 استماع للتلاوة'; curBtn.classList.remove('playing'); curBtn=null; }
   clearReading(); curDet=null;
 }
+function fullStopAudio(){
+  stopAudio();
+  repeatMode=false;
+  if(repeatBtn) repeatBtn.classList.remove('on');
+  repeatBtn=null;
+}
+window.fullStopAudio=fullStopAudio;
 window.stopAudio=stopAudio;
+/* تغليف كلمات الآية بـ span.w يتم هنا فقط، لحظة قراءتها فعليًا — لا وقت
+   البناء لكل الأوراق دفعة واحدة (كان هذا يُضاعف حجم الصفحة كثيرًا، انظر
+   التعليق في build.js). يُغلَّف نص العقد النصية فقط، ويُترَك رمز نهاية
+   الآية (span.aya) كما هو دون لمسه. */
+/* رموز الوقف (ۖۗۘۙۛۜ۩) ليست كلمات تُقرأ — هي إشارة وقف/سكتة تُطيل زمن
+   الكلمة التي تسبقها في التلاوة الفعلية؛ لا تُغلَّف بـ span.w مستقل (فتُعامَل
+   خطأً ككلمة قابلة للتتبّع/النقر)، بل تُلحَق بوزن الكلمة السابقة زمنيًا. */
+var PAUSE_MARK=/^[ۖۗۘۙۛۜ۩]+$/;
+function wrapSegWords(seg){
+  if(seg.dataset.wrapped==='1') return;
+  seg.dataset.wrapped='1';
+  Array.prototype.slice.call(seg.childNodes).forEach(function(node){
+    if(node.nodeType!==3||!node.textContent.trim()) return;
+    var frag=document.createDocumentFragment();
+    var lastSpan=null;
+    node.textContent.split(/(\s+)/).forEach(function(tok){
+      if(!tok) return;
+      if(/^\s+$/.test(tok)){ frag.appendChild(document.createTextNode(tok)); return; }
+      if(PAUSE_MARK.test(tok)){
+        frag.appendChild(document.createTextNode(tok));
+        if(lastSpan) lastSpan.dataset.pause='1'; /* يمنحها وزنًا زمنيًا إضافيًا في trackWord */
+        return;
+      }
+      var span=document.createElement('span');
+      span.className='w'; span.textContent=tok;
+      frag.appendChild(span);
+      lastSpan=span;
+    });
+    seg.replaceChild(frag, node);
+  });
+}
+function wrapVerseWords(det){
+  det.querySelectorAll('.sheet .verse .aya-seg').forEach(wrapSegWords);
+}
+window.wrapVerseWords=wrapVerseWords;
+/* وزن كل كلمة زمنيًا بحسب طولها الحرفي لا بعدّها المجرّد — كلمة طويلة تستغرق
+   نطقًا أطول من كلمة قصيرة، فتوزيع الزمن بالتساوي بينهما يُسبِّب انزياحًا
+   تدريجيًا؛ وتُمنَح الكلمة التي تسبق علامة وقف (ۖۗۘۙۛۜ۩) وزنًا إضافيًا لأن
+   السكتة تُطيل زمنها الفعلي في التلاوة. مُستخدمة هنا لكلٍّ من: أ) تتبّع
+   الكلمة الحالية أثناء الاستماع، ب) حساب نقطة البدء التقريبية عند النقر على
+   كلمة بعينها لإعادة القراءة منها — بنفس الحساب بالضبط كي لا يتضاربا. */
+function wordBounds(words){
+  var weights=words.map(function(w){
+    return w.textContent.replace(/[^؀-ۿ]/g,'').length + (w.dataset.pause==='1'?4:0) + 1;
+  });
+  var total=weights.reduce(function(a,b){return a+b;},0);
+  var acc=0;
+  return weights.map(function(wt){ acc+=wt; return acc/total; });
+}
 function markReading(ayaNo){
   if(!curDet) return;
   clearReading();
   if(!ayaNo) return; /* الاستعاذة/البسملة: لا آية محددة لتمييزها */
   var seg=curDet.querySelector('.sheet .verse .aya-seg[data-aya="'+ayaNo+'"]');
-  if(seg){ seg.classList.add('reading'); try{ seg.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} }
+  if(seg){
+    seg.classList.add('reading'); curSeg=seg;
+    wrapSegWords(seg);
+    curWords=Array.prototype.slice.call(seg.querySelectorAll('.w'));
+    curBounds=wordBounds(curWords);
+    /* تقدير احتياطي لزمن الآية (بمعزل عن audio.duration) — بعض ملفات
+       الصوت المصدرية لا تُعلن مدة صالحة (Infinity/NaN) فور بدء التشغيل، ما
+       كان يُعطِّل التتبّع بالكامل صامتًا (لا خطأ ظاهر، فقط لا تحديث أبدًا).
+       نستخدم الزمن الحقيقي إذا توفّر، وإلا هذا التقدير — فيبقى التتبّع
+       يعمل دومًا ولو بدقة أقل حين تنقص بيانات الصوت. */
+    curEstStart=(window.performance&&performance.now)?performance.now():Date.now();
+    curEstDuration=Math.max(900, curBounds.length*260);
+    startTrackLoop();
+    try{ seg.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){}
+  }
+}
+/* تتبّع الكلمة الحالية أثناء تشغيل الآية — موزَّع على حدود تراكمية مبنية على
+   طول كل كلمة ووجود وقفة بعدها (curBounds) لا على عدّ الكلمات بالتساوي.
+   يُفضَّل زمن الصوت الحقيقي (audio.currentTime/duration) حين يكون صالحًا،
+   ويسقط تلقائيًا إلى التقدير الزمني (curEstStart/curEstDuration) حين لا
+   يكون — عبر حلقة requestAnimationFrame مستمرة، لا حدث timeupdate فقط (كان
+   الاعتماد عليه وحده يعني توقّف التتبّع تمامًا كلما تأخّر أو غاب). */
+function trackWord(){
+  if(!curAudio||!curWords||!curWords.length||!curBounds) return;
+  var ratio;
+  if(isFinite(curAudio.duration)&&curAudio.duration>0){
+    ratio=curAudio.currentTime/curAudio.duration;
+  } else if(curEstStart!=null){
+    var now=(window.performance&&performance.now)?performance.now():Date.now();
+    ratio=(now-curEstStart)/curEstDuration;
+  } else return;
+  ratio=Math.max(0,Math.min(1,ratio));
+  var idx=curBounds.findIndex(function(b){ return ratio<=b; });
+  if(idx<0) idx=curWords.length-1;
+  curWords.forEach(function(w,i){ w.classList.toggle('reading', i===idx); });
+}
+function startTrackLoop(){
+  if(curRAF) cancelAnimationFrame(curRAF);
+  function tick(){
+    if(!curWords){ curRAF=null; return; }
+    trackWord();
+    curRAF=requestAnimationFrame(tick);
+  }
+  curRAF=requestAnimationFrame(tick);
 }
 /* البسملة: «بسم الله الرحمن الرحيم» — تُقرأ في مطلع كل سورة (ما عدا التوبة رقم ٩)،
    وكذلك عند بدء آية مختارة من أول السورة. ملفات الآية الأولى لكل سورة لا تتضمّن
@@ -221,11 +345,11 @@ function needsBasmala(det){
   return start===1;
 }
 /* تُشغَّل الآيات كملفات منفصلة بالتتابع (لا كصوت سورة كاملة واحد) كي يمكن تمييز الآية الحالية أثناء الاستماع لمساعدة الحفظ */
-function playAyaList(items,btn,det){
+function playAyaList(items,btn,det,seekRatio){
   if(!items.length){ btn.textContent='🔊 لا يوجد صوت'; setTimeout(function(){ btn.textContent='🔊 استماع للتلاوة'; },1500); return; }
   var i=0, preloaded=null; /* {idx, audio} — ملف الآية التالية يُحمَّل مسبقًا أثناء تشغيل الحالية */
   curAudio=new Audio(); curBtn=btn; curDet=det; btn.textContent='⏸️ إيقاف التلاوة'; btn.classList.add('playing');
-  function bindEvents(a){ a.addEventListener('ended', next); a.addEventListener('error', next); }
+  function bindEvents(a){ a.addEventListener('ended', next); a.addEventListener('error', next); a.addEventListener('timeupdate', trackWord); }
   /* كل آية تُقرأ كاملة من بدايتها لنهايتها ثم تنتقل تلقائيًا للتالية (حدث ended) —
      هذا سلوك مقصود، لا عطل. العطل الحقيقي هو توقّف التلاوة كلها بسبب تعثّر آية
      واحدة فقط (شبكة بطيئة، انقطاع لحظي...)، فتخطّي تلك الآية والمتابعة للتي
@@ -240,13 +364,37 @@ function playAyaList(items,btn,det){
     preloaded={idx:idx, audio:a};
   }
   function next(){
-    if(!curAudio||i>=items.length){ stopAudio(); return; }
+    if(!curAudio) return;
+    if(i>=items.length){
+      if(repeatMode){ i=0; preloaded=null; } else { stopAudio(); return; }
+    }
     var it=items[i];
     var use = (preloaded && preloaded.idx===i) ? preloaded.audio : curAudio;
+    var isFirst=(i===0);
     i++;
     markReading(it.aya);
     if(use!==curAudio){ curAudio.pause(); curAudio=use; }
     else { curAudio.src=it.url; }
+    /* النقر على كلمة بعينها: نبدأ الاستماع من موضعها التقريبي داخل الآية،
+       لا من أولها — لا توجد بيانات توقيت فعلية لكل كلمة، فهذا تقريب بنسبة
+       ترتيب الكلمة إلى عددها، لكنه كافٍ عمليًا ليضع المستمع قرب الكلمة
+       المطلوبة مباشرة بدل الاضطرار لسماع الآية كاملة من البداية كل مرة. */
+    if(isFirst && seekRatio!=null){
+      /* أكثر من مستمع احتياطي واحد لتطبيق القفز — بعض المتصفحات (خصوصًا على
+         الجوال) لا تُطلق loadedmetadata بثبات قبل بدء التشغيل فعليًا، فكان
+         القفز يفشل صامتًا ويُسمَع مطلع الآية دومًا بصرف النظر عن الكلمة
+         المنقورة (يبدو للمستخدم وكأن "صوتًا خطأ" يُشغَّل). */
+      var seekDone=false;
+      var applySeek=function(){
+        if(seekDone||!curAudio.duration) return;
+        curAudio.currentTime=seekRatio*curAudio.duration;
+        seekDone=true;
+      };
+      ['loadedmetadata','durationchange','canplay'].forEach(function(ev){
+        curAudio.addEventListener(ev, applySeek, {once:true});
+      });
+      if(curAudio.readyState>=1) applySeek();
+    }
     curAudio.play().catch(next);
     preloaded=null;
     preloadNext(i); /* حمِّل الآية التي تلي هذه فورًا، بينما هذه قيد التشغيل */
@@ -258,6 +406,11 @@ function refreshAudioButtons(){
   var s=audioSettings();
   document.querySelectorAll('[data-audio]').forEach(function(b){
     var det=document.getElementById('w-'+b.dataset.audio);
+    var has = det && det.dataset.surano && det.dataset.ayaend==='1' && det.dataset.ayalist;
+    b.hidden = !s.enabled || !has;
+  });
+  document.querySelectorAll('[data-repeat]').forEach(function(b){
+    var det=document.getElementById('w-'+b.dataset.repeat);
     var has = det && det.dataset.surano && det.dataset.ayaend==='1' && det.dataset.ayalist;
     b.hidden = !s.enabled || !has;
   });
@@ -296,6 +449,48 @@ function bindAudio(root){
 bindAudio(document);
 window.bindAudio=bindAudio;
 refreshAudioButtons();
+/* إعادة قراءة آية بعينها — يفيد المتعلم الذي يريد تكرار آية واحدة لحفظها
+   بدل الاستماع للورقة كلها من البداية؛ النقر على أي جزء من نص الآية (كلمة
+   أو الآية كاملة) يشغّل ملف صوت تلك الآية وحدها فورًا، ويُبقي تمييز الآية
+   والكلمة (تتبّع القراءة) يعمل كالمعتاد أثناء تشغيلها. */
+function replayAya(det, ayaNo, seekRatio){
+  var s=audioSettings(), sura=det.dataset.surano;
+  if(!sura||!ayaNo) return;
+  stopAudio();
+  fetchJson('https://quranapi.pages.dev/api/audio/'+sura+'/'+ayaNo+'.json').then(function(d){
+    var url=d&&d[s.reciter]&&d[s.reciter].url;
+    if(!url) return;
+    var btn=det.querySelector('[data-audio]');
+    playAyaList([{aya:ayaNo, url:url}], btn||{textContent:'',classList:{add:function(){},remove:function(){}}}, det, seekRatio);
+  });
+}
+function bindReplay(root){
+  root.querySelectorAll('.sheet .verse').forEach(function(v){
+    if(isBound(v)) return;
+    v.classList.add('replayable');
+    v.addEventListener('click', function(e){
+      var wordEl=e.target.closest('.w');
+      var seg=e.target.closest('.aya-seg');
+      if(!seg) return;
+      var det=v.closest('.ws-item');
+      if(!det || !det.dataset.surano || !det.dataset.ayaend) return;
+      var seekRatio=null;
+      if(wordEl){
+        var words=Array.prototype.slice.call(seg.querySelectorAll('.w'));
+        var idx=words.indexOf(wordEl);
+        /* نفس حساب الأوزان المستخدَم في التتبّع أثناء الاستماع (wordBounds)
+           — نقطة البدء هي نهاية الكلمة السابقة، لا نسبة ترتيب الكلمة المجرّدة
+           كما كان (كانت تُسبِّب بدء التشغيل من موضع بعيد عن الكلمة المنقورة
+           فعلًا لاختلاف أطوال الكلمات، فيبدو كأن صوتًا "خطأ" يُشغَّل). */
+        if(idx>0 && words.length>1) seekRatio=wordBounds(words)[idx-1];
+        else if(idx===0) seekRatio=0;
+      }
+      replayAya(det, seg.dataset.aya, seekRatio);
+    });
+  });
+}
+bindReplay(document);
+window.bindReplay=bindReplay;
 /* ---------- قوائم منبثقة (القارئ/اللغة): حاجز خلفي مشترك واحد لكل التطبيق —
    يُظهره أي زر يفتح قائمة، ويُغلقها النقر عليه، فتبدو كل قائمة منبثقة نافذة
    تطبيق حقيقية بدل قائمة منسدلة عادية، ولا حاجة لتكرار هذا لكل قائمة جديدة. */
@@ -374,12 +569,12 @@ var Locale = (function(){
   /* اللغة الافتراضية عند غياب اختيار محفوظ أو عند طلب كود لغة غير موجود —
      قيمة إعداد واحدة، لا حالة خاصة مكرّرة في كل دالة. */
   var DEFAULT_LOCALE = 'ar';
-  var NAMES  = {ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe',ug:'ئۇيغۇرچە',id:'Bahasa Indonesia',fr:'Français',bn:'বাংলা',ha:'Hausa'};
-  var DIRS   = {ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr',ug:'rtl',id:'ltr',fr:'ltr',bn:'ltr',ha:'ltr'};
-  /* رقم كل لغة الخاص بها — عشرة أرقام مرتّبة ٠..٩؛ العربية وحدها تستخدم
-     الأرقام الهندية، وباقي اللغات غربية، لكن التحويل أدناه لا يفضّل أيًّا
-     منها: يُترجَم دومًا إلى مجموعة رقم current الحالية أيًّا كانت. */
-  var DIGIT_SETS = {ar:'٠١٢٣٤٥٦٧٨٩',en:'0123456789',ur:'0123456789',tr:'0123456789',ug:'0123456789',id:'0123456789',fr:'0123456789',bn:'0123456789',ha:'0123456789'};
+  var NAMES  = {ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe',ug:'ئۇيغۇرچە',id:'Bahasa Indonesia/Melayu',fr:'Français',bn:'বাংলা',ha:'Hausa',fa:'فارسی',ml:'മലയാളം',sw:'Kiswahili',hi:'हिन्दी'};
+  var DIRS   = {ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr',ug:'rtl',id:'ltr',fr:'ltr',bn:'ltr',ha:'ltr',fa:'rtl',ml:'ltr',sw:'ltr',hi:'ltr'};
+  /* رقم كل لغة الخاص بها — عشرة أرقام مرتّبة ٠..٩؛ العربية والفارسية وحدهما
+     تستخدمان أرقامًا غير غربية، وباقي اللغات غربية، لكن التحويل أدناه لا
+     يفضّل أيًّا منها: يُترجَم دومًا إلى مجموعة رقم current الحالية أيًّا كانت. */
+  var DIGIT_SETS = {ar:'٠١٢٣٤٥٦٧٨٩',en:'0123456789',ur:'0123456789',tr:'0123456789',ug:'0123456789',id:'0123456789',fr:'0123456789',bn:'0123456789',ha:'0123456789',fa:'۰۱۲۳۴۵۶۷۸۹',ml:'0123456789',sw:'0123456789',hi:'0123456789'};
   var SRC_DIGITS = DIGIT_SETS.ar; // كل الأرقام في نص القوالب واردة بهذه الصورة أصلًا
   /* خمس لغات، بلا استثناء ولا حالة خاصة للعربية: كل لغة — العربية أيضًا —
      قاموسها الكامل في src/data/i18n/<code>.json، يُقرأ من هنا فقط. لا نص
@@ -396,9 +591,15 @@ var Locale = (function(){
      (t، render، وأي كود مستقبلي) تمر عبر هذه الدالة فقط. */
   function catalog(){ return catalogs[current] || {}; }
 
-  /* ترجمة نص واجهة يُنشأ ديناميكيًا وقت التشغيل (مثل زر إظهار الإجابة) — لا علاقة له بكلمات القرآن */
+  /* ترجمة نص واجهة يُنشأ ديناميكيًا وقت التشغيل (مثل زر إظهار الإجابة) — لا علاقة له بكلمات القرآن.
+     تتدهور بلطف إلى قاموس العربية إن كانت اللغة الحالية غير عربية ولم يصل
+     قاموسها بعد (جلب غير متزامن) — بدل عرض معرّف المفتاح الخام حرفيًا على
+     الشاشة (كـ"openWsToggle") ريثما يكتمل الجلب. */
   function t(key){
-    return catalog()[key] || key;
+    var cat=catalog();
+    if(cat[key]) return cat[key];
+    var fb=catalogs[DEFAULT_LOCALE]||{};
+    return fb[key] || key;
   }
   /* الأرقام قياسية عبر التطبيق كله حسب اللغة المختارة — تُحوَّل دومًا إلى
      مجموعة رقم current من DIGIT_SETS، بلا أي فرع خاص بأي لغة بعينها؛
@@ -481,15 +682,34 @@ var Locale = (function(){
     var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=NAMES[current]||NAMES[DEFAULT_LOCALE];
   }
 
+  /* غير العربية: قوالبها لا تُضمَّن في الصفحة، تُجلَب من api/i18n/<code>.json
+     عند أول استخدام فعلي فقط لا عند التحميل — فلا يُحمَّل زائر عربي وحده
+     بيانات ٨ لغات أخرى لن يفتحها أبدًا. تُخزَّن في catalogs بعد الجلب فلا
+     تتكرر الشبكة لنفس اللغة مرتين. عربية تبقى دومًا مضمَّنة (أول عرض فوري). */
+  function loadCatalog(code, cb){
+    if(catalogs[code] || code===DEFAULT_LOCALE){ cb(); return; }
+    fetch('api/i18n/'+code+'.json').then(function(r){ return r.json(); }).then(function(data){
+      catalogs[code]=data; cb();
+    }).catch(function(){ cb(); });
+  }
+
   function set(code){
-    current = catalogs[code] ? code : DEFAULT_LOCALE;
+    current = NAMES[code] ? code : DEFAULT_LOCALE;
     try{ localStorage.setItem(STORAGE_KEY, current); }catch(e){}
-    render();
+    render(); /* عرض فوري بالنص العربي المطبوع أصلًا ريثما تصل الترجمة (تدهور سلس) */
+    loadCatalog(current, render);
   }
 
   render(); // أول عرض عند تحميل الصفحة، بحسب ما كان محفوظًا سابقًا (أو العربية افتراضيًا)
+  /* وعد جهوزية الترجمة — يُستخدَم في نظام الكشف الوحيد عن الصفحة (reveal في
+     أسفل هذا الملف، مع جهوزية الخطوط) بدل بوابة كشف منفصلة ثانية كانت
+     تتعارض معه (كلتاهما تُخفيان body بشرط مستقل، فتبقى الصفحة مخفية حتى
+     يتحقق الشرطان معًا، لا أوّل ما يتحقق أيّهما) — مصدر حقيقة واحد الآن. */
+  var localeReady = (current===DEFAULT_LOCALE)
+    ? Promise.resolve()
+    : new Promise(function(res){ loadCatalog(current, function(){ render(); res(); }); });
 
-  return { get current(){ return current; }, set: set, t: t, render: render, num: num, isDigits: isDigits, tid: tid, NAMES: NAMES, DIRS: DIRS };
+  return { get current(){ return current; }, set: set, t: t, render: render, num: num, isDigits: isDigits, tid: tid, NAMES: NAMES, DIRS: DIRS, ready: localeReady };
 })();
 window.Locale=Locale;
 /* توافق خلفي: بقية الشيفرة (وربما ملحقات مستقبلية) تنادي t() مباشرة */
@@ -530,6 +750,10 @@ function bindToggles(root){
     setGoLabel();
     d.addEventListener('toggle',function(){
       setGoLabel();
+      /* تغليف كلمات الآيات بـ span.w فور فتح الورقة — لا وقت تحميل الصفحة
+         لكل الأوراق (تكلفة ضئيلة على ورقة واحدة مفتوحة فقط)، فيصبح النقر
+         على كلمة بعينها ممكنًا فورًا دون انتظار بدء الاستماع أولًا. */
+      if(d.open && window.wrapVerseWords) window.wrapVerseWords(d);
       if(!d.open && window.stopAudio) window.stopAudio(d);
       if(d.open && !noAutoScroll){
         document.querySelectorAll('.grid .ws-item[open]').forEach(function(o){
@@ -546,6 +770,7 @@ window.bindToggles=bindToggles;
 /* تهيئة ورقة أُضيفت في وقت التشغيل (من صفحة المدير) */
 window.bindSheet=function(root){
   bindAnswers(root); bindControls(root); bindToggles(root);
+  bindAudio(root); bindReplay(root); bindRepeatToggle(root); refreshAudioButtons();
 };
 var filter='all';
 function applyFilter(){
@@ -557,6 +782,18 @@ function applyFilter(){
     var ok=catOk&&juzOk&&(!q||c.dataset.name.indexOf(q.trim())>-1);
     c.style.display=ok?'':'none';
   });
+  /* تصفية «آيات مختارة»: تُعرَض أجزاء السور المجزَّأة منفكّة كبطاقات مستقلة
+     متتابعة، لا مجمَّعة تحت غلاف قابل للطي — يتطلب فتح كل <details> فعليًا
+     (لا مجرد إخفاء الرأس بصريًا) كي يُعرَض محتواها أصلًا. */
+  var grid=document.querySelector('.grid');
+  var flat = filter==='ayah';
+  if(grid) grid.classList.toggle('force-flat', flat);
+  document.querySelectorAll('.grid .ws-group').forEach(function(g){
+    if(flat) g.setAttribute('open','');
+    else g.removeAttribute('open');
+  });
+  /* تنبيه واضح كيف تُعاد الأجزاء المنفكّة إلى تجميعها — لا شيء كان يوضّح ذلك سابقًا */
+  var hint=document.getElementById('flatHint'); if(hint) hint.hidden=!flat;
   /* سورة طويلة مجزّأة: أخفِ بطاقة المجموعة نفسها إن اختفت كل أجزائها بالتصفية،
      كي لا يبقى إطار فارغ لا يحوي أي جزء مطابق للبحث/الفئة المختارة */
   document.querySelectorAll('.grid .ws-group').forEach(function(g){
@@ -566,8 +803,12 @@ function applyFilter(){
 }
 document.querySelectorAll('.tabs:not(.lvl-tabs) button').forEach(function(b){
   b.addEventListener('click',function(){
-    filter=b.dataset.f;
-    document.querySelectorAll('.tabs:not(.lvl-tabs) button').forEach(function(x){x.classList.toggle('on',x===b);});
+    /* الضغط على التبويب النشط نفسه مجددًا (مثل «آيات مختارة») يُعيد كل شيء
+       إلى «الكل» بدل البقاء عالقًا بلا وسيلة واضحة للرجوع */
+    var already = b.classList.contains('on');
+    var target = already ? document.querySelector('.tabs:not(.lvl-tabs) [data-f="all"]') : b;
+    filter=target.dataset.f;
+    document.querySelectorAll('.tabs:not(.lvl-tabs) button').forEach(function(x){x.classList.toggle('on',x===target);});
     applyFilter();
   });
 });
@@ -620,11 +861,12 @@ window.addEventListener('afterprint',function(){
    جهوزية الخطوط (document.fonts.ready) قبل الكشف عن الصفحة أيضًا، بحدّ
    أقصى قصير كي لا تتجمّد الصفحة إن تعذّر تحميل الخطوط لأي سبب. */
 function reveal(){ document.documentElement.setAttribute('data-ready','1'); }
-if(document.fonts && document.fonts.ready){
-  var revealed=false;
-  var doReveal=function(){ if(revealed) return; revealed=true; reveal(); };
-  document.fonts.ready.then(doReveal).catch(doReveal);
-  setTimeout(doReveal, 400); /* لا تنتظر أكثر من هذا حتى لا يبدو التطبيق بطيئًا */
-} else {
-  reveal();
-}
+var revealed=false;
+var doReveal=function(){ if(revealed) return; revealed=true; reveal(); };
+/* بوابة كشف واحدة فقط — تنتظر الخطوط والترجمة معًا (Locale.ready)، لا كل
+   واحدة ببوابة body{visibility:hidden} مستقلة (كانتا تتعارضان: تبقى الصفحة
+   مخفية حتى يتحقق الشرطان معًا بدل أوّل ما يتحقق أيّهما، فيتضاعف التأخير). */
+var fontsP = (document.fonts && document.fonts.ready) ? document.fonts.ready.catch(function(){}) : Promise.resolve();
+var localeP = (window.Locale && Locale.ready) ? Locale.ready.catch(function(){}) : Promise.resolve();
+Promise.all([fontsP, localeP]).then(doReveal).catch(doReveal);
+setTimeout(doReveal, 700); /* لا تنتظر أكثر من هذا حتى لا يبدو التطبيق بطيئًا */

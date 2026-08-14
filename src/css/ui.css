@@ -4,7 +4,7 @@
 .ws-item summary::marker{content:''}
 .ws-item[open] summary{border-radius:14px 14px 0 0}
 .js-only{display:none}
-body.js .js-only{display:flex}
+html.js .js-only{display:flex}
 .q .hint{margin-top:6px;font-size:.85rem;color:#8a6d1f;background:#fdf6e3;border:1px dashed #d9b44a;border-radius:8px;padding:6px 10px}
 .q.ok input[data-k]{border-color:#1E6E63;background:#eefaf5}
 .q.ok .num{background:#1E6E63;color:#fff}
