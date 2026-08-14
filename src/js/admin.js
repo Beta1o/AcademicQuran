@@ -116,8 +116,16 @@ function renderCustomWs(){
   if(window.Locale) window.Locale.render(); /* تطبيق اللغة الحالية على أي ورقة/سؤال أُدرج للتو */
   refreshStats();
 }
-/* تحديث أرقام الصفحة الرئيسية بعد الإضافة */
+/* تحديث أرقام لوحة المدير (عدد الأوراق/الأسئلة) — هذه الأرقام داخل لوحة
+   المدير المخفية افتراضيًا (hidden حتى يُفتح القفل)، لا الصفحة الرئيسة العامة؛
+   لا يراها الزائر العادي أبدًا. مع ذلك كانت تُحسَب بفحص كل عنصر .q في الصفحة
+   (حتى ٤٢ ألفًا) على كل تحميل صفحة — مرتين فعليًا (هنا وعبر renderCustomWs)
+   — بلا أي فائدة ملموسة لمن لم يفتح لوحة المدير إطلاقًا. تُؤجَّل الآن حتى
+   تُفتح اللوحة فعلًا (انظر استدعاءها عند فتح القفل أدناه)، فلا كلفة على
+   الزائر العادي أبدًا. */
 function refreshStats(){
+  var panel=document.getElementById('adminPanel');
+  if(panel && panel.hidden) return;
   var all=document.querySelectorAll('.ws-item:not(.ws-hidden)');
   var qs=document.querySelectorAll('.ws-item:not(.ws-hidden) .q').length;
   var s=0,a=0;
@@ -394,6 +402,15 @@ function renumberQuestions(det){
 }
 window.renumberQuestions=renumberQuestions;
 function renderCustomAll(){
+  /* تُستدعى هذه الدالة بلا شرط عند تحميل كل صفحة (أسفل هذا الملف) — لمعظم
+     الزوار CUSTOM فارغ تمامًا (لا أسئلة أضافها المدير)، فكانت تفحص مع ذلك
+     كل عنصر .q في الصفحة (حتى ٤٢ ألفًا) بحثًا عمّا يُزال، ثم تعيد تطبيق
+     الترجمة على الصفحة كلها من جديد رغم عدم تغيّر شيء فعليًا — كلفة حقيقية
+     على كل تحميل صفحة أثبتتها تتبّعات الأداء (render/renderCustomAll من
+     أبرز مستهلكي وقت المعالج). لا داعي لأي من هذا حين لا توجد أسئلة مخصَّصة
+     أصلًا؛ الخروج المبكر هنا آمن تمامًا لأن نفس الدالة تُستدعى مجددًا بعد كل
+     إضافة/تعديل فعلي لسؤال، حين يصبح CUSTOM غير فارغ. */
+  if(!Object.keys(CUSTOM).length) return;
   document.querySelectorAll('.q.custom').forEach(function(el){el.remove();});
   Object.keys(CUSTOM).forEach(function(ws){
     var det=document.getElementById('w-'+ws); if(!det) return;
@@ -442,7 +459,10 @@ if(panel){
   function setPanel(open){
     panel.hidden=!open;
     lockScroll(open || (gate && !gate.hidden));
-    if(open && $('admWs')) try{ $('admWs').focus(); }catch(e){}
+    if(open){
+      refreshStats(); /* الأرقام كانت تُحسَب دومًا حتى قبل فتح اللوحة — الآن فقط لحظة فتحها فعليًا */
+      if($('admWs')) try{ $('admWs').focus(); }catch(e){}
+    }
   }
   function gateMsg(s){ if($('admGateMsg')) $('admGateMsg').textContent=s||''; }
   function setGate(open){
