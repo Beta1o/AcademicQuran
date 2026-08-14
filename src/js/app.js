@@ -849,7 +849,19 @@ document.querySelectorAll('.tabs:not(.lvl-tabs) button').forEach(function(b){
     applyFilter();
   });
 });
-var qi=document.getElementById('q'); if(qi) qi.addEventListener('input',applyFilter);
+/* applyFilter تفحص ٦٨٧ بطاقة/مجموعة في كل استدعاء — دون تأخير كان كل ضغطة
+   حرف أثناء الكتابة تُشغِّل هذا الفحص كاملًا فورًا، فتتراكم الكلفة مع سرعة
+   الكتابة الطبيعية. تأخير قصير (تُلغى المؤقتات السابقة عند كل ضغطة جديدة)
+   يجعل الفحص يعمل مرة واحدة فقط بعد توقّف الكتابة، بلا أي تأخير محسوس على
+   الاستخدام العادي. */
+var qi=document.getElementById('q');
+if(qi){
+  var filterDebounce=null;
+  qi.addEventListener('input',function(){
+    clearTimeout(filterDebounce);
+    filterDebounce=setTimeout(applyFilter,150);
+  });
+}
 var jf=document.getElementById('juzFilter'); if(jf) jf.addEventListener('change',applyFilter);
 /* ---------- تصفية الأسئلة حسب المستوى: إخفاء أي مستوى غير المختار ---------- */
 var lvlFilter='all';
