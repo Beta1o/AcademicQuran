@@ -119,6 +119,8 @@ input,textarea{font-family:inherit;color:var(--ink)}
 .lvl-tabs button.on.lvl-4{background:#b0561a;color:#fff}
 .lvl-tabs button.on.lvl-5{background:#a32b3f;color:#fff}
 .lvl-tabs button.on:not([class*="lvl-"]){background:var(--teal);color:#fff}
+.juz-filter select{border:1.5px solid var(--line);border-radius:999px;padding:8px 34px 8px 18px;background:var(--surface);font-size:.88rem;font-weight:600;color:var(--ink-soft);cursor:pointer}
+.juz-filter select:focus{outline:2px solid var(--teal);outline-offset:1px}
 .search{position:relative}
 .search input{border:1.5px solid var(--line);border-radius:999px;padding:9px 40px 9px 18px;width:250px;background:var(--surface);font-size:.9rem}
 .search input:focus{outline:2px solid var(--teal);outline-offset:1px}

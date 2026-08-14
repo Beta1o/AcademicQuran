@@ -1116,7 +1116,8 @@
   "tuu1mbd": "Laboratoire d'Analyse de Sourate",
   "t16ca38s": "Laboratoire d'Analyse Linguistique",
   "t1w9gbrp": "Le Mihrab de la Réflexion — Un Voyage Microscopique",
-  "tk8cd4g": "{} parties"
+  "tk8cd4g": "{} parties",
+  "t1hlv3dr": "Joz' {}"
  },
  "revealModel": "Afficher la réponse modèle",
  "revealCorrect": "Afficher la bonne réponse",
@@ -1234,5 +1235,6 @@
  "checkSimple": "Fait ✓",
  "checkActivity": "J'ai fait l'activité ✓",
  "revMeccan": "Mecquoise",
- "revMedinan": "Médinoise"
+ "revMedinan": "Médinoise",
+ "fJuzAll": "Tous les joz'"
 }

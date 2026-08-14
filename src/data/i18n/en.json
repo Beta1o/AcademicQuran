@@ -1116,7 +1116,8 @@
   "tuu1mbd": "Surah Analysis Lab",
   "t16ca38s": "Linguistic Analysis Lab",
   "t1w9gbrp": "The Mihrab of Reflection — A Microscopic Journey",
-  "tk8cd4g": "{} parts"
+  "tk8cd4g": "{} parts",
+  "t1hlv3dr": "Juz' {}"
  },
  "revealModel": "Show model answer",
  "revealCorrect": "Show correct answer",
@@ -1234,5 +1235,6 @@
  "checkSimple": "Done ✓",
  "checkActivity": "I did the activity ✓",
  "revMeccan": "Meccan",
- "revMedinan": "Medinan"
+ "revMedinan": "Medinan",
+ "fJuzAll": "All juz'"
 }

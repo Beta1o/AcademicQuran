@@ -1116,7 +1116,8 @@
   "tuu1mbd": "Laboratorium Analisis Surah",
   "t16ca38s": "Laboratorium Analisis Linguistik",
   "t1w9gbrp": "Mihrab Tadabur — Perjalanan Mikroskopis",
-  "tk8cd4g": "{} bagian"
+  "tk8cd4g": "{} bagian",
+  "t1hlv3dr": "Juz {}"
  },
  "revealModel": "Tampilkan jawaban model",
  "revealCorrect": "Tampilkan jawaban benar",
@@ -1234,5 +1235,6 @@
  "checkSimple": "Selesai ✓",
  "checkActivity": "Saya telah melakukan aktivitas ini ✓",
  "revMeccan": "Makkiyah",
- "revMedinan": "Madaniyah"
+ "revMedinan": "Madaniyah",
+ "fJuzAll": "Semua juz"
 }

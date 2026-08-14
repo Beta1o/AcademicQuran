@@ -91,6 +91,19 @@ const I18N=JSON.stringify(Object.fromEntries(I18N_LANGS.map(l=>[l,JSON.parse(R('
 /* تصنيف كل سورة مكية أو مدنية — بترتيب المصحف (١ فاتحة ← ١١٤ ناس)، مصدره
    بيانات quran.com الرسمية (revelation_place)؛ حرف واحد لكل سورة: م=مكية، د=مدنية. */
 const REV_PLACE='م د د د د م م د د م م م د م م م م م م م م د م د م م م م م م م م د م م م م م م م م م م م م م د د د م م م م م د م د د د د د د د د د د م م م م م م م م م د م م م م م م م م م م م م م م م م م م م م م د د م م م م م م م م م م د م م م م'.split(' ');
+/* بداية كل جزء من الأجزاء الثلاثين (رقم السورة:رقم الآية) — بيانات معتمدة
+   (quran.com الرسمية)، تُستخدم لاشتقاق أي آية تنتمي لأي جزء وقت البناء. */
+const JUZ_STARTS=[[1,1],[2,142],[2,253],[3,93],[4,24],[4,148],[5,82],[6,111],[7,88],[8,41],[9,93],[11,6],[12,53],[15,1],[17,1],[18,75],[21,1],[23,1],[25,21],[27,56],[29,46],[33,31],[36,28],[39,32],[41,47],[46,1],[51,31],[58,1],[67,1],[78,1]];
+function juzOf(suraNo, ayaNo){
+  if(!suraNo) return null;
+  ayaNo=ayaNo||1;
+  let j=1;
+  for(let i=0;i<JUZ_STARTS.length;i++){
+    const [s,a]=JUZ_STARTS[i];
+    if(suraNo>s || (suraNo===s && ayaNo>=a)) j=i+1; else break;
+  }
+  return j;
+}
 function revPlaceOf(id){ const n=SURA_NO[id]; return n?REV_PLACE[n-1]:null; }
 const SURA_NAMES=['الفاتحة','البقرة','آل عمران','النساء','المائدة','الأنعام','الأعراف','الأنفال','التوبة','يونس','هود','يوسف','الرعد','إبراهيم','الحجر','النحل','الإسراء','الكهف','مريم','طه','الأنبياء','الحج','المؤمنون','النور','الفرقان','الشعراء','النمل','القصص','العنكبوت','الروم','لقمان','السجدة','الأحزاب','سبأ','فاطر','يس','الصافات','ص','الزمر','غافر','فصلت','الشورى','الزخرف','الدخان','الجاثية','الأحقاف','محمد','الفتح','الحجرات','ق','الذاريات','الطور','النجم','القمر','الرحمن','الواقعة','الحديد','المجادلة','الحشر','الممتحنة','الصف','الجمعة','المنافقون','التغابن','الطلاق','التحريم','الملك','القلم','الحاقة','المعارج','نوح','الجن','المزمل','المدثر','القيامة','الإنسان','المرسلات','النبأ','النازعات','عبس','التكوير','الانفطار','المطففين','الانشقاق','البروج','الطارق','الأعلى','الغاشية','الفجر','البلد','الشمس','الليل','الضحى','الشرح','التين','العلق','القدر','البينة','الزلزلة','العاديات','القارعة','التكاثر','العصر','الهمزة','الفيل','قريش','الماعون','الكوثر','الكافرون','النصر','المسد','الإخلاص','الفلق','الناس'];
 /* أسماء الحروف → الحرف نفسه */
@@ -791,7 +804,8 @@ const blockHTMLs=W.map((w,wi)=>{
      أي حين تنتهي الورقة عند نهاية الآية فعليًا (endMark)، وليس لمقتطف جزئي منها
      (كمطلع آية الكرسي)، تجنّبًا لسماع تلاوة أطول مما هو ظاهر على الورقة. */
   const endMark=w.cat==='surah'||!!AYA_END[w.id];
-  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${endMark?` data-ayaend="1"`:''}${ayaListAttr}>
+  const juzNo=juzOf(SURA_NO[w.id], AYA_NUM[w.id]?arNum(AYA_NUM[w.id]):1);
+  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${endMark?` data-ayaend="1"`:''}${juzNo?` data-juz="${juzNo}"`:''}${ayaListAttr}>
   <summary class="card">
     <div class="tagrow">
       <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':'tagAyah'}">${w.cat==='surah'?'سورة كاملة':'آية مختارة'}</span>
@@ -965,7 +979,10 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
     <p class="sub" data-i18n="heroSub">ضع آيات القرآن الكريم تحت المجهر — اضغط أي بطاقة لفتح ورقة العمل، واكتب إجاباتك: الأسئلة القابلة للتصحيح تُصحَّح تلقائيًا (✓ صحيح / ✗ حاول مجددًا)، ويمكن طباعة أي ورقة كما هي.</p>
   </section>
   <div class="controls js-only">
-    <div class="tabs"><button class="on" data-f="all" data-i18n="fAll">الكل</button><button data-f="surah" data-i18n="fSurah">السور الكاملة</button><button data-f="ayah" data-i18n="fAyah">الآيات المختارة</button><button data-f="story" data-i18n="fStory">القصص</button></div>
+    <div class="tabs"><button class="on" data-f="all" data-i18n="fAll">الكل</button><button data-f="surah" data-i18n="fSurah">السور الكاملة</button></div>
+    <div class="juz-filter">
+      <select id="juzFilter"><option value="0" data-i18n="fJuzAll">كل الأجزاء</option>${Array.from({length:30},(_,i)=>`<option value="${i+1}" data-i18n-tpl="${tid('الجزء {}')}" data-i18n-word="${toAr(i+1)}">الجزء ${toAr(i+1)}</option>`).join('')}</select>
+    </div>
     <div class="tabs lvl-tabs"><button class="on" data-lf="all" data-i18n="lvlAll">كل المستويات</button>${LEVELS.map((L,i)=>`<button data-lf="${i+1}" class="lvl-tab lvl-${i+1}" data-i18n="lvl${i+1}">${L}</button>`).join('')}</div>
     <div class="search"><input id="q" type="text" placeholder="ابحث عن سورة أو آية..." data-i18n-ph="searchPh"></div>
   </div>

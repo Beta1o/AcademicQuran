@@ -1116,7 +1116,8 @@
   "tuu1mbd": "Sure Analiz Laboratuvarı",
   "t16ca38s": "Dilbilimsel Analiz Laboratuvarı",
   "t1w9gbrp": "Tefekkür Mihrabı — Mikroskobik Bir Yolculuk",
-  "tk8cd4g": "{} bölüm"
+  "tk8cd4g": "{} bölüm",
+  "t1hlv3dr": "{}. Cüz"
  },
  "revealModel": "Örnek cevabı göster",
  "revealCorrect": "Doğru cevabı göster",
@@ -1234,5 +1235,6 @@
  "checkSimple": "Tamamlandı ✓",
  "checkActivity": "Etkinliği yaptım ✓",
  "revMeccan": "Mekkî",
- "revMedinan": "Medenî"
+ "revMedinan": "Medenî",
+ "fJuzAll": "Tüm cüzler"
 }

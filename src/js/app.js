@@ -550,9 +550,11 @@ window.bindSheet=function(root){
 var filter='all';
 function applyFilter(){
   var q=(document.getElementById('q')||{}).value||'';
+  var juzSel=document.getElementById('juzFilter'), juz=juzSel?juzSel.value:'0';
   document.querySelectorAll('.grid .ws-item').forEach(function(c){
-    var catOk = filter==='all' || (filter==='story' ? c.dataset.story==='1' : c.dataset.cat===filter);
-    var ok=catOk&&(!q||c.dataset.name.indexOf(q.trim())>-1);
+    var catOk = filter==='all' || c.dataset.cat===filter;
+    var juzOk = juz==='0' || c.dataset.juz===juz;
+    var ok=catOk&&juzOk&&(!q||c.dataset.name.indexOf(q.trim())>-1);
     c.style.display=ok?'':'none';
   });
   /* سورة طويلة مجزّأة: أخفِ بطاقة المجموعة نفسها إن اختفت كل أجزائها بالتصفية،
@@ -570,6 +572,7 @@ document.querySelectorAll('.tabs:not(.lvl-tabs) button').forEach(function(b){
   });
 });
 var qi=document.getElementById('q'); if(qi) qi.addEventListener('input',applyFilter);
+var jf=document.getElementById('juzFilter'); if(jf) jf.addEventListener('change',applyFilter);
 /* ---------- تصفية الأسئلة حسب المستوى: إخفاء أي مستوى غير المختار ---------- */
 var lvlFilter='all';
 function applyLvlFilter(){
