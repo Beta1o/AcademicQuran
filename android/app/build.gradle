@@ -8,9 +8,16 @@ plugins {
 // المستودع قبل هذا البناء لتوليد dist/index.html أولًا (يفعله سير العمل تلقائيًا).
 def webAssetsDir = layout.buildDirectory.dir('generated/webassets')
 
+// كانت هذه المهمة تُزامن index.html فقط — فلا يوجد api/i18n/*.json أصلًا
+// داخل حزمة التطبيق مهما كانت طريقة الجلب (fetch أو XHR)، فيفشل تبديل اللغة
+// صامتًا على أندرويد تحديدًا رغم عمله في المتصفح العادي (حيث يُخدَّم dist/
+// كاملًا). api/i18n/** فقط تُزامَن الآن أيضًا — هي وحدها ما يقرأه التطبيق
+// وقت التشغيل؛ api/worksheets.json وapi/meta.json واجهة عامة للموقع لا
+// يستخدمهما التطبيق نفسه إطلاقًا (لا فائدة من تضخيم حجم الـAPK بهما).
 tasks.register('syncWebAssets', Sync) {
     from(rootProject.file('../dist')) {
         include 'index.html'
+        include 'api/i18n/**'
         into 'www'
     }
     into webAssetsDir

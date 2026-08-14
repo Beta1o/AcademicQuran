@@ -682,13 +682,38 @@ var Locale = (function(){
     var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=NAMES[current]||NAMES[DEFAULT_LOCALE];
   }
 
+  /* fetch() غير موثوق لملفات file:// محلية في WebView (تطبيق أندرويد يحمّل
+     الصفحة عبر file:///android_asset/www/index.html) حتى ضمن نفس الأصل —
+     كان تبديل اللغة على أندرويد يفشل صامتًا (catalogs[code] يبقى فارغًا،
+     فيظل العرض بالعربية دون أي خطأ ظاهر) لهذا السبب تحديدًا، ويستهلك وقتًا
+     محسوسًا في كل محاولة فاشلة. XMLHttpRequest يعمل بثبات مع file:// في
+     WebView؛ يُستخدم هنا حصرًا حين يكون أصل الصفحة file:، وfetch() كالمعتاد
+     على الموقع العادي (http/https). */
+  function fetchJSONCompat(url){
+    return new Promise(function(resolve, reject){
+      if(location.protocol==='file:'){
+        var xhr=new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange=function(){
+          if(xhr.readyState!==4) return;
+          if(xhr.status===0||xhr.status===200){
+            try{ resolve(JSON.parse(xhr.responseText)); }catch(e){ reject(e); }
+          } else reject(new Error('HTTP '+xhr.status));
+        };
+        xhr.onerror=function(){ reject(new Error('XHR network error')); };
+        xhr.send();
+      } else {
+        fetch(url).then(function(r){ return r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)); }).then(resolve).catch(reject);
+      }
+    });
+  }
   /* غير العربية: قوالبها لا تُضمَّن في الصفحة، تُجلَب من api/i18n/<code>.json
      عند أول استخدام فعلي فقط لا عند التحميل — فلا يُحمَّل زائر عربي وحده
      بيانات ٨ لغات أخرى لن يفتحها أبدًا. تُخزَّن في catalogs بعد الجلب فلا
      تتكرر الشبكة لنفس اللغة مرتين. عربية تبقى دومًا مضمَّنة (أول عرض فوري). */
   function loadCatalog(code, cb){
     if(catalogs[code] || code===DEFAULT_LOCALE){ cb(); return; }
-    fetch('api/i18n/'+code+'.json').then(function(r){ return r.json(); }).then(function(data){
+    fetchJSONCompat('api/i18n/'+code+'.json').then(function(data){
       catalogs[code]=data; cb();
     }).catch(function(){ cb(); });
   }
@@ -696,18 +721,30 @@ var Locale = (function(){
   function set(code){
     current = NAMES[code] ? code : DEFAULT_LOCALE;
     try{ localStorage.setItem(STORAGE_KEY, current); }catch(e){}
-    render(); /* عرض فوري بالنص العربي المطبوع أصلًا ريثما تصل الترجمة (تدهور سلس) */
-    loadCatalog(current, render);
+    /* render() يفحص كل عنصر بخاصية data-i18n-tpl في الصفحة (عشرات الآلاف مع
+       ٦٨٧ ورقة عمل) — كلفة حقيقية محسوسة على الأجهزة الضعيفة. كان يُستدعى
+       مرتين لكل تبديل لغة (فورًا بعربية جزئيًا، ثم مجددًا بعد اكتمال الجلب)،
+       فيضاعف هذه الكلفة دون داعٍ. الآن: رسمة واحدة فورية إن كان القاموس
+       متوفرًا بالفعل (عربية أو لغة سبق تحميلها)، وإلا رسمة واحدة فقط بعد
+       اكتمال الجلب — لا ازدواج أبدًا. */
+    if(catalogs[current] || current===DEFAULT_LOCALE){
+      render();
+    } else {
+      loadCatalog(current, render);
+    }
   }
 
-  render(); // أول عرض عند تحميل الصفحة، بحسب ما كان محفوظًا سابقًا (أو العربية افتراضيًا)
-  /* وعد جهوزية الترجمة — يُستخدَم في نظام الكشف الوحيد عن الصفحة (reveal في
-     أسفل هذا الملف، مع جهوزية الخطوط) بدل بوابة كشف منفصلة ثانية كانت
-     تتعارض معه (كلتاهما تُخفيان body بشرط مستقل، فتبقى الصفحة مخفية حتى
-     يتحقق الشرطان معًا، لا أوّل ما يتحقق أيّهما) — مصدر حقيقة واحد الآن. */
-  var localeReady = (current===DEFAULT_LOCALE)
-    ? Promise.resolve()
-    : new Promise(function(res){ loadCatalog(current, function(){ render(); res(); }); });
+  /* رسمة واحدة فقط عند التحميل الأول — لا مرتين (فورًا بالعربية ثم مجددًا
+     بعد اكتمال جلب لغة أخرى محفوظة): الصفحة أصلًا مخفية عبر بوابة data-ready
+     حتى تجهز الترجمة والخطوط معًا (انظر أسفل الملف)، فلا حاجة لرسمة أولى
+     "مؤقتة" لن يراها المستخدم إطلاقًا — فقط كلفة إضافية على الأجهزة الضعيفة. */
+  var localeReady;
+  if(current===DEFAULT_LOCALE){
+    render();
+    localeReady=Promise.resolve();
+  } else {
+    localeReady=new Promise(function(res){ loadCatalog(current, function(){ render(); res(); }); });
+  }
 
   return { get current(){ return current; }, set: set, t: t, render: render, num: num, isDigits: isDigits, tid: tid, NAMES: NAMES, DIRS: DIRS, ready: localeReady };
 })();
