@@ -6,7 +6,7 @@ const dom=new JSDOM(html,{runScripts:'dangerously',url:'https://x.test/'});
 const w=dom.window, doc=w.document;
 const errs=[]; w.addEventListener('error',e=>errs.push(e.message));
 
-const WS=373, QS=9758, PASS=process.env.ADMIN_PASS||'change-me-set-ADMIN_PASS-env-var';
+const WS=655, QS=27030, PASS=process.env.ADMIN_PASS||'change-me-set-ADMIN_PASS-env-var';
 
 setTimeout(()=>{
   let fails=0;
@@ -65,8 +65,8 @@ setTimeout(()=>{
 
   /* ---------- أرقام الآيات وموقع السورة ---------- */
   ok('ayah markers numbered', /۝١/.test(html) && !/>۝<\//.test(html));
-  ok('non-sequential excerpts numbered correctly (takwir 19,20)',
-     [...doc.querySelectorAll('#w-takwir .verse .aya')].map(a=>a.textContent).join(' ').endsWith('۝١٩ ۝٢٠'));
+  ok('full surah numbered completely and sequentially (takwir ends at 29)',
+     [...doc.querySelectorAll('#w-takwir .verse .aya')].map(a=>a.textContent).join(' ').endsWith('۝٢٩'));
   ok('partial ayah has no end marker (kursi)', doc.querySelectorAll('#w-kursi .verse .aya').length===0);
   ok('surah location shown', /السورة رقم ١١٣ في المصحف/.test(doc.querySelector('#w-falaq .loc').textContent));
   ok('ayah location shown', /الآية ٩٠ من سورة النحل/.test(doc.querySelector('#w-nahl90 .loc').textContent));

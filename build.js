@@ -33,9 +33,6 @@ const norm=s=>stripD(String(s)).replace(PUNCT,'').replace(/[ٱآأإ]/g,'ا').re
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /* أرقام الآيات لكل مقطع — تُذكر صراحةً حين لا تكون متتالية (مقاطع مختارة) */
 const AYA_SEQ={
-  takwir:[1,2,3,4,5,6,19,20],   // ٦ آيات ثم مقطع من ١٩ و ٢٠
-  alaq:[1,2,3,4,5,6,7,8,19],    // ٨ آيات ثم خاتمة الآية ١٩
-  sharh56:[5,6],
   anbiya87:[87,88],
   adam30:[30,31,32,33,34],
   nar69:[68,69,70],
