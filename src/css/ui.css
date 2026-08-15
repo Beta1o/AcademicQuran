@@ -2,7 +2,10 @@
 .ws-item summary{list-style:none;cursor:pointer;display:block}
 .ws-item summary::-webkit-details-marker{display:none}
 .ws-item summary::marker{content:''}
-.ws-item[open] summary{border-radius:14px 14px 0 0}
+/* The closed card (title, tags, verse preview) duplicates what the opened
+   sheet's own header already shows more cleanly — hiding it once open avoids
+   a redundant boxed "card" sitting above the real worksheet content. */
+.ws-item[open] summary{display:none}
 .js-only{display:none}
 html.js .js-only{display:flex}
 .q .hint{margin-top:6px;font-size:.85rem;color:#8a6d1f;background:#fdf6e3;border:1px dashed #d9b44a;border-radius:8px;padding:6px 10px}

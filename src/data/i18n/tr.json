@@ -30,10 +30,12 @@
  "gateTitle": "🔒 Yönetici sayfası",
  "gateDesc": "Bu sayfa öğretmen içindir — devam etmek için şifreyi girin",
  "gatePassPh": "Şifre",
+ "gateUserPh": "Kullanıcı adı",
  "gateEnter": "Giriş",
  "gateCancel": "İptal",
  "adminTitle": "🛠️ Yönetici sayfası",
  "adminClose": "✕ Kapat",
+ "adminLogout": "🔒 Çıkış yap",
  "adminStep1": "Sure veya ayet ekle",
  "adminStep2": "Soru ekle",
  "tpl": {

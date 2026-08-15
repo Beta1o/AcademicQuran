@@ -23,6 +23,12 @@
 .admin-msg{min-height:22px;font-weight:700;margin:6px 0}
 .admin-msg.ok{color:var(--teal)}.admin-msg.err{color:#c0392b}
 .admin-list{display:flex;flex-direction:column;gap:8px}
+.bw-group{background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:8px}
+.bw-group summary{cursor:pointer;font-weight:700;color:var(--ink);padding:4px 6px;list-style:none;display:flex;align-items:center;gap:8px}
+.bw-group summary::-webkit-details-marker{display:none}
+.bw-group summary::before{content:'▸';color:var(--ink-soft);transition:transform .15s}
+.bw-group[open] summary::before{transform:rotate(90deg)}
+.bw-group .row{margin-top:6px}
 .admin-list .row{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.9rem;overflow-wrap:anywhere}
 .admin-list .row .del{margin-inline-start:auto;background:none;border:1px solid #c0392b;color:#c0392b;border-radius:8px;padding:3px 10px;cursor:pointer;font-family:inherit}
 .admin-list .row .edit{background:none;border:1px solid var(--indigo);color:var(--indigo);border-radius:8px;padding:3px 10px;cursor:pointer;font-family:inherit;white-space:nowrap}

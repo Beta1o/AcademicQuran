@@ -30,10 +30,12 @@
  "gateTitle": "🔒 প্রশাসক পাতা",
  "gateDesc": "এই পাতাটি শিক্ষকের জন্য — চালিয়ে যেতে পাসওয়ার্ড দিন",
  "gatePassPh": "পাসওয়ার্ড",
+ "gateUserPh": "ব্যবহারকারীর নাম",
  "gateEnter": "প্রবেশ করুন",
  "gateCancel": "বাতিল",
  "adminTitle": "🛠️ প্রশাসক পাতা",
  "adminClose": "✕ বন্ধ করুন",
+ "adminLogout": "🔒 লগ আউট",
  "adminStep1": "সূরা বা আয়াত যোগ করুন",
  "adminStep2": "প্রশ্ন যোগ করুন",
  "tpl": {

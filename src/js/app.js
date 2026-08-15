@@ -8,9 +8,12 @@ var DIAC=/[\u064B-\u0652\u0670\u0640\u06D6-\u06ED]/g;
 function norm(s){return String(s).replace(DIAC,'').replace(/[﴿﴾«»()،:؟\.!+\-]/g,'').replace(/[ٱآأإ]/g,'ا').replace(/ى/g,'ي').replace(/\s+/g,' ').trim();}
 function toInt(s){ s=String(s).trim().replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);}); var n=parseInt(s,10); return isNaN(n)?null:n; }
 var WORDS={};
-document.querySelectorAll('.ws-item').forEach(function(d){
-  try{ WORDS[d.id.slice(2)]=JSON.parse(d.dataset.words); }catch(e){ WORDS[d.id.slice(2)]=[]; }
-});
+function registerWords(root){
+  root.querySelectorAll('.ws-item').forEach(function(d){
+    try{ WORDS[d.id.slice(2)]=JSON.parse(d.dataset.words); }catch(e){ WORDS[d.id.slice(2)]=[]; }
+  });
+}
+registerWords(document);
 function dynTest(kind,extra,orig,nrm){
   if(kind==='len') return orig.replace(DIAC,'').replace(/[\u0640\s]/g,'').length===+extra;
   if(kind==='twice') return (nrm.split(extra).length-1)>=2;
@@ -181,11 +184,11 @@ function bindControls(root){
 }
 bindControls(document);
 window.bindControls=bindControls;
-/* ---------- تلاوة القرآن (حفظ) — عبر واجهة quranapi.pages.dev، تُربط تلقائيًا بكل ورقة سورة أو آية بناءً على أرقامها ---------- */
+/* ---------- Quran recitation (memorization aid) — via everyayah.com, wired automatically to any surah/ayah worksheet based on its surah/ayah numbers ---------- */
 var AUDIO_KEY='tahleel-audio';
 function audioSettings(){
-  try{ var s=JSON.parse(localStorage.getItem(AUDIO_KEY)||'{}'); return {enabled:true, reciter:s.reciter||1}; }
-  catch(e){ return {enabled:true, reciter:1}; }
+  try{ var s=JSON.parse(localStorage.getItem(AUDIO_KEY)||'{}'); return {enabled:true, reciter:s.reciter||21}; }
+  catch(e){ return {enabled:true, reciter:21}; }
 }
 window.audioSettings=audioSettings;
 var audioCache={};
@@ -194,8 +197,78 @@ function fetchJson(url){
   audioCache[url]=fetch(url).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; });
   return audioCache[url];
 }
-var curAudio=null, curBtn=null, curDet=null, curSeg=null, curWords=null, curBounds=null;
-var curEstStart=null, curEstDuration=null, curRAF=null;
+/* everyayah.com hosts one mp3 per ayah under each reciter's folder, named
+   with the surah number then the ayah number, each zero-padded to 3 digits
+   (e.g. 001001.mp3 for Fatiha ayah 1) — no lookup request needed, the URL
+   is built directly. */
+/* Each reciter has two verified bitrate folders on everyayah.com (a lighter
+   ~64kbps one and a fuller 128/192kbps one) — instead of listing both as
+   separate confusing entries, one clean name is shown per reciter and the
+   right tier is picked automatically from the visitor's measured connection
+   quality (navigator.connection), same idea as adaptive video streaming. */
+var RECITER_FOLDER={
+  7:{hi:'Alafasy_128kbps',lo:'Alafasy_64kbps'},
+  1:{hi:'Abdul_Basit_Mujawwad_128kbps',lo:'Abdul_Basit_Mujawwad_128kbps'},
+  2:{hi:'Abdul_Basit_Murattal_192kbps',lo:'Abdul_Basit_Murattal_64kbps'},
+  3:{hi:'Abdurrahmaan_As-Sudais_192kbps',lo:'Abdurrahmaan_As-Sudais_64kbps'},
+  4:{hi:'Abu_Bakr_Ash-Shaatree_128kbps',lo:'Abu_Bakr_Ash-Shaatree_64kbps'},
+  5:{hi:'Hani_Rifai_192kbps',lo:'Hani_Rifai_64kbps'},
+  6:{hi:'Husary_128kbps',lo:'Husary_64kbps'},
+  12:{hi:'Husary_Muallim_128kbps',lo:'Husary_Muallim_128kbps'},
+  8:{hi:'Minshawy_Mujawwad_192kbps',lo:'Minshawy_Mujawwad_64kbps'},
+  9:{hi:'Minshawy_Murattal_128kbps',lo:'Minshawy_Murattal_128kbps'},
+  10:{hi:'Saood_ash-Shuraym_128kbps',lo:'Saood_ash-Shuraym_64kbps'},
+  11:{hi:'Mohammad_al_Tablaway_128kbps',lo:'Mohammad_al_Tablaway_64kbps'},
+  13:{hi:'Ghamadi_40kbps',lo:'Ghamadi_40kbps'},
+  14:{hi:'Hudhaify_128kbps',lo:'Hudhaify_32kbps'},
+  15:{hi:'Ibrahim_Akhdar_32kbps',lo:'Ibrahim_Akhdar_32kbps'},
+  16:{hi:'MaherAlMuaiqly128kbps',lo:'Maher_AlMuaiqly_64kbps'},
+  17:{hi:'Muhammad_Ayyoub_128kbps',lo:'Muhammad_Ayyoub_32kbps'},
+  18:{hi:'Muhammad_Jibreel_128kbps',lo:'Muhammad_Jibreel_64kbps'},
+  19:{hi:'Mustafa_Ismail_48kbps',lo:'Mustafa_Ismail_48kbps'},
+  20:{hi:'Muhsin_Al_Qasim_192kbps',lo:'Muhsin_Al_Qasim_192kbps'},
+  21:{hi:'Salah_Al_Budair_128kbps',lo:'Salah_Al_Budair_128kbps'},
+  22:{hi:'Khaalid_Abdullaah_al-Qahtaanee_192kbps',lo:'Khaalid_Abdullaah_al-Qahtaanee_192kbps'},
+  23:{hi:'Yasser_Ad-Dussary_128kbps',lo:'Yasser_Ad-Dussary_128kbps'},
+  24:{hi:'Nasser_Alqatami_128kbps',lo:'Nasser_Alqatami_128kbps'},
+  25:{hi:'Ayman_Sowaid_64kbps',lo:'Ayman_Sowaid_64kbps'},
+  26:{hi:'Abdullah_Basfar_192kbps',lo:'Abdullah_Basfar_32kbps'},
+  27:{hi:'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net',lo:'Ahmed_ibn_Ali_al-Ajamy_64kbps_QuranExplorer.Com'},
+  28:{hi:'Husary_128kbps_Mujawwad',lo:'Husary_Mujawwad_64kbps'},
+  29:{hi:'Menshawi_32kbps',lo:'Menshawi_16kbps'},
+  30:{hi:'Salaah_AbdulRahman_Bukhatir_128kbps',lo:'Salaah_AbdulRahman_Bukhatir_128kbps'},
+  31:{hi:'Abdullaah_3awwaad_Al-Juhaynee_128kbps',lo:'Abdullaah_3awwaad_Al-Juhaynee_128kbps'},
+  32:{hi:'Abdullah_Matroud_128kbps',lo:'Abdullah_Matroud_128kbps'},
+  33:{hi:'mahmoud_ali_al_banna_32kbps',lo:'mahmoud_ali_al_banna_32kbps'},
+  34:{hi:'Ali_Jaber_64kbps',lo:'Ali_Jaber_64kbps'},
+  35:{hi:'Fares_Abbad_64kbps',lo:'Fares_Abbad_64kbps'},
+  36:{hi:'Ahmed_Neana_128kbps',lo:'Ahmed_Neana_128kbps'},
+  37:{hi:'Muhammad_AbdulKareem_128kbps',lo:'Muhammad_AbdulKareem_128kbps'},
+  38:{hi:'khalefa_al_tunaiji_64kbps',lo:'khalefa_al_tunaiji_64kbps'},
+  39:{hi:'Karim_Mansoori_40kbps',lo:'Karim_Mansoori_40kbps'},
+  40:{hi:'Ali_Hajjaj_AlSuesy_128kbps',lo:'Ali_Hajjaj_AlSuesy_128kbps'},
+  41:{hi:'Sahl_Yassin_128kbps',lo:'Sahl_Yassin_128kbps'},
+  42:{hi:'aziz_alili_128kbps',lo:'aziz_alili_128kbps'},
+  43:{hi:'Yaser_Salamah_128kbps',lo:'Yaser_Salamah_128kbps'},
+  44:{hi:'Akram_AlAlaqimy_128kbps',lo:'Akram_AlAlaqimy_128kbps'}
+};
+function useLowQuality(){
+  try{
+    var c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+    if(!c) return false;
+    if(c.saveData) return true;
+    if(c.effectiveType && /2g/.test(c.effectiveType)) return true;
+    if(typeof c.downlink==='number' && c.downlink>0 && c.downlink<1.2) return true;
+  }catch(e){}
+  return false;
+}
+function ayaAudioUrl(reciter, sura, aya){
+  var tiers=RECITER_FOLDER[reciter]||RECITER_FOLDER[21];
+  var folder=useLowQuality()?tiers.lo:tiers.hi;
+  var s=('000'+sura).slice(-3), a=('000'+aya).slice(-3);
+  return Promise.resolve('https://everyayah.com/data/'+folder+'/'+s+a+'.mp3');
+}
+var curAudio=null, curBtn=null, curDet=null, curSeg=null;
 /* تكرار: يُعيد تشغيل نفس قائمة الآيات الحالية من جديد بدل التوقف عند
    نهايتها — يفيد ترديد آية واحدة (أو الورقة كلها) مرارًا أثناء الحفظ،
    بدل الضغط يدويًا في كل مرة. حالة عامة واحدة كافية، لأن ورقة واحدة فقط
@@ -215,12 +288,10 @@ bindRepeatToggle(document);
 window.bindRepeatToggle=bindRepeatToggle;
 function clearReading(){
   if(curDet) curDet.querySelectorAll('.sheet .verse .aya-seg.reading').forEach(function(el){ el.classList.remove('reading'); });
-  if(curWords) curWords.forEach(function(w){ w.classList.remove('reading'); });
-  curSeg=null; curWords=null; curBounds=null; curEstStart=null; curEstDuration=null;
-  if(curRAF){ cancelAnimationFrame(curRAF); curRAF=null; }
+  curSeg=null;
 }
 function stopAudio(onlyIfDet){
-  if(onlyIfDet && curDet!==onlyIfDet) return; /* أغلقت ورقة أخرى غير التي تُقرأ حاليًا */
+  if(onlyIfDet && curDet!==onlyIfDet) return; /* a different worksheet closed, not the one currently playing */
   if(curAudio){ curAudio.pause(); curAudio=null; }
   if(curBtn){ curBtn.textContent='🔊 استماع للتلاوة'; curBtn.classList.remove('playing'); curBtn=null; }
   clearReading(); curDet=null;
@@ -233,123 +304,28 @@ function fullStopAudio(){
 }
 window.fullStopAudio=fullStopAudio;
 window.stopAudio=stopAudio;
-/* تغليف كلمات الآية بـ span.w يتم هنا فقط، لحظة قراءتها فعليًا — لا وقت
-   البناء لكل الأوراق دفعة واحدة (كان هذا يُضاعف حجم الصفحة كثيرًا، انظر
-   التعليق في build.js). يُغلَّف نص العقد النصية فقط، ويُترَك رمز نهاية
-   الآية (span.aya) كما هو دون لمسه. */
-/* رموز الوقف (ۖۗۘۙۛۜ۩) ليست كلمات تُقرأ — هي إشارة وقف/سكتة تُطيل زمن
-   الكلمة التي تسبقها في التلاوة الفعلية؛ لا تُغلَّف بـ span.w مستقل (فتُعامَل
-   خطأً ككلمة قابلة للتتبّع/النقر)، بل تُلحَق بوزن الكلمة السابقة زمنيًا. */
-var PAUSE_MARK=/^[ۖۗۘۙۛۜ۩]+$/;
-function wrapSegWords(seg){
-  if(seg.dataset.wrapped==='1') return;
-  seg.dataset.wrapped='1';
-  Array.prototype.slice.call(seg.childNodes).forEach(function(node){
-    if(node.nodeType!==3||!node.textContent.trim()) return;
-    var frag=document.createDocumentFragment();
-    var lastSpan=null;
-    node.textContent.split(/(\s+)/).forEach(function(tok){
-      if(!tok) return;
-      if(/^\s+$/.test(tok)){ frag.appendChild(document.createTextNode(tok)); return; }
-      if(PAUSE_MARK.test(tok)){
-        frag.appendChild(document.createTextNode(tok));
-        if(lastSpan) lastSpan.dataset.pause='1'; /* يمنحها وزنًا زمنيًا إضافيًا في trackWord */
-        return;
-      }
-      var span=document.createElement('span');
-      span.className='w'; span.textContent=tok;
-      frag.appendChild(span);
-      lastSpan=span;
-    });
-    seg.replaceChild(frag, node);
-  });
-}
-function wrapVerseWords(det){
-  det.querySelectorAll('.sheet .verse .aya-seg').forEach(wrapSegWords);
-}
-window.wrapVerseWords=wrapVerseWords;
-/* وزن كل كلمة زمنيًا بحسب طولها الحرفي لا بعدّها المجرّد — كلمة طويلة تستغرق
-   نطقًا أطول من كلمة قصيرة، فتوزيع الزمن بالتساوي بينهما يُسبِّب انزياحًا
-   تدريجيًا؛ وتُمنَح الكلمة التي تسبق علامة وقف (ۖۗۘۙۛۜ۩) وزنًا إضافيًا لأن
-   السكتة تُطيل زمنها الفعلي في التلاوة. مُستخدمة هنا لكلٍّ من: أ) تتبّع
-   الكلمة الحالية أثناء الاستماع، ب) حساب نقطة البدء التقريبية عند النقر على
-   كلمة بعينها لإعادة القراءة منها — بنفس الحساب بالضبط كي لا يتضاربا. */
-function wordBounds(words){
-  var weights=words.map(function(w){
-    return w.textContent.replace(/[^؀-ۿ]/g,'').length + (w.dataset.pause==='1'?4:0) + 1;
-  });
-  var total=weights.reduce(function(a,b){return a+b;},0);
-  var acc=0;
-  return weights.map(function(wt){ acc+=wt; return acc/total; });
-}
+/* Word-level highlighting was removed: the audio source only provides
+   per-ayah files with no real per-word timestamps, so any word-level
+   position was always an estimate from text length — and it was wrong
+   often enough (especially when a reciter repeats a word) that it did more
+   harm than good. Ayah-level highlighting below is fully accurate, since it
+   is driven by real audio file boundaries, not an estimate. */
 function markReading(ayaNo){
   if(!curDet) return;
   clearReading();
-  if(!ayaNo) return; /* الاستعاذة/البسملة: لا آية محددة لتمييزها */
+  if(!ayaNo) return;
   var seg=curDet.querySelector('.sheet .verse .aya-seg[data-aya="'+ayaNo+'"]');
   if(seg){
     seg.classList.add('reading'); curSeg=seg;
-    wrapSegWords(seg);
-    curWords=Array.prototype.slice.call(seg.querySelectorAll('.w'));
-    curBounds=wordBounds(curWords);
-    /* تقدير احتياطي لزمن الآية (بمعزل عن audio.duration) — بعض ملفات
-       الصوت المصدرية لا تُعلن مدة صالحة (Infinity/NaN) فور بدء التشغيل، ما
-       كان يُعطِّل التتبّع بالكامل صامتًا (لا خطأ ظاهر، فقط لا تحديث أبدًا).
-       نستخدم الزمن الحقيقي إذا توفّر، وإلا هذا التقدير — فيبقى التتبّع
-       يعمل دومًا ولو بدقة أقل حين تنقص بيانات الصوت. */
-    curEstStart=(window.performance&&performance.now)?performance.now():Date.now();
-    curEstDuration=Math.max(900, curBounds.length*260);
-    startTrackLoop();
     try{ seg.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){}
   }
 }
-/* تتبّع الكلمة الحالية أثناء تشغيل الآية — موزَّع على حدود تراكمية مبنية على
-   طول كل كلمة ووجود وقفة بعدها (curBounds) لا على عدّ الكلمات بالتساوي.
-   يُفضَّل زمن الصوت الحقيقي (audio.currentTime/duration) حين يكون صالحًا،
-   ويسقط تلقائيًا إلى التقدير الزمني (curEstStart/curEstDuration) حين لا
-   يكون — عبر حلقة requestAnimationFrame مستمرة، لا حدث timeupdate فقط (كان
-   الاعتماد عليه وحده يعني توقّف التتبّع تمامًا كلما تأخّر أو غاب). */
-function trackWord(){
-  if(!curAudio||!curWords||!curWords.length||!curBounds) return;
-  var ratio;
-  if(isFinite(curAudio.duration)&&curAudio.duration>0){
-    ratio=curAudio.currentTime/curAudio.duration;
-  } else if(curEstStart!=null){
-    var now=(window.performance&&performance.now)?performance.now():Date.now();
-    ratio=(now-curEstStart)/curEstDuration;
-  } else return;
-  ratio=Math.max(0,Math.min(1,ratio));
-  var idx=curBounds.findIndex(function(b){ return ratio<=b; });
-  if(idx<0) idx=curWords.length-1;
-  curWords.forEach(function(w,i){ w.classList.toggle('reading', i===idx); });
-}
-function startTrackLoop(){
-  if(curRAF) cancelAnimationFrame(curRAF);
-  function tick(){
-    if(!curWords){ curRAF=null; return; }
-    trackWord();
-    curRAF=requestAnimationFrame(tick);
-  }
-  curRAF=requestAnimationFrame(tick);
-}
-/* البسملة: «بسم الله الرحمن الرحيم» — تُقرأ في مطلع كل سورة (ما عدا التوبة رقم ٩)،
-   وكذلك عند بدء آية مختارة من أول السورة. ملفات الآية الأولى لكل سورة لا تتضمّن
-   البسملة داخلها (تحقّقنا من ذلك بمقارنة مدد الملفات)، فتُلحَق كمقطع منفصل من
-   آية ١ من الفاتحة نفسها — وهي البسملة ذاتها — بنفس صوت القارئ المختار، عبر نفس
-   الواجهة (quranapi.pages.dev) دون أي مصدر إضافي. */
-function needsBasmala(det){
-  var sura=parseInt(det.dataset.surano,10);
-  if(!sura||sura===9) return false;
-  if(det.dataset.cat==='surah') return true;
-  var start=det.dataset.ayalist?parseInt(det.dataset.ayalist.split(',')[0],10):parseInt(det.dataset.ayano,10);
-  return start===1;
-}
 /* تُشغَّل الآيات كملفات منفصلة بالتتابع (لا كصوت سورة كاملة واحد) كي يمكن تمييز الآية الحالية أثناء الاستماع لمساعدة الحفظ */
-function playAyaList(items,btn,det,seekRatio){
+function playAyaList(items,btn,det){
   if(!items.length){ btn.textContent='🔊 لا يوجد صوت'; setTimeout(function(){ btn.textContent='🔊 استماع للتلاوة'; },1500); return; }
   var i=0, preloaded=null; /* {idx, audio} — ملف الآية التالية يُحمَّل مسبقًا أثناء تشغيل الحالية */
   curAudio=new Audio(); curBtn=btn; curDet=det; btn.textContent='⏸️ إيقاف التلاوة'; btn.classList.add('playing');
-  function bindEvents(a){ a.addEventListener('ended', next); a.addEventListener('error', next); a.addEventListener('timeupdate', trackWord); }
+  function bindEvents(a){ a.addEventListener('ended', next); a.addEventListener('error', next); }
   /* كل آية تُقرأ كاملة من بدايتها لنهايتها ثم تنتقل تلقائيًا للتالية (حدث ended) —
      هذا سلوك مقصود، لا عطل. العطل الحقيقي هو توقّف التلاوة كلها بسبب تعثّر آية
      واحدة فقط (شبكة بطيئة، انقطاع لحظي...)، فتخطّي تلك الآية والمتابعة للتي
@@ -370,31 +346,10 @@ function playAyaList(items,btn,det,seekRatio){
     }
     var it=items[i];
     var use = (preloaded && preloaded.idx===i) ? preloaded.audio : curAudio;
-    var isFirst=(i===0);
     i++;
     markReading(it.aya);
     if(use!==curAudio){ curAudio.pause(); curAudio=use; }
     else { curAudio.src=it.url; }
-    /* النقر على كلمة بعينها: نبدأ الاستماع من موضعها التقريبي داخل الآية،
-       لا من أولها — لا توجد بيانات توقيت فعلية لكل كلمة، فهذا تقريب بنسبة
-       ترتيب الكلمة إلى عددها، لكنه كافٍ عمليًا ليضع المستمع قرب الكلمة
-       المطلوبة مباشرة بدل الاضطرار لسماع الآية كاملة من البداية كل مرة. */
-    if(isFirst && seekRatio!=null){
-      /* أكثر من مستمع احتياطي واحد لتطبيق القفز — بعض المتصفحات (خصوصًا على
-         الجوال) لا تُطلق loadedmetadata بثبات قبل بدء التشغيل فعليًا، فكان
-         القفز يفشل صامتًا ويُسمَع مطلع الآية دومًا بصرف النظر عن الكلمة
-         المنقورة (يبدو للمستخدم وكأن "صوتًا خطأ" يُشغَّل). */
-      var seekDone=false;
-      var applySeek=function(){
-        if(seekDone||!curAudio.duration) return;
-        curAudio.currentTime=seekRatio*curAudio.duration;
-        seekDone=true;
-      };
-      ['loadedmetadata','durationchange','canplay'].forEach(function(ev){
-        curAudio.addEventListener(ev, applySeek, {once:true});
-      });
-      if(curAudio.readyState>=1) applySeek();
-    }
     curAudio.play().catch(next);
     preloaded=null;
     preloadNext(i); /* حمِّل الآية التي تلي هذه فورًا، بينما هذه قيد التشغيل */
@@ -402,20 +357,50 @@ function playAyaList(items,btn,det,seekRatio){
   bindEvents(curAudio);
   next();
 }
-function refreshAudioButtons(){
+/* root اختياري: بلا تحديد تفحص كل زر صوت في الصفحة (بعد تغيّر إعداد عام،
+   مثل تفعيل/تعطيل الصوت) — بتحديده (عنصر ورقة واحدة) تفحص زرَّيها فقط. فتح
+   ورقة واحدة لا يحتاج مطلقًا مسح المستند كله بحثًا عن كل زر صوت موجود؛ ذلك
+   المسح الكامل يتكرر مع فتح كل ورقة أثناء التحميل الجماعي (صفحة المدير،
+   فحوصات الاختبار) فيصبح كلفة تربيعية فعليًا — تتسع كلما كبرت الشجرة
+   المعروضة بالفعل — وهو ما كان يُجمِّد الصفحة عند فتح لوحة المدير. */
+function refreshAudioButtons(root){
   var s=audioSettings();
-  document.querySelectorAll('[data-audio]').forEach(function(b){
+  var scope = root || document;
+  scope.querySelectorAll('[data-audio]').forEach(function(b){
     var det=document.getElementById('w-'+b.dataset.audio);
     var has = det && det.dataset.surano && det.dataset.ayaend==='1' && det.dataset.ayalist;
     b.hidden = !s.enabled || !has;
   });
-  document.querySelectorAll('[data-repeat]').forEach(function(b){
+  scope.querySelectorAll('[data-repeat]').forEach(function(b){
     var det=document.getElementById('w-'+b.dataset.repeat);
     var has = det && det.dataset.surano && det.dataset.ayaend==='1' && det.dataset.ayalist;
     b.hidden = !s.enabled || !has;
   });
 }
 window.refreshAudioButtons=refreshAudioButtons;
+/* Isti'adhah ("أعوذ بالله من الشيطان الرجيم") is audio-only — no text card on
+   the worksheet — played from the locally-hosted audios/istiadhah.mp3 file
+   before the first ayah, only when the admin has it enabled (audio-settings
+   panel checkbox, persisted alongside the other admin settings). */
+function istiadhahEnabled(){
+  try{ var s=JSON.parse(localStorage.getItem('tahleel-settings')||'{}'); return s.istiadhahEnabled!==false; }
+  catch(e){ return true; }
+}
+/* Basmalah ("بسم الله الرحمن الرحيم") is recited before every surah except
+   Tawbah (9), and before any worksheet starting at ayah 1 of its surah. No
+   separate audio source is used for it — Al-Fatiha's ayah 1 *is* the
+   Basmalah verbatim, so the same reciter's 001001.mp3 (already fetched via
+   ayaAudioUrl for any Fatiha worksheet) is reused here directly, keeping it
+   in the same reciter's voice as the rest of the recitation. Fatiha itself
+   is excluded — its own ayah 1 already *is* this audio, so prepending it
+   again would just repeat the same line twice. */
+function needsBasmala(det){
+  var sura=parseInt(det.dataset.surano,10);
+  if(!sura||sura===9||sura===1) return false;
+  if(det.dataset.cat==='surah') return true;
+  var start=det.dataset.ayalist?parseInt(det.dataset.ayalist.split(',')[0],10):parseInt(det.dataset.ayano,10);
+  return start===1;
+}
 function bindAudio(root){
   root.querySelectorAll('[data-audio]').forEach(function(b){
     if(isBound(b)) return;
@@ -427,21 +412,17 @@ function bindAudio(root){
       var s=audioSettings(), sura=det.dataset.surano;
       b.textContent='⏳ جاري التحميل...';
       var list=(det.dataset.ayalist?det.dataset.ayalist.split(','):[]).filter(Boolean);
-      var basmalaP = needsBasmala(det)
-        ? fetchJson('https://quranapi.pages.dev/api/audio/1/1.json').then(function(d){
-            var u=d&&d[s.reciter]&&d[s.reciter].url; return u?[{aya:null, url:u}]:[];
-          })
-        : Promise.resolve([]);
-      Promise.all([
-        basmalaP,
-        Promise.all(list.map(function(a){
-          return fetchJson('https://quranapi.pages.dev/api/audio/'+sura+'/'+a+'.json').then(function(d){
-            return {aya:a, url:d&&d[s.reciter]&&d[s.reciter].url};
-          });
-        }))
-      ]).then(function(res){
-        var basmala=res[0], items=res[1];
-        playAyaList(basmala.concat(items.filter(function(it){ return it.url; })), b, det);
+      Promise.all(list.map(function(a){
+        return ayaAudioUrl(s.reciter,sura,a).then(function(u){ return {aya:a, url:u}; });
+      })).then(function(items){
+        var playable=items.filter(function(it){ return it.url; });
+        var withBasmala=needsBasmala(det)
+          ? ayaAudioUrl(s.reciter,1,1).then(function(u){ return u?[{aya:null,url:u}].concat(playable):playable; })
+          : Promise.resolve(playable);
+        withBasmala.then(function(full){
+          if(istiadhahEnabled()) full=[{aya:null, url:'audios/istiadhah.mp3'}].concat(full);
+          playAyaList(full, b, det);
+        });
       });
     });
   });
@@ -453,39 +434,28 @@ refreshAudioButtons();
    بدل الاستماع للورقة كلها من البداية؛ النقر على أي جزء من نص الآية (كلمة
    أو الآية كاملة) يشغّل ملف صوت تلك الآية وحدها فورًا، ويُبقي تمييز الآية
    والكلمة (تتبّع القراءة) يعمل كالمعتاد أثناء تشغيلها. */
-function replayAya(det, ayaNo, seekRatio){
+function replayAya(det, ayaNo){
   var s=audioSettings(), sura=det.dataset.surano;
   if(!sura||!ayaNo) return;
   stopAudio();
-  fetchJson('https://quranapi.pages.dev/api/audio/'+sura+'/'+ayaNo+'.json').then(function(d){
-    var url=d&&d[s.reciter]&&d[s.reciter].url;
+  ayaAudioUrl(s.reciter,sura,ayaNo).then(function(url){
     if(!url) return;
     var btn=det.querySelector('[data-audio]');
-    playAyaList([{aya:ayaNo, url:url}], btn||{textContent:'',classList:{add:function(){},remove:function(){}}}, det, seekRatio);
+    playAyaList([{aya:ayaNo, url:url}], btn||{textContent:'',classList:{add:function(){},remove:function(){}}}, det);
   });
 }
+/* Clicking anywhere in an ayah replays that ayah — useful for repeating one
+   verse while memorizing without listening to the whole worksheet again. */
 function bindReplay(root){
   root.querySelectorAll('.sheet .verse').forEach(function(v){
     if(isBound(v)) return;
     v.classList.add('replayable');
     v.addEventListener('click', function(e){
-      var wordEl=e.target.closest('.w');
       var seg=e.target.closest('.aya-seg');
       if(!seg) return;
       var det=v.closest('.ws-item');
       if(!det || !det.dataset.surano || !det.dataset.ayaend) return;
-      var seekRatio=null;
-      if(wordEl){
-        var words=Array.prototype.slice.call(seg.querySelectorAll('.w'));
-        var idx=words.indexOf(wordEl);
-        /* نفس حساب الأوزان المستخدَم في التتبّع أثناء الاستماع (wordBounds)
-           — نقطة البدء هي نهاية الكلمة السابقة، لا نسبة ترتيب الكلمة المجرّدة
-           كما كان (كانت تُسبِّب بدء التشغيل من موضع بعيد عن الكلمة المنقورة
-           فعلًا لاختلاف أطوال الكلمات، فيبدو كأن صوتًا "خطأ" يُشغَّل). */
-        if(idx>0 && words.length>1) seekRatio=wordBounds(words)[idx-1];
-        else if(idx===0) seekRatio=0;
-      }
-      replayAya(det, seg.dataset.aya, seekRatio);
+      replayAya(det, seg.dataset.aya);
     });
   });
 }
@@ -517,16 +487,20 @@ var Popover=(function(){
 /* ---------- إعدادات التلاوة العامة: متاحة لكل زائر من شريط الموقع، وليست حكرًا على المدير ---------- */
 (function(){
   var btn=document.getElementById('pubAudioBtn'), panel=document.getElementById('pubAudioPanel');
-  var sel=document.getElementById('pubAudioReciter');
-  if(!btn||!panel||!sel) return;
+  var opts=document.getElementById('reciterOpts');
+  if(!btn||!panel||!opts) return;
   var cur=audioSettings();
-  sel.value=cur.reciter;
-  var save=function(){
-    try{ localStorage.setItem(AUDIO_KEY, JSON.stringify({reciter:+sel.value||1})); }catch(e){}
-    refreshAudioButtons();
-    setTimeout(Popover.close, 450); /* يُغلَق تلقائيًا بعد ضبط الإعداد */
-  };
-  sel.addEventListener('change',save);
+  opts.querySelectorAll('.reciter-opt').forEach(function(o){
+    o.classList.toggle('on', +o.dataset.reciter===+cur.reciter);
+  });
+  opts.querySelectorAll('.reciter-opt').forEach(function(o){
+    o.addEventListener('click',function(){
+      try{ localStorage.setItem(AUDIO_KEY, JSON.stringify({reciter:+o.dataset.reciter||21})); }catch(e){}
+      opts.querySelectorAll('.reciter-opt').forEach(function(x){ x.classList.toggle('on',x===o); });
+      refreshAudioButtons();
+      setTimeout(Popover.close, 300); /* يُغلَق تلقائيًا بعد اختيار القارئ */
+    });
+  });
   btn.addEventListener('click',function(){
     if(panel.hidden) Popover.open(panel,btn); else Popover.close();
   });
@@ -569,12 +543,12 @@ var Locale = (function(){
   /* اللغة الافتراضية عند غياب اختيار محفوظ أو عند طلب كود لغة غير موجود —
      قيمة إعداد واحدة، لا حالة خاصة مكرّرة في كل دالة. */
   var DEFAULT_LOCALE = 'ar';
-  var NAMES  = {ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe',ug:'ئۇيغۇرچە',id:'Bahasa Indonesia/Melayu',fr:'Français',bn:'বাংলা',ha:'Hausa',fa:'فارسی',ml:'മലയാളം',sw:'Kiswahili',hi:'हिन्दी'};
-  var DIRS   = {ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr',ug:'rtl',id:'ltr',fr:'ltr',bn:'ltr',ha:'ltr',fa:'rtl',ml:'ltr',sw:'ltr',hi:'ltr'};
+  var NAMES  = {ar:'العربية',en:'English',ur:'اردو',tr:'Türkçe',ug:'ئۇيغۇرچە',id:'Bahasa Indonesia/Melayu',fr:'Français',bn:'বাংলা',ha:'Hausa',fa:'فارسی',ml:'മലയാളം',sw:'Kiswahili',hi:'हिन्दी',es:'Español',ru:'Русский',zh:'中文',so:'Soomaali',ps:'پښتو'};
+  var DIRS   = {ar:'rtl',en:'ltr',ur:'rtl',tr:'ltr',ug:'rtl',id:'ltr',fr:'ltr',bn:'ltr',ha:'ltr',fa:'rtl',ml:'ltr',sw:'ltr',hi:'ltr',es:'ltr',ru:'ltr',zh:'ltr',so:'ltr',ps:'rtl'};
   /* رقم كل لغة الخاص بها — عشرة أرقام مرتّبة ٠..٩؛ العربية والفارسية وحدهما
      تستخدمان أرقامًا غير غربية، وباقي اللغات غربية، لكن التحويل أدناه لا
      يفضّل أيًّا منها: يُترجَم دومًا إلى مجموعة رقم current الحالية أيًّا كانت. */
-  var DIGIT_SETS = {ar:'٠١٢٣٤٥٦٧٨٩',en:'0123456789',ur:'0123456789',tr:'0123456789',ug:'0123456789',id:'0123456789',fr:'0123456789',bn:'0123456789',ha:'0123456789',fa:'۰۱۲۳۴۵۶۷۸۹',ml:'0123456789',sw:'0123456789',hi:'0123456789'};
+  var DIGIT_SETS = {ar:'٠١٢٣٤٥٦٧٨٩',en:'0123456789',ur:'0123456789',tr:'0123456789',ug:'0123456789',id:'0123456789',fr:'0123456789',bn:'0123456789',ha:'0123456789',fa:'۰۱۲۳۴۵۶۷۸۹',ml:'0123456789',sw:'0123456789',hi:'0123456789',es:'0123456789',ru:'0123456789',zh:'0123456789',so:'0123456789',ps:'۰۱۲۳۴۵۶۷۸۹'};
   var SRC_DIGITS = DIGIT_SETS.ar; // كل الأرقام في نص القوالب واردة بهذه الصورة أصلًا
   /* خمس لغات، بلا استثناء ولا حالة خاصة للعربية: كل لغة — العربية أيضًا —
      قاموسها الكامل في src/data/i18n/<code>.json، يُقرأ من هنا فقط. لا نص
@@ -583,8 +557,27 @@ var Locale = (function(){
   var catalogs = {}; // {ar:{...}, en:{...}, ur:{...}, tr:{...}, ug:{...}}
   try{ var el=document.getElementById('i18nData'); if(el) catalogs=JSON.parse(el.textContent||'{}')||{}; }catch(e){ catalogs={}; }
 
+  /* No saved choice? Guess from the browser/system language (navigator.language)
+     instead of always defaulting to Arabic — this doesn't increase how many
+     languages actually load; it's still just Arabic (already embedded in the
+     page) plus the visitor's detected language, exactly as if they'd picked
+     it manually from the menu — the only difference is they don't have to
+     click if their device's language is already supported. */
+  function detectBrowserLocale(){
+    try{
+      var langs = navigator.languages || [navigator.language || navigator.userLanguage];
+      for(var i=0;i<langs.length;i++){
+        var code=String(langs[i]||'').toLowerCase().split('-')[0];
+        if(code && NAMES[code]) return code;
+      }
+    }catch(e){}
+    return null;
+  }
   var current = DEFAULT_LOCALE;
-  try{ current = localStorage.getItem(STORAGE_KEY) || DEFAULT_LOCALE; }catch(e){}
+  try{
+    var saved = localStorage.getItem(STORAGE_KEY);
+    current = saved || detectBrowserLocale() || DEFAULT_LOCALE;
+  }catch(e){}
 
   /* القاموس الحالي — متغيّر واحد عام يُشتق من اللغة المختارة فقط (current)،
      لا تفضيل ثابت لأي لغة بعينها بما فيها العربية؛ كل قراءة نص في التطبيق
@@ -622,21 +615,29 @@ var Locale = (function(){
     return 't'+h.toString(36);
   }
 
-  function render(){
+  function render(root){
+    /* root اختياري: يقصر الفحص على عنصر بعينه (مثل ورقة كسولة حُمِّلت للتو)
+       بدل الصفحة كلها — تُستدعى render() من ensureBodyLoaded لكل ورقة تُفتح؛
+       بلا هذا التقييد كانت كل ورقة جديدة تُشغِّل فحصًا لعشرات آلاف العناصر
+       في الصفحة كلها (بما فيها كل الأوراق المفتوحة سابقًا)، فيتفاقم الزمن
+       تراكميًا مع كل ورقة تُفتح (سلوك تربيعي عمليًا كلما زاد عدد الأوراق
+       المفتوحة). لا حاجة له عند العرض الأول للصفحة كلها (root تبقى document
+       افتراضيًا هناك). */
+    root = root || document;
     /* كل لغة — بما فيها العربية — تُقرأ من نفس catalog() العامة، لا تفضيل
        لأي لغة بعينها في منطق القراءة نفسه */
     var cat = catalog();
     document.documentElement.setAttribute('lang', current);
     document.documentElement.setAttribute('dir', DIRS[current]||DIRS[DEFAULT_LOCALE]);
-    document.querySelectorAll('[data-i18n]').forEach(function(node){
+    root.querySelectorAll('[data-i18n]').forEach(function(node){
       var k=node.dataset.i18n;
       if(cat[k]) node.textContent = cat[k];
     });
-    document.querySelectorAll('[data-i18n-ph]').forEach(function(node){
+    root.querySelectorAll('[data-i18n-ph]').forEach(function(node){
       var k=node.dataset.i18nPh;
       if(cat[k]) node.setAttribute('placeholder', cat[k]);
     });
-    document.querySelectorAll('[data-i18n-aria]').forEach(function(node){
+    root.querySelectorAll('[data-i18n-aria]').forEach(function(node){
       var k=node.dataset.i18nAria;
       if(cat[k]) node.setAttribute('aria-label', cat[k]);
     });
@@ -652,7 +653,7 @@ var Locale = (function(){
        الشيفرة، فيبقى المصدر الوحيد للنص هو ملفات JSON دومًا. */
     var fallbackCat = catalogs[DEFAULT_LOCALE] || {};
     var fbTpl = fallbackCat.tpl, fbTerms = fallbackCat.term, fbSura = fallbackCat.sura;
-    document.querySelectorAll('[data-i18n-tpl]').forEach(function(node){
+    root.querySelectorAll('[data-i18n-tpl]').forEach(function(node){
       var key=node.dataset.i18nTpl, word=node.dataset.i18nWord;
       var phrase = (tpl && tpl[key]) || (fbTpl && fbTpl[key]);
       /* لا ترجمة معروفة لهذا القالب في أي قاموس (لا الحالي ولا الافتراضي) —
@@ -670,12 +671,12 @@ var Locale = (function(){
       node.textContent = word!==undefined ? phrase.replace('{}', sub) : phrase;
     });
     /* أي رقم عرضته الصفحة وقت البناء (شارات الأقسام، عدّاد المستويات...) */
-    document.querySelectorAll('[data-i18n-num]').forEach(function(node){
+    root.querySelectorAll('[data-i18n-num]').forEach(function(node){
       node.textContent = num(node.dataset.i18nNum);
     });
     /* أسماء السور داخل عنوان الورقة — على عكس كلمات الأسئلة، اسم السورة نفسه
        يُترجَم (له اسم معروف بكل لغة)، فقط نص القرآن وكلماته يبقى عربيًا دائمًا. */
-    document.querySelectorAll('[data-i18n-name]').forEach(function(node){
+    root.querySelectorAll('[data-i18n-name]').forEach(function(node){
       var ar=node.dataset.i18nName, nid=tid(ar);
       node.textContent = (suraDict && suraDict[nid]) || (fbSura && fbSura[nid]) || ar;
     });
@@ -772,11 +773,67 @@ function syncTopbar(){
   var fixed=getComputedStyle(topbar).position!=='static';
   document.documentElement.style.setProperty('--topbar-h',(fixed?h:0)+'px');
 }
-syncTopbar();
+if(window.requestAnimationFrame) requestAnimationFrame(syncTopbar); else syncTopbar();
 window.addEventListener('resize',syncTopbar);
 window.addEventListener('orientationchange',syncTopbar);
 if(window.ResizeObserver&&topbar){ try{ new ResizeObserver(syncTopbar).observe(topbar); }catch(e){} }
 /* ---------- فتح/إغلاق الورقة: تحديث الوسم والتمرير إليها ---------- */
+/* محتوى كل ورقة (كل الأسئلة) مُخزَّن كنص HTML خام في وسم JSON، لا كعناصر DOM
+   حية — لا يُبنى DOM فعلي لأي ورقة حتى تُفتح فعلًا (انظر ensureBodyLoaded).
+   ٦٨٧ ورقة × عشرات الأسئلة كانت تُبنى كلها دفعة واحدة عند تحميل الصفحة بصرف
+   النظر عمّا يراه المستخدم فعلًا (٤٣٥ ألف عنصر DOM قياسًا)، وهو السبب
+   الأساسي في بطء البناء الأول وارتفاع استهلاك المعالج. */
+/* Each worksheet body is fetched from its own api/ws/<id>.js file — a plain
+   <script src>, not fetch/XHR, specifically so this still works when the
+   page is opened directly by double-click (file://) with no server: browsers
+   block fetch/XHR to separate local files under file:// same-origin policy,
+   but not <script> tags, which is why this loader shape was chosen over the
+   more obvious fetch()-based one. Each file assigns into window.__WSB[id]
+   when it loads; results are cached there so re-opening a worksheet (or a
+   second caller during the batch preload in admin.js) never re-fetches. */
+window.__WSB=window.__WSB||{};
+var wsbLoading={};
+function loadWsBody(id, cb){
+  if(window.__WSB[id]!=null){ cb(window.__WSB[id]); return; }
+  if(wsbLoading[id]){ wsbLoading[id].push(cb); return; }
+  wsbLoading[id]=[cb];
+  var s=document.createElement('script');
+  s.src='api/ws/'+id+'.js';
+  function done(){
+    var cbs=wsbLoading[id]||[]; delete wsbLoading[id];
+    var html=window.__WSB[id]||null;
+    cbs.forEach(function(f){ f(html); });
+  }
+  s.onload=done; s.onerror=done;
+  document.head.appendChild(s);
+}
+function ensureBodyLoaded(det){
+  var slot=det.querySelector(':scope > .ws[data-lazy]');
+  if(!slot) return Promise.resolve(false); /* مُحمَّلة بالفعل، أو ورقة أُضيفت وقت التشغيل بمحتوى كامل أصلًا */
+  var id=det.id.replace(/^w-/,'');
+  return new Promise(function(resolve){
+    loadWsBody(id, function(html){
+      if(!html){ resolve(false); return; }
+      slot.outerHTML=html;
+      var body=det.querySelector(':scope > .ws');
+      if(body && window.Locale) Locale.render(body);
+      if(body) window.bindSheet(body, det);
+      /* تعديلات المدير المحفوظة (اسم/أقسام/أسئلة مُعدَّلة) وأسئلة مُضافة سابقًا
+         لهذه الورقة تحديدًا — تُعاد هنا فقط إن وُجد فعلًا تعديل/سؤال مخصَّص محفوظ
+         لهذا المعرّف تحديدًا، لا لكل ورقة تُفتح دون شرط: كلتا الدالتين تفحصان
+         وتُعيدان بناء كل التعديلات على كل الأوراق في كل مرة، فاستدعاؤهما بلا شرط
+         لكل ورقة من ٦٨٧ يُشغِّلهما مئات المرات تباعًا ويُجمِّد الصفحة عمليًا. */
+      if(body && ((window.WS_OVERRIDES||{})[id] || (window.CUSTOM||{})[id])){
+        setTimeout(function(){
+          try{ if(window.applyOverrides) window.applyOverrides(); }catch(e){}
+          try{ if(window.renderCustomAll) window.renderCustomAll(); }catch(e){}
+        },0);
+      }
+      resolve(true);
+    });
+  });
+}
+window.ensureBodyLoaded=ensureBodyLoaded;
 function bindToggles(root){
   root.querySelectorAll('.ws-item').forEach(function(d){
     if(isBound(d)) return;
@@ -787,10 +844,7 @@ function bindToggles(root){
     setGoLabel();
     d.addEventListener('toggle',function(){
       setGoLabel();
-      /* تغليف كلمات الآيات بـ span.w فور فتح الورقة — لا وقت تحميل الصفحة
-         لكل الأوراق (تكلفة ضئيلة على ورقة واحدة مفتوحة فقط)، فيصبح النقر
-         على كلمة بعينها ممكنًا فورًا دون انتظار بدء الاستماع أولًا. */
-      if(d.open && window.wrapVerseWords) window.wrapVerseWords(d);
+      if(d.open) ensureBodyLoaded(d);
       if(!d.open && window.stopAudio) window.stopAudio(d);
       if(d.open && !noAutoScroll){
         document.querySelectorAll('.grid .ws-item[open]').forEach(function(o){
@@ -804,15 +858,58 @@ function bindToggles(root){
 }
 bindToggles(document);
 window.bindToggles=bindToggles;
-/* تهيئة ورقة أُضيفت في وقت التشغيل (من صفحة المدير) */
-window.bindSheet=function(root){
-  bindAnswers(root); bindControls(root); bindToggles(root);
-  bindAudio(root); bindReplay(root); bindRepeatToggle(root); refreshAudioButtons();
+/* تهيئة ورقة أُضيفت في وقت التشغيل (من صفحة المدير)، أو محتوى ورقة حُمِّل
+   لتوّه من WS_BODIES — root هنا قد يكون .ws (المحتوى) بينما det هو .ws-item
+   الخارجي (يلزم لبعض الروابط كالصوت التي تبحث عن data-audio ضمن الورقة كلها) */
+window.bindSheet=function(root, det){
+  bindAnswers(root); bindControls(root); bindToggles(det||root);
+  bindAudio(det||root); bindReplay(det||root); bindRepeatToggle(det||root); refreshAudioButtons(det||root);
 };
-var filter='all';
+/* ---------- تحميل تدريجي لبطاقات الصفحة الرئيسية ----------
+   build.js يكتب أول ٣٠ بطاقة فقط كعناصر DOM حقيقية، والباقي كنص HTML خام
+   داخل #gridRest (JSON) — لأن بناء ٦٨٧ بطاقة دفعة واحدة عند التحميل الأول
+   كان السبب الرئيسي لثقل Style & Layout (Lighthouse). الدفعات التالية
+   تُدرَج تدريجيًا أثناء التمرير، أو كلها دفعة واحدة عند استخدام البحث/التصفية
+   (كي تبقى نتائجهما شاملة كل الأوراق كالسابق تمامًا). */
+var gridRest=[];
+try{ var grEl=document.getElementById('gridRest'); if(grEl) gridRest=JSON.parse(grEl.textContent||'[]'); }catch(e){}
+var gridRestIdx=0;
+function insertGridBatch(n){
+  if(gridRestIdx>=gridRest.length) return false;
+  var sentinel=document.getElementById('gridSentinel');
+  var batch=gridRest.slice(gridRestIdx, gridRestIdx+n).join('\n');
+  gridRestIdx+=n;
+  if(sentinel) sentinel.insertAdjacentHTML('beforebegin', batch);
+  else { var grid=document.querySelector('.grid'); if(grid) grid.insertAdjacentHTML('beforeend', batch); }
+  registerWords(document);
+  bindToggles(document);
+  if(window.Locale) window.Locale.render();
+  if(window.applyHidden) window.applyHidden();
+  if(window.applyOverrides) window.applyOverrides();
+  return gridRestIdx<gridRest.length;
+}
+function materializeAllGridCards(){
+  if(gridRestIdx>=gridRest.length) return;
+  while(insertGridBatch(200)){}
+}
+(function(){
+  var sentinel=document.getElementById('gridSentinel');
+  if(!sentinel || !gridRest.length) return;
+  if(!window.IntersectionObserver){ materializeAllGridCards(); return; }
+  var io=new IntersectionObserver(function(entries){
+    if(entries.some(function(e){return e.isIntersecting;})){
+      var more=insertGridBatch(30);
+      if(!more) io.disconnect();
+    }
+  },{rootMargin:'600px'});
+  io.observe(sentinel);
+})();
+window.materializeAllGridCards=materializeAllGridCards;
+
+var filter='all', juz='0';
 function applyFilter(){
+  materializeAllGridCards();
   var q=(document.getElementById('q')||{}).value||'';
-  var juzSel=document.getElementById('juzFilter'), juz=juzSel?juzSel.value:'0';
   document.querySelectorAll('.grid .ws-item').forEach(function(c){
     var catOk = filter==='all' || c.dataset.cat===filter;
     var juzOk = juz==='0' || c.dataset.juz===juz;
@@ -823,7 +920,10 @@ function applyFilter(){
      متتابعة، لا مجمَّعة تحت غلاف قابل للطي — يتطلب فتح كل <details> فعليًا
      (لا مجرد إخفاء الرأس بصريًا) كي يُعرَض محتواها أصلًا. */
   var grid=document.querySelector('.grid');
-  var flat = filter==='ayah';
+  /* اختيار جزء معيّن يعني أن المستخدم يريد رؤية أجزاء السور التي تقع ضمنه
+     تحديدًا — إبقاؤها مطويّة داخل غلاف السورة الكاملة يخفي أيها يطابق
+     فعلًا، فيُفكّ التجميع أيضًا هنا كما في تبويب «آيات مختارة». */
+  var flat = filter==='ayah' || juz!=='0';
   if(grid) grid.classList.toggle('force-flat', flat);
   document.querySelectorAll('.grid .ws-group').forEach(function(g){
     if(flat) g.setAttribute('open','');
@@ -862,7 +962,25 @@ if(qi){
     filterDebounce=setTimeout(applyFilter,150);
   });
 }
-var jf=document.getElementById('juzFilter'); if(jf) jf.addEventListener('change',applyFilter);
+/* قائمة الأجزاء أصبحت نافذة منبثقة مطابقة لتصميم قائمة اللغة/إعدادات
+   التلاوة (لا <select> متصفح افتراضي كان يخرج عن تصميم التطبيق تمامًا). */
+(function(){
+  var btn=document.getElementById('juzBtn'), panel=document.getElementById('juzPanel');
+  if(!btn||!panel) return;
+  panel.querySelectorAll('.juz-opt').forEach(function(o){
+    o.addEventListener('click',function(){
+      juz=o.dataset.juz;
+      panel.querySelectorAll('.juz-opt').forEach(function(x){ x.classList.toggle('on',x===o); });
+      var lbl=document.getElementById('juzBtnLabel');
+      if(lbl) lbl.textContent=o.textContent;
+      applyFilter();
+      Popover.close();
+    });
+  });
+  btn.addEventListener('click',function(){
+    if(panel.hidden) Popover.open(panel,btn); else Popover.close();
+  });
+})();
 /* ---------- تصفية الأسئلة حسب المستوى: إخفاء أي مستوى غير المختار ---------- */
 var lvlFilter='all';
 function applyLvlFilter(){

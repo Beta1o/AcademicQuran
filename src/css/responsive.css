@@ -74,7 +74,7 @@
   .brand .lens{width:28px;height:28px;border-width:2.5px}
 
   .hero{padding-top:24px;padding-bottom:16px}
-  .hero .bismillah{font-size:1.2rem;margin-bottom:10px}
+  .hero .bismillah{font-size:1.2rem;line-height:2.1rem;margin-bottom:10px}
   .hero p.sub{font-size:.93rem;margin-top:10px}
   .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
   .stat{min-width:0;padding:10px 8px;text-align:center}
@@ -92,7 +92,7 @@
 
   .grid{margin-top:20px;margin-bottom:40px;gap:14px;grid-template-columns:1fr}
   .card{padding:16px 14px 14px}
-  .card h3{font-size:1.12rem}
+  .card h2{font-size:1.12rem}
 
   .ws{padding-left:0;padding-right:0;padding-top:16px;padding-bottom:34px}
   .ws-top{border-radius:10px;flex-wrap:wrap}

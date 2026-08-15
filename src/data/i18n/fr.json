@@ -30,10 +30,12 @@
  "gateTitle": "🔒 Page administrateur",
  "gateDesc": "Cette page est réservée à l'enseignant — entre le mot de passe pour continuer",
  "gatePassPh": "Mot de passe",
+ "gateUserPh": "Nom d'utilisateur",
  "gateEnter": "Entrer",
  "gateCancel": "Annuler",
  "adminTitle": "🛠️ Page administrateur",
  "adminClose": "✕ Fermer",
+ "adminLogout": "🔒 Déconnexion",
  "adminStep1": "Ajouter une sourate ou un verset",
  "adminStep2": "Ajouter des questions",
  "tpl": {

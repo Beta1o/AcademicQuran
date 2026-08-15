@@ -1,5 +1,8 @@
 /* ================= admin: add questions of every type ================= */
-var ORIGINAL_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+/* كانت تُلتقَط فورًا عند تحميل الصفحة — تسلسُل DOM كامل (~٨م.ب.) إلى نص نصيًا
+   لكل زائر، رغم أنها تُستخدَم فقط داخل __exportHtml أدناه (إجراء إداري نادر).
+   الآن تُحسَب كسولًا عند الحاجة الفعلية فقط، فلا كلفة على الزائر العادي. */
+function currentHtml(){ return '<!DOCTYPE html>\n' + document.documentElement.outerHTML; }
 var stripDc=function(s){return String(s).replace(DIAC,'');};
 var lettersOf=function(w){return stripDc(w).replace(/[ـ\s\-–]/g,'').split('').filter(function(c){return /[\u0621-\u064A]/.test(c);});};
 var AR='٠١٢٣٤٥٦٧٨٩';
@@ -14,6 +17,14 @@ function wordInVerse(ws,word){var t=norm(word);return vNorm(ws).some(function(x)
 function freqWord(ws,word){var t=norm(word),c=0;vNorm(ws).forEach(function(x){if(x===t||['و','ف','ب','ك','ل'].some(function(p){return x===p+t;}))c++;});return c;}
 function shuffled(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}
   return a.join('')===a.slice().sort().join('')?a:a;}
+
+/* ---------- builtin worksheet index: {id: [questionCount, [lvl1..lvl5]]},
+   a small precomputed table (see build.js) — used by the admin panel's
+   builtin-worksheets list to show counts without loading any worksheet's
+   full body/DOM first. Safe to parse eagerly unlike wsBodies: this is a few
+   dozen KB total, not tens of megabytes. ---------- */
+window.WS_INDEX={};
+try{ var wsiEl=document.getElementById('wsIndex'); if(wsiEl) window.WS_INDEX=JSON.parse(wsiEl.textContent||'{}')||{}; }catch(e){ window.WS_INDEX={}; }
 
 /* ---------- custom questions store ---------- */
 var CUSTOM={};
@@ -127,7 +138,22 @@ function refreshStats(){
   var panel=document.getElementById('adminPanel');
   if(panel && panel.hidden) return;
   var all=document.querySelectorAll('.ws-item:not(.ws-hidden)');
-  var qs=document.querySelectorAll('.ws-item:not(.ws-hidden) .q').length;
+  /* Counting live .q DOM elements here used to be accurate because every
+     worksheet body was always fully built — now most are lazy-loaded
+     placeholders until opened, so that count would silently only reflect
+     whichever few worksheets happen to be open. WS_INDEX (precomputed at
+     build time, see build.js) has each builtin worksheet's real question
+     count regardless of whether its body is currently loaded; runtime-added
+     custom worksheets aren't in that build-time table, but they're never
+     lazy (built with a full body immediately), so counting their live .q
+     elements is still correct for them specifically. */
+  var qs=0;
+  all.forEach(function(d){
+    var id=d.id.slice(2);
+    var idx=(window.WS_INDEX||{})[id];
+    qs += idx ? idx[0] : d.querySelectorAll('.q').length;
+    qs += (CUSTOM[id]||[]).length;
+  });
   var s=0,a=0;
   all.forEach(function(d){ if(d.dataset.cat==='surah') s++; else a++; });
   var set=function(k,v){ var el=document.querySelector('[data-stat="'+k+'"]'); if(el) el.textContent=v; };
@@ -155,7 +181,7 @@ function applyOverrides(){
     var o=WS_OVERRIDES[id];
     if(o.name){
       d.dataset.name=o.name;
-      var h3=d.querySelector('.card h3'); if(h3) h3.textContent=o.name;
+      var h3=d.querySelector('.card h2'); if(h3) h3.textContent=o.name;
       var h2=d.querySelector('.sheet-head h2'); if(h2) h2.textContent=o.name;
     }
     if(o.info!==undefined){ var inf=d.querySelector('.sheet-head .info'); if(inf) inf.textContent=o.info; }
@@ -169,6 +195,23 @@ function applyOverrides(){
     if(o.secs){
       var heads=d.querySelectorAll('.sec .sec-head h3');
       o.secs.forEach(function(t,i){ if(t && heads[i]) heads[i].textContent=t; });
+    }
+    /* أقسام جديدة أضافها المدير (بخلاف الأقسام الثلاثة الأصلية) — تُعاد كل
+       مرة من الصفر (إزالة ما أُضيف سابقًا ثم إعادة بنائه من o.extraSecs) كي
+       يبقى الاستدعاء المتكرّر لهذه الدالة آمنًا بلا تكرار للأقسام نفسها. */
+    d.querySelectorAll('.sec.sec-extra').forEach(function(x){ x.remove(); });
+    if(o.extraSecs && o.extraSecs.length){
+      /* الأقسام تسبق التذييل (footer.sheet-foot) دومًا في بنية الورقة —
+         إدراجها قبله مباشرة يحافظ على نفس ترتيب العرض، لا بعد التذييل. */
+      var foot=d.querySelector('.ws article.sheet > .sheet-foot');
+      var baseCount=d.querySelectorAll('.sec:not(.sec-extra)').length;
+      if(foot){
+        o.extraSecs.forEach(function(title,i){
+          var secNum=baseCount+i+1;
+          foot.insertAdjacentHTML('beforebegin',
+            '<section class="sec sec-extra"><div class="sec-head"><span class="lens-badge">'+secNum+'</span><h3>'+escA(title)+'</h3><span class="rule"></span></div><div class="qlist"></div></section>');
+        });
+      }
     }
     if(o.questions){
       Object.keys(o.questions).forEach(function(key){ applyQuestionEdit(d, key, o.questions[key]); });
@@ -217,29 +260,60 @@ function applyQuestionEdit(wsEl, key, edit){
 }
 
 /* ---------- question types catalog ---------- */
-var F_WORD=[{k:'word',label:'الكلمة'}];
+var F_WORD=[{k:'word',label:'الكلمة (أو عدة كلمات مفصولة بفواصل، لسؤال واحد بعدة أجزاء)'}];
+var ORDINALS=['أ','ب','ج','د','هـ','و','ز','ح','ط','ي','ك','ل','م','ن','س'];
+/* Wraps a single-word gen() so entering several comma-separated words (or one
+   per line) produces several linked sub-questions — 'أ) ...', 'ب) ...', etc —
+   in one Add click, instead of having to add each word as its own separate
+   question one at a time. Deliberately returns an ARRAY of full question
+   objects rather than inventing a new multi-answer-per-.q rendering/grading
+   path: every sub-item becomes its own ordinary .q block (grading, progress
+   counting, and rendering all already handle that correctly with zero
+   changes), just grouped visually by consecutive ordinal-prefixed text and
+   added together. Single word entered → behaves exactly as before, unwrapped
+   (no ordinal prefix, returns one plain object, not a 1-item array), so this
+   is fully backward compatible with every existing single-word type. */
+function multiField(fieldKey, genOne){
+  return function(p, ws){
+    var raw=(p[fieldKey]||'').split(/[,،\n]+/).map(function(s){return s.trim();}).filter(Boolean);
+    if(!raw.length) return 'أدخل '+(fieldKey==='letter'?'حرفًا':'كلمة')+' واحدة على الأقل';
+    if(raw.length===1){
+      var pp={}; for(var k in p) pp[k]=p[k]; pp[fieldKey]=raw[0];
+      return genOne(pp, ws);
+    }
+    var out=[];
+    for(var i=0;i<raw.length;i++){
+      var pi={}; for(var k2 in p) pi[k2]=p[k2]; pi[fieldKey]=raw[i];
+      var r=genOne(pi, ws);
+      if(typeof r==='string') return '('+raw[i]+'): '+r;
+      r.t=(ORDINALS[i]||(i+1))+') '+r.t;
+      out.push(r);
+    }
+    return out;
+  };
+}
 var TYPES=[
- {id:'seg',label:'تقسيم كلمة إلى حروف (__ + __)',fields:F_WORD,gen:function(p){var ls=lettersOf(p.word);if(ls.length<2)return 'أدخل كلمة من حرفين فأكثر';
-   return {t:p.word+' : '+ls.map(function(){return '__';}).join(' + '),ui:'seg',parts:ls.map(function(){return 1;}),ans:norm(ls.join('')),show:ls.join(' + ')};}},
- {id:'segAl',label:'تقسيم (ال + الكلمة)',fields:F_WORD,gen:function(p){var w=p.word,ls=lettersOf(w);
+ {id:'seg',label:'تقسيم كلمة إلى حروف (__ + __)',fields:F_WORD,gen:multiField('word',function(p){var ls=lettersOf(p.word);if(ls.length<2)return 'أدخل كلمة من حرفين فأكثر';
+   return {t:p.word+' : '+ls.map(function(){return '__';}).join(' + '),ui:'seg',parts:ls.map(function(){return 1;}),ans:norm(ls.join('')),show:ls.join(' + ')};})},
+ {id:'segAl',label:'تقسيم (ال + الكلمة)',fields:F_WORD,gen:multiField('word',function(p){var w=p.word,ls=lettersOf(w);
    if(norm(w).indexOf('ال')!==0||ls.length<4)return 'الكلمة يجب أن تبدأ بـ (ال) وطولها 4 حروف فأكثر';
-   return {t:w+' : __ + ___',ui:'seg',parts:[2,ls.length-2],ans:norm(ls.join('')),show:'ال + '+stripDc(w).slice(2)};}},
- {id:'count',label:'عدد حروف كلمة',fields:F_WORD,gen:function(p){var n=lettersOf(p.word).length;if(!n)return 'أدخل كلمة';
-   return {t:'حروف كلمة ('+p.word+') =',ui:'num',ans:n,show:toArD(n)};}},
- {id:'dots',label:'عدد النقاط في كلمة',fields:F_WORD,gen:function(p){if(!p.word)return 'أدخل كلمة';
+   return {t:w+' : __ + ___',ui:'seg',parts:[2,ls.length-2],ans:norm(ls.join('')),show:'ال + '+stripDc(w).slice(2)};})},
+ {id:'count',label:'عدد حروف كلمة',fields:F_WORD,gen:multiField('word',function(p){var n=lettersOf(p.word).length;if(!n)return 'أدخل كلمة';
+   return {t:'حروف كلمة ('+p.word+') =',ui:'num',ans:n,show:toArD(n)};})},
+ {id:'dots',label:'عدد النقاط في كلمة',fields:F_WORD,gen:multiField('word',function(p){if(!p.word)return 'أدخل كلمة';
    var n=lettersOf(p.word).reduce(function(s,c){return s+(DOTS[c]||0);},0);
-   return {t:'عدد النقاط في كلمة ('+p.word+') =',ui:'num',ans:n,show:toArD(n)};}},
- {id:'freqL',label:'تكرار حرف في السورة',fields:[{k:'letter',label:'الحرف'}],gen:function(p,ws){var L=stripDc(p.letter||'').replace(/ـ/g,'');
+   return {t:'عدد النقاط في كلمة ('+p.word+') =',ui:'num',ans:n,show:toArD(n)};})},
+ {id:'freqL',label:'تكرار حرف في السورة',fields:[{k:'letter',label:'الحرف (أو عدة حروف مفصولة بفواصل)'}],gen:multiField('letter',function(p,ws){var L=stripDc(p.letter||'').replace(/ـ/g,'');
    if(L.length!==1)return 'أدخل حرفًا واحدًا';
    if('اأإآءئؤى'.indexOf(L)>-1)return 'حروف الألف والهمزة غير مدعومة للعدّ الآلي';
    var n=vJoined(ws).split('').filter(function(c){return c===L;}).length;
    if(!n)return 'الحرف ('+L+') غير موجود في النص';
-   return {t:'تكرار حرف ('+L+') في السورة =',ui:'num',ans:n,show:toArD(n)};}},
- {id:'freqW',label:'تكرار كلمة في السورة',fields:F_WORD,gen:function(p,ws){var n=freqWord(ws,p.word);
+   return {t:'تكرار حرف ('+L+') في السورة =',ui:'num',ans:n,show:toArD(n)};})},
+ {id:'freqW',label:'تكرار كلمة في السورة',fields:F_WORD,gen:multiField('word',function(p,ws){var n=freqWord(ws,p.word);
    if(!n)return 'الكلمة غير موجودة في النص';
-   return {t:'تكرار كلمة ('+p.word+') =',ui:'num',ans:n,show:toArD(n)};}},
- {id:'merge',label:'ادمج حروفًا لتكوين كلمة',fields:F_WORD,gen:function(p){var ls=lettersOf(p.word);if(ls.length<2)return 'أدخل كلمة من حرفين فأكثر';
-   return {t:'ادمج ('+ls.join(' - ')+') ←',ui:'text',ans:norm(ls.join('')),show:stripDc(p.word)};}},
+   return {t:'تكرار كلمة ('+p.word+') =',ui:'num',ans:n,show:toArD(n)};})},
+ {id:'merge',label:'ادمج حروفًا لتكوين كلمة',fields:F_WORD,gen:multiField('word',function(p){var ls=lettersOf(p.word);if(ls.length<2)return 'أدخل كلمة من حرفين فأكثر';
+   return {t:'ادمج ('+ls.join(' - ')+') ←',ui:'text',ans:norm(ls.join('')),show:stripDc(p.word)};})},
  {id:'copy',label:'انسخ نصًا',fields:[{k:'text',label:'النص المطلوب نسخه'}],gen:function(p){if(!p.text)return 'أدخل النص';
    return {t:'انسخ: ('+p.text+')',ui:'text',ans:norm(p.text),show:p.text};}},
  {id:'dict',label:'إملاء',fields:[{k:'text',label:'نص الإملاء'}],gen:function(p){if(!p.text)return 'أدخل النص';
@@ -253,13 +327,13 @@ var TYPES=[
    return {t:'أول كلمة في السورة؟',ui:'text',ans:vNorm(ws)[0],show:o[0]};}},
  {id:'lastWord',label:'آخر كلمة في السورة/الآية',fields:[],gen:function(p,ws){var o=vOrig(ws),n=vNorm(ws);
    return {t:'آخر كلمة في السورة؟',ui:'text',ans:n[n.length-1],show:o[o.length-1]};}},
- {id:'firstLetter',label:'أول حرف في كلمة',fields:F_WORD,gen:function(p){if(!p.word)return 'أدخل كلمة';var L=norm(p.word)[0];
-   return {t:'أول حرف في ('+p.word+'):',ui:'text',ans:L,show:L};}},
- {id:'lastLetter',label:'آخر حرف في كلمة',fields:F_WORD,gen:function(p){if(!p.word)return 'أدخل كلمة';var nn=norm(p.word);
-   return {t:'آخر حرف في ('+p.word+'):',ui:'text',ans:nn.slice(-1),show:nn.slice(-1)};}},
- {id:'hasLetter',label:'كلمة بها حرف (من السورة)',fields:[{k:'letter',label:'الحرف'}],gen:function(p,ws){return dynGen('has',p.letter,ws,'كلمة بها حرف');}},
- {id:'startsLetter',label:'كلمة تبدأ بحرف',fields:[{k:'letter',label:'الحرف'}],gen:function(p,ws){return dynGen('starts',p.letter,ws,'كلمة تبدأ بحرف');}},
- {id:'endsLetter',label:'كلمة تنتهي بحرف',fields:[{k:'letter',label:'الحرف'}],gen:function(p,ws){return dynGen('ends',p.letter,ws,'كلمة تنتهي بحرف');}},
+ {id:'firstLetter',label:'أول حرف في كلمة',fields:F_WORD,gen:multiField('word',function(p){if(!p.word)return 'أدخل كلمة';var L=norm(p.word)[0];
+   return {t:'أول حرف في ('+p.word+'):',ui:'text',ans:L,show:L};})},
+ {id:'lastLetter',label:'آخر حرف في كلمة',fields:F_WORD,gen:multiField('word',function(p){if(!p.word)return 'أدخل كلمة';var nn=norm(p.word);
+   return {t:'آخر حرف في ('+p.word+'):',ui:'text',ans:nn.slice(-1),show:nn.slice(-1)};})},
+ {id:'hasLetter',label:'كلمة بها حرف (من السورة)',fields:[{k:'letter',label:'الحرف (أو عدة حروف مفصولة بفواصل)'}],gen:multiField('letter',function(p,ws){return dynGen('has',p.letter,ws,'كلمة بها حرف');})},
+ {id:'startsLetter',label:'كلمة تبدأ بحرف',fields:[{k:'letter',label:'الحرف (أو عدة حروف مفصولة بفواصل)'}],gen:multiField('letter',function(p,ws){return dynGen('starts',p.letter,ws,'كلمة تبدأ بحرف');})},
+ {id:'endsLetter',label:'كلمة تنتهي بحرف',fields:[{k:'letter',label:'الحرف (أو عدة حروف مفصولة بفواصل)'}],gen:multiField('letter',function(p,ws){return dynGen('ends',p.letter,ws,'كلمة تنتهي بحرف');})},
  {id:'extract',label:'استخرج (ظاهرة تجويدية/لغوية)',fields:[{k:'mark',label:'الظاهرة',type:'select',opts:[
    ['mark:shadda','شدّة'],['mark:tk','تنوين كسر'],['mark:tf','تنوين فتح'],['mark:td','تنوين ضم'],['mark:tany','تنوين (أي نوع)'],
    ['mark:sukun','سكون'],['mark:hamza','همزة'],['lam:sun','لام شمسية'],['lam:moon','لام قمرية'],
@@ -275,11 +349,11 @@ var TYPES=[
    var t=norm(p.word),o=vOrig(ws),n=vNorm(ws),out=[],done=false,shown=null;
    for(var i=0;i<o.length;i++){ if(!done&&(n[i]===t)){out.push('________');shown=o[i];done=true;} else out.push(o[i]); }
    return {t:'أكمل: ﴿ '+out.join(' ')+' ﴾',ui:'text',ans:t,show:shown||p.word};}},
- {id:'scramble',label:'رتب حروفًا مبعثرة لتكوين كلمة',fields:F_WORD,gen:function(p,ws){
+ {id:'scramble',label:'رتب حروفًا مبعثرة لتكوين كلمة',fields:F_WORD,gen:multiField('word',function(p,ws){
    if(!wordInVerse(ws,p.word))return 'اختر كلمة من نص السورة';
    var ls=lettersOf(p.word);if(ls.length<3)return 'كلمة من 3 حروف فأكثر';
    var sc=shuffled(ls);
-   return {t:'رتب الحروف لتكوّن كلمة من السورة: ('+sc.join(' - ')+')',ui:'text',ans:norm(ls.join('')),show:stripDc(p.word)};}},
+   return {t:'رتب الحروف لتكوّن كلمة من السورة: ('+sc.join(' - ')+')',ui:'text',ans:norm(ls.join('')),show:stripDc(p.word)};})},
  {id:'mcq',label:'اختيار من متعدد',fields:[{k:'q',label:'نص السؤال'},{k:'o1',label:'الخيار 1'},{k:'o2',label:'الخيار 2'},{k:'o3',label:'الخيار 3 (اختياري)'},{k:'o4',label:'الخيار 4 (اختياري)'},{k:'correct',label:'رقم الإجابة الصحيحة (1-4)'}],
   gen:function(p){var opts=[p.o1,p.o2,p.o3,p.o4].filter(function(x){return x&&x.trim();});
    if(!p.q)return 'أدخل نص السؤال'; if(opts.length<2)return 'أدخل خيارين على الأقل';
@@ -318,11 +392,11 @@ var TYPES=[
    o.forEach(function(x){var L=lettersOf(x).length; if(L>len){len=L;best=[x];} else if(L===len) best.push(x);});
    if(best.length!==1) return 'توجد أكثر من كلمة بالطول نفسه — لا يمكن تصحيحها آليًا';
    return {t:'أطول كلمة في السورة =',ui:'text',ans:norm(best[0]),show:best[0]};}},
- {id:'lamType',label:'نوع الـ في كلمة (شمسية/قمرية)',fields:F_WORD,gen:function(p,ws){
+ {id:'lamType',label:'نوع الـ في كلمة (شمسية/قمرية)',fields:F_WORD,gen:multiField('word',function(p,ws){
    var x=norm(p.word||''); ['و','ف','ب','ل','ك'].forEach(function(pr){ if(x.indexOf(pr+'ال')===0) x=x.slice(1); });
    if(x.indexOf('ال')!==0||x.length<3) return 'اختر كلمة معرّفة بـ (ال)';
    var t=SUN.indexOf(x[2])>-1?'شمسية':'قمرية';
-   return {t:'نوع الـ في ('+p.word+'):',ui:'text',ans:t,show:'لام '+t,mode:'contains'};}},
+   return {t:'نوع الـ في ('+p.word+'):',ui:'text',ans:t,show:'لام '+t,mode:'contains'};})},
  {id:'meaning',label:'معنى كلمة (إجابة نموذجية)',fields:[{k:'word',label:'الكلمة'},{k:'model',label:'المعنى'}],
   gen:function(p){ if(!p.word||!p.model) return 'أدخل الكلمة ومعناها';
    return {t:'ما معنى ('+p.word+')؟',ui:'text',show:p.model};}}
@@ -412,22 +486,28 @@ function renderCustomAll(){
      إضافة/تعديل فعلي لسؤال، حين يصبح CUSTOM غير فارغ. */
   if(!Object.keys(CUSTOM).length) return;
   document.querySelectorAll('.q.custom').forEach(function(el){el.remove();});
-  Object.keys(CUSTOM).forEach(function(ws){
-    var det=document.getElementById('w-'+ws); if(!det) return;
-    var secs=det.querySelectorAll('.sec .qlist');
-    (CUSTOM[ws]||[]).forEach(function(item,idx){
-      var target=secs[Math.min(item.sec||0,secs.length-1)];
-      var key=ws+'-c-'+idx;
-      target.insertAdjacentHTML('beforeend', qHTML(item,key,0));
+  Promise.all(Object.keys(CUSTOM).map(function(ws){
+    var det=document.getElementById('w-'+ws); if(!det) return null;
+    var loadP = window.ensureBodyLoaded ? window.ensureBodyLoaded(det) : Promise.resolve();
+    return loadP.then(function(){
+      var secs=det.querySelectorAll('.sec .qlist');
+      if(!secs.length) return;
+      (CUSTOM[ws]||[]).forEach(function(item,idx){
+        var target=secs[Math.min(item.sec||0,secs.length-1)];
+        if(!target) return;
+        var key=ws+'-c-'+idx;
+        target.insertAdjacentHTML('beforeend', qHTML(item,key,0));
+      });
+      renumberQuestions(det);
+      bindQ(det); updateProg(ws);
+      var pm=det.querySelector('.prog-mini');
+      if(pm){ var qn=det.querySelectorAll('.q').length; pm.dataset.i18nTpl='{} سؤالًا'; pm.dataset.i18nWord=toArD(qn); }
     });
-    renumberQuestions(det);
-    bindQ(det); updateProg(ws);
-    var pm=det.querySelector('.prog-mini');
-    if(pm){ var qn=det.querySelectorAll('.q').length; pm.dataset.i18nTpl='{} سؤالًا'; pm.dataset.i18nWord=toArD(qn); }
+  })).then(function(){
+    renderAdmList();
+    if(window.applyLvlFilter) window.applyLvlFilter();
+    if(window.Locale) window.Locale.render(); /* يطبّق الترجمة على أي نص أُعيد بناؤه للتو (عدّاد الأسئلة وغيره) */
   });
-  renderAdmList();
-  if(window.applyLvlFilter) window.applyLvlFilter();
-  if(window.Locale) window.Locale.render(); /* يطبّق الترجمة على أي نص أُعيد بناؤه للتو (عدّاد الأسئلة وغيره) */
 }
 /* ---------- duplicate check ---------- */
 function isDup(ws,text){
@@ -450,6 +530,7 @@ var panel=$('adminPanel');
    ولا يُعدّ حماية أمنية (يمكن قراءة كلمة المرور من مصدر الصفحة المبنية).
    ======================================================================= */
 var ADMIN_PASS='change-me-set-ADMIN_PASS-env-var';
+var ADMIN_USER='admin';
 var ADMIN_SESSION_KEY='tahleel-adm-ok';
 
 if(panel){
@@ -460,7 +541,18 @@ if(panel){
     panel.hidden=!open;
     lockScroll(open || (gate && !gate.hidden));
     if(open){
+      if(window.materializeAllGridCards) window.materializeAllGridCards(); /* اللوحة تتعامل مع كل الأوراق (تعديل/إخفاء) لا فقط الصفحة الأولى المعروضة */
       refreshStats(); /* الأرقام كانت تُحسَب دومًا حتى قبل فتح اللوحة — الآن فقط لحظة فتحها فعليًا */
+      fillAdminOptionsOnce();
+      /* renderBwList reads counts from WS_INDEX (a small precomputed table
+         embedded in the page — see build.js) instead of querying live DOM
+         for each of 687 worksheets, so it no longer needs any worksheet
+         body loaded first. Opening the admin panel used to force-load all
+         687 bodies just to compute this list's question counts, which was
+         real, un-yielding main-thread work (each body load does a DOM
+         swap + reflow) — that's what was making the tab freeze/become
+         unresponsive right when the panel opened. */
+      renderBwList();
       if($('admWs')) try{ $('admWs').focus(); }catch(e){}
     }
   }
@@ -469,20 +561,66 @@ if(panel){
     if(!gate) return;
     gate.hidden=!open;
     lockScroll(open || !panel.hidden);
-    if(open){ gateMsg(''); if($('admPass')){ $('admPass').value=''; try{ $('admPass').focus(); }catch(e){} } }
+    if(open){ gateMsg(''); if($('admUser')) $('admUser').value=''; if($('admPass')){ $('admPass').value=''; try{ ($('admUser')||$('admPass')).focus(); }catch(e){} } updateLockUI(); }
   }
-  /* الدخول: يطلب كلمة المرور مرة واحدة في كل جلسة متصفح */
+  /* الدخول: يطلب اسم المستخدم وكلمة المرور مرة واحدة في كل جلسة متصفح */
   function requestAdmin(){ if(isUnlocked()) setPanel(true); else setGate(true); }
   window.requestAdmin=requestAdmin;
 
+  /* Login attempt lockout: this is a client-only static site, so the
+     password check itself can never be true security — anyone can read
+     ADMIN_PASS straight out of the page source. What a lockout DOES
+     meaningfully stop is casual/scripted brute-forcing through the actual
+     login form (trying the whole common-password list in a fraction of a
+     second) rather than someone bypassing the UI entirely, which no
+     client-side measure can prevent. Tracked in localStorage (not
+     sessionStorage) so it survives a reload or new tab, since that's
+     exactly what a brute-force attempt would try first. Lockout duration
+     doubles each time it's triggered (capped at 10 minutes) rather than
+     resetting, so repeated brute-force bursts get progressively costlier. */
+  var RATE_KEY='tahleel-adm-rate';
+  var FAIL_THRESHOLD=5, MAX_LOCK_MIN=10;
+  function getRate(){ try{ return JSON.parse(localStorage.getItem(RATE_KEY)||'{}')||{}; }catch(e){ return {}; } }
+  function setRate(r){ try{ localStorage.setItem(RATE_KEY, JSON.stringify(r)); }catch(e){} }
+  function lockRemainingMs(){ var r=getRate(); return r.until ? Math.max(0, r.until-Date.now()) : 0; }
+  function registerFail(){
+    var r=getRate();
+    r.fails=(r.fails||0)+1;
+    if(r.fails>=FAIL_THRESHOLD){
+      var mins=Math.min(MAX_LOCK_MIN, Math.pow(2, r.fails-FAIL_THRESHOLD));
+      r.until=Date.now()+mins*60*1000;
+    }
+    setRate(r);
+  }
+  function registerSuccess(){ setRate({}); }
+  var lockTimer=null;
+  function updateLockUI(){
+    if(lockTimer){ clearTimeout(lockTimer); lockTimer=null; }
+    var ms=lockRemainingMs();
+    var form=$('admGateForm');
+    var locked=ms>0;
+    if(form){ [...form.elements].forEach(function(el){ el.disabled=locked; }); }
+    if(locked){
+      var secs=Math.ceil(ms/1000);
+      var mm=Math.floor(secs/60), ss=secs%60;
+      gateMsg('محاولات كثيرة فاشلة — حاول مجددًا بعد '+(mm?mm+':'+(ss<10?'0':'')+ss:ss+' ثانية'));
+      lockTimer=setTimeout(updateLockUI,1000);
+    }
+  }
+
   if($('admGateForm')) $('admGateForm').addEventListener('submit',function(e){
     e.preventDefault();
+    if(lockRemainingMs()>0){ updateLockUI(); return; }
+    var u=($('admUser')||{}).value||'';
     var v=($('admPass')||{}).value||'';
-    if(v.trim()===ADMIN_PASS){
+    if(u.trim()===ADMIN_USER && v.trim()===ADMIN_PASS){
+      registerSuccess();
       try{ sessionStorage.setItem(ADMIN_SESSION_KEY,'1'); }catch(e2){}
       setGate(false); setPanel(true);
     } else {
-      gateMsg('كلمة المرور غير صحيحة');
+      registerFail();
+      if(lockRemainingMs()>0){ updateLockUI(); }
+      else gateMsg('اسم المستخدم أو كلمة المرور غير صحيحة');
       var box=gate.querySelector('.adm-gate-box');
       if(box){ box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake'); }
       if($('admPass')){ $('admPass').value=''; $('admPass').focus(); }
@@ -517,17 +655,23 @@ if(panel){
 
   if($('admOpen')) $('admOpen').addEventListener('click',requestAdmin);
   $('admClose').addEventListener('click',function(){ setPanel(false); });
+  /* Ends the session immediately (clears the unlock flag) instead of just
+     closing the panel — closing alone leaves isUnlocked() true, so the
+     next 5-tap-the-logo would skip straight back in with no re-entry of
+     credentials. This gives a way to force that re-entry, e.g. before
+     handing the device to someone else. */
+  if($('admLogout')) $('admLogout').addEventListener('click',function(){
+    try{ sessionStorage.removeItem(ADMIN_SESSION_KEY); }catch(e){}
+    setPanel(false);
+  });
   panel.addEventListener('click',function(e){ if(e.target===panel) setPanel(false); });
-  /* ================= الخطوتان: ورقة جديدة ← ثم الأسئلة ================= */
+  /* ================= لوحة موحّدة الآن: لا خطوتان ولا إنشاء ورقة جديدة —
+     الأوراق الأصلية وقسم الأسئلة معروضان معًا دومًا (انظر showStep أدناه،
+     أُبقيت بلا أثر عملي إذ لا أزرار خطوات تستدعيها بعد الآن، حتى لا تنكسر
+     الاستدعاءات القديمة المتبقية في مسار حفظ نموذج الإنشاء المخفي). ================= */
   function showStep(k){
-    $('admStepWs').hidden=(k!=='ws');
-    $('admStepQ').hidden=(k!=='q');
-    panel.querySelectorAll('.admin-steps .step').forEach(function(b){ b.classList.toggle('on',b.dataset.step===k); });
     try{ panel.scrollTop=0; }catch(e){}
   }
-  panel.querySelectorAll('.admin-steps .step').forEach(function(b){
-    b.addEventListener('click',function(){ showStep(b.dataset.step); });
-  });
 
   /* ---------- قائمة الأوراق في الخطوة الثانية ---------- */
   function fillWsOptions(sel){
@@ -544,32 +688,68 @@ if(panel){
   /* أقسام الورقة المختارة بعناوينها الحقيقية (ثلاثة أقسام لكل ورقة) */
   function fillSecOptions(){
     var det=document.getElementById('w-'+$('admWs').value);
-    var heads=det?det.querySelectorAll('.sec .sec-head h3'):[];
-    $('admSec').innerHTML='';
-    if(!heads.length){
-      ['القسم الأول','القسم الثاني','القسم الثالث'].forEach(function(t,i){
-        $('admSec').appendChild(new Option(t,i));
-      });
+    /* One choke point: any worksheet picked from the "add questions" list
+       has its body loaded here (if not already) — covers every later
+       .sec/.q query on the same worksheet elsewhere in this file, so it's
+       not repeated at each call site. Now async (the body may still need
+       fetching via its own <script src>), so the rest of this function runs
+       once that load settles rather than immediately. */
+    var loadP = (det && window.ensureBodyLoaded) ? window.ensureBodyLoaded(det) : Promise.resolve();
+    loadP.then(function(){
+      var heads=det?det.querySelectorAll('.sec .sec-head h3'):[];
+      $('admSec').innerHTML='';
+      if(!heads.length){
+        ['القسم الأول','القسم الثاني','القسم الثالث'].forEach(function(t,i){
+          $('admSec').appendChild(new Option(t,i));
+        });
+        fillTypeOptions();
+        return;
+      }
+      heads.forEach(function(h,i){ $('admSec').appendChild(new Option((i+1)+') '+h.textContent,i)); });
       fillTypeOptions();
-      return;
-    }
-    heads.forEach(function(h,i){ $('admSec').appendChild(new Option((i+1)+') '+h.textContent,i)); });
-    fillTypeOptions();
+    });
   }
   $('admWs').addEventListener('change',fillSecOptions);
   $('admSec').addEventListener('change',fillTypeOptions);
-  fillWsOptions();
-
+  /* ---------- إضافة قسم جديد لورقة أصلية (بخلاف أقسامها الثلاثة) ---------- */
+  if($('admAddSection')) $('admAddSection').addEventListener('click',function(){
+    var wsId=$('admWs').value, title=($('admNewSecTitle').value||'').trim();
+    var msg=$('admSecMsg');
+    if(!wsId||!title){ if(msg) msg.textContent='اختر ورقة واكتب عنوان القسم أولًا'; return; }
+    WS_OVERRIDES[wsId]=WS_OVERRIDES[wsId]||{};
+    WS_OVERRIDES[wsId].extraSecs=WS_OVERRIDES[wsId].extraSecs||[];
+    WS_OVERRIDES[wsId].extraSecs.push(title);
+    saveOverrides(); applyOverrides();
+    $('admNewSecTitle').value='';
+    if(msg) msg.textContent='أُضيف القسم «'+title+'» — اختره الآن من قائمة الأقسام أعلاه لإضافة أسئلة إليه';
+    fillSecOptions();
+  });
   /* ---------- قائمة السور الـ ١١٤ (رقم، اسم، عدد الآيات) — لتعبئة تلقائية سريعة ---------- */
   /* تصنيف كل سورة مكية أو مدنية بترتيب المصحف — نفس قائمة build.js حرفيًا */
   var REV_PLACE='م د د د د م م د د م م م د م م م م م م م م د م د م م م م م م م م د م م م م م م م م م م م م م د د د م م م م م د م د د د د د د د د د د م م م م م م م م م د م م م م م م م م م م م م م م م م م م م م م د د م م م م م م م م م م د م م م م'.split(' ');
   var SURA_TABLE=[[1,"الفاتحة",7],[2,"البقرة",286],[3,"آل عمران",200],[4,"النساء",176],[5,"المائدة",120],[6,"الأنعام",165],[7,"الأعراف",206],[8,"الأنفال",75],[9,"التوبة",129],[10,"يونس",109],[11,"هود",123],[12,"يوسف",111],[13,"الرعد",43],[14,"إبراهيم",52],[15,"الحجر",99],[16,"النحل",128],[17,"الإسراء",111],[18,"الكهف",110],[19,"مريم",98],[20,"طه",135],[21,"الأنبياء",112],[22,"الحج",78],[23,"المؤمنون",118],[24,"النور",64],[25,"الفرقان",77],[26,"الشعراء",227],[27,"النمل",93],[28,"القصص",88],[29,"العنكبوت",69],[30,"الروم",60],[31,"لقمان",34],[32,"السجدة",30],[33,"الأحزاب",73],[34,"سبإ",54],[35,"فاطر",45],[36,"يس",83],[37,"الصافات",182],[38,"ص",88],[39,"الزمر",75],[40,"غافر",85],[41,"فصلت",54],[42,"الشورى",53],[43,"الزخرف",89],[44,"الدخان",59],[45,"الجاثية",37],[46,"الأحقاف",35],[47,"محمد",38],[48,"الفتح",29],[49,"الحجرات",18],[50,"ق",45],[51,"الذاريات",60],[52,"الطور",49],[53,"النجم",62],[54,"القمر",55],[55,"الرحمن",78],[56,"الواقعة",96],[57,"الحديد",29],[58,"المجادلة",22],[59,"الحشر",24],[60,"الممتحنة",13],[61,"الصف",14],[62,"الجمعة",11],[63,"المنافقون",11],[64,"التغابن",18],[65,"الطلاق",12],[66,"التحريم",12],[67,"الملك",30],[68,"القلم",52],[69,"الحاقة",52],[70,"المعارج",44],[71,"نوح",28],[72,"الجن",28],[73,"المزمل",20],[74,"المدثر",56],[75,"القيامة",40],[76,"الإنسان",31],[77,"المرسلات",50],[78,"النبإ",40],[79,"النازعات",46],[80,"عبس",42],[81,"التكوير",29],[82,"الانفطار",19],[83,"المطففين",36],[84,"الانشقاق",25],[85,"البروج",22],[86,"الطارق",17],[87,"الأعلى",19],[88,"الغاشية",26],[89,"الفجر",30],[90,"البلد",20],[91,"الشمس",15],[92,"الليل",21],[93,"الضحى",11],[94,"الشرح",8],[95,"التين",8],[96,"العلق",19],[97,"القدر",5],[98,"البينة",8],[99,"الزلزلة",8],[100,"العاديات",11],[101,"القارعة",11],[102,"التكاثر",8],[103,"العصر",3],[104,"الهمزة",9],[105,"الفيل",5],[106,"قريش",4],[107,"الماعون",7],[108,"الكوثر",3],[109,"الكافرون",6],[110,"النصر",3],[111,"المسد",5],[112,"الإخلاص",4],[113,"الفلق",5],[114,"الناس",6]];
-  SURA_TABLE.forEach(function(row){
-    var o=document.createElement('option');
-    o.value=row[0]; o.textContent=toArD2(row[0])+') '+row[1]+' — '+toArD2(row[2])+' آية';
-    o.dataset.name=row[1]; o.dataset.ayat=row[2];
-    $('nwSuraPick').appendChild(o);
-  });
+  function fillSuraPick(){
+    SURA_TABLE.forEach(function(row){
+      var o=document.createElement('option');
+      o.value=row[0]; o.textContent=toArD2(row[0])+') '+row[1]+' — '+toArD2(row[2])+' آية';
+      o.dataset.name=row[1]; o.dataset.ayat=row[2];
+      $('nwSuraPick').appendChild(o);
+    });
+  }
+  /* fillWsOptions() (688 <option>s) and fillSuraPick() (114 <option>s) used
+     to run unconditionally at script load, for every visitor — not just
+     the admin who'll ever see them. That's ~800 DOM nodes built and parsed
+     on every single page view for content nobody but the teacher opening
+     the admin panel will ever look at (Lighthouse flagged admWs specifically
+     as the page's largest single element by child count). Deferred to run
+     once, the first time the panel is actually opened. */
+  var adminOptionsFilled=false;
+  function fillAdminOptionsOnce(){
+    if(adminOptionsFilled) return;
+    adminOptionsFilled=true;
+    fillWsOptions();
+    fillSuraPick();
+  }
   /* ---------- نص القرآن الكريم كاملًا (مضمَّن من صفحة المدير) — ١١٤ سورة × آياتها ---------- */
   var QURAN_FULL=[];
   try{ var qf=document.getElementById('quranfull'); if(qf) QURAN_FULL=JSON.parse(qf.textContent||'[]')||[]; }catch(e){ QURAN_FULL=[]; }
@@ -774,23 +954,70 @@ if(panel){
   window.renderNwList=renderNwList;
   /* ---------- قائمة الأوراق الأصلية (المدمجة) — تعديل العنوان/الوصف، وحذف يطلب كلمة المرور ---------- */
   var editingBuiltinId=null;
+  /* renderBwList() runs unconditionally on every page load (below in this
+     file), not only when the admin panel is actually opened — it used to
+     need every one of the 687 worksheet bodies loaded just to count their
+     questions, which both defeated the point of lazy loading and froze the
+     tab whenever the admin panel opened. It now reads counts from WS_INDEX
+     (a precomputed table embedded in the page — see build.js) instead, so
+     no worksheet body needs loading at all just to show this list. */
+  /* Counts come from WS_INDEX (a small precomputed {id: [count, [lvl1..lvl5]]}
+     table embedded in the page — see build.js) instead of querying live DOM
+     .q elements, which would require loading that worksheet's full body
+     first. Custom questions the admin added at runtime aren't in WS_INDEX
+     (it's a build-time snapshot), so they're added in on top here — CUSTOM
+     is always in memory regardless of whether the worksheet body is loaded. */
+  function bwRowHTML(d){
+    var id=d.id.slice(2), hidden=HIDDEN_WS.indexOf(id)>-1;
+    var idx=(window.WS_INDEX||{})[id]||[0,[0,0,0,0,0]];
+    var nq=idx[0], lvlCount=idx[1].slice();
+    (CUSTOM[id]||[]).forEach(function(it){ nq++; var l=+it.lvl; if(l>=1&&l<=5) lvlCount[l-1]++; });
+    var lvlSummary=lvlCount.map(function(c,i){ return c?('<span class="lvl lvl-'+(i+1)+'">'+toArD2(c)+'</span>'):''; }).join('');
+    return '<div class="row"><b>'+escA(d.dataset.name)+'</b><span class="builtin-tag">أصلية</span>'+
+      '<span>'+(d.dataset.cat==='surah'?'سورة':'آية')+(hidden?' · مخفية':'')+' · '+toArD2(nq)+' سؤالًا</span>'+
+      '<span class="bw-lvls">'+lvlSummary+'</span>'+
+      '<button class="act print" data-bwqadd="'+id+'">➕ سؤال جديد</button>'+
+      '<button class="edit" data-bwq="'+id+'">أسئلة الورقة</button>'+
+      '<button class="hide-toggle" data-hideid="'+id+'">'+(hidden?'استعادة':'حذف')+'</button></div>';
+  }
+  /* الأوراق المجزَّأة لسورة طويلة (كالبقرة، ٣٤ جزءًا) تظهر هنا مجمَّعة تحت
+     السورة نفسها — تمامًا كتجميعها في الصفحة الرئيسية — بدل قائمة مسطَّحة
+     طويلة يصعب فيها إيجاد جزء بعينه. */
   function renderBwList(){
+    /* الترتيب هنا يجب أن يطابق ترتيب المصحف الفعلي (كما تظهر البطاقات في
+       الصفحة الرئيسية) — تكرار كل عنصر مجموعة/ورقة أصلية على مستواه الأعلى
+       فقط (.grid > .ws-group أو .grid > .ws-item)، لا تجميع كل الأوراق أولًا
+       ثم كل المجموعات لاحقًا، فذلك كان يكسر تسلسل السور. */
     var out=[];
-    document.querySelectorAll('.ws-item:not(.ws-custom)').forEach(function(d){
-      var id=d.id.slice(2), hidden=HIDDEN_WS.indexOf(id)>-1;
-      var qs=d.querySelectorAll('.q'), nq=qs.length;
-      var lvlCount=[0,0,0,0,0];
-      qs.forEach(function(q){ var l=+q.dataset.lvl; if(l>=1&&l<=5) lvlCount[l-1]++; });
-      var lvlSummary=lvlCount.map(function(c,i){ return c?('<span class="lvl lvl-'+(i+1)+'">'+toArD2(c)+'</span>'):''; }).join('');
-      out.push('<div class="row"><b>'+escA(d.dataset.name)+'</b><span class="builtin-tag">أصلية</span>'+
-        '<span>'+(d.dataset.cat==='surah'?'سورة':'آية')+(hidden?' · مخفية':'')+' · '+toArD2(nq)+' سؤالًا</span>'+
-        '<span class="bw-lvls">'+lvlSummary+'</span>'+
-        '<button class="edit" data-bwq="'+id+'">أسئلة الورقة</button>'+
-        '<button class="hide-toggle" data-hideid="'+id+'">'+(hidden?'استعادة':'حذف')+'</button></div>');
+    document.querySelectorAll('.grid > .ws-group, .grid > .ws-item:not(.ws-custom)').forEach(function(el){
+      if(el.classList.contains('ws-group')){
+        var items=el.querySelectorAll('.ws-item:not(.ws-custom)');
+        var label=(el.querySelector('h2')||{}).textContent||'سورة مجزّأة';
+        out.push('<details class="bw-group"><summary>'+escA(label)+' <span class="builtin-tag">'+toArD2(items.length)+' جزءًا</span></summary>'+
+          [...items].map(bwRowHTML).join('')+'</details>');
+      } else {
+        out.push(bwRowHTML(el));
+      }
     });
     $('bwList').innerHTML=out.join('')||'<div class="row">لا توجد أوراق أصلية.</div>';
     $('bwList').querySelectorAll('[data-bwq]').forEach(function(b){
       b.addEventListener('click',function(){ openBwQuestionList(b.dataset.bwq); });
+    });
+    /* "➕ سؤال جديد" on any row jumps straight to the add-question form
+       (admStepQ) with that worksheet already selected — the form itself
+       didn't move or change, only how you get to it: previously a global
+       worksheet dropdown you had to pick from yourself, now pre-filled by
+       whichever row you clicked. */
+    $('bwList').querySelectorAll('[data-bwqadd]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var id=b.dataset.bwqadd;
+        $('admWs').value=id;
+        $('admWs').dispatchEvent(new Event('change',{bubbles:true}));
+        var d=document.getElementById('w-'+id);
+        if($('admAddForWs')) $('admAddForWs').textContent=d?'— «'+d.dataset.name+'»':'';
+        var step=$('admStepQ');
+        if(step) try{ step.scrollIntoView({block:'start',behavior:'smooth'}); }catch(e){}
+      });
     });
     $('bwList').querySelectorAll('[data-hideid]').forEach(function(b){
       b.addEventListener('click',function(){
@@ -808,14 +1035,17 @@ if(panel){
   var bwQSession=null; // {wsId, snapshot: [{key,t,ans,show,mode}]}
   function openBwQuestionList(wsId){
     var d=document.getElementById('w-'+wsId); if(!d) return;
-    var snapshot=[];
-    d.querySelectorAll('.q').forEach(function(q){
-      var el=q.querySelector('[data-k]'); if(!el) return;
-      var txtEl=q.querySelector('.txt');
-      snapshot.push({key:el.dataset.k, t:txtEl?txtEl.firstChild.textContent.replace(/\s+$/,''):'', ans:el.dataset.ans, show:el.dataset.show, mode:el.dataset.mode});
+    var loadP = window.ensureBodyLoaded ? window.ensureBodyLoaded(d) : Promise.resolve();
+    loadP.then(function(){
+      var snapshot=[];
+      d.querySelectorAll('.q').forEach(function(q){
+        var el=q.querySelector('[data-k]'); if(!el) return;
+        var txtEl=q.querySelector('.txt');
+        snapshot.push({key:el.dataset.k, t:txtEl?txtEl.firstChild.textContent.replace(/\s+$/,''):'', ans:el.dataset.ans, show:el.dataset.show, mode:el.dataset.mode});
+      });
+      bwQSession={wsId:wsId, snapshot:snapshot};
+      renderBwQuestionList();
     });
-    bwQSession={wsId:wsId, snapshot:snapshot};
-    renderBwQuestionList();
   }
   function renderBwQuestionList(){
     var s=bwQSession; if(!s) return;
@@ -896,31 +1126,34 @@ if(panel){
   applyOverrides();
   function startEditBuiltin(id){
     var d=document.getElementById('w-'+id); if(!d) return;
-    editingBuiltinId=id; editingWsIdx=-1;
-    $('nwSuraPick').value='';
-    $('nwCat').value=d.dataset.cat; toggleAyaField();
-    $('nwNum').value=d.dataset.surano||'';
-    $('nwAyat').value=d.dataset.ayat||'';
-    $('nwAya').value=d.dataset.ayano||'';
-    $('nwAyaTo').value='';
-    var extraMatch=(d.dataset.name||'').match(/\(([^)]+)\)\s*$/);
-    $('nwNameExtra').value=extraMatch?extraMatch[1]:'';
-    computeNwName();
-    $('nwVerse').value='(نص الورقة الأصلية — غير قابل للتعديل هنا)';
-    $('nwVerse').disabled=true; $('nwAyaMark').disabled=true;
-    var inf=d.querySelector('.sheet-head .info'); $('nwInfo').value=inf?inf.textContent:'';
-    var fv=d.querySelector('.sheet-foot .fv'); $('nwFootV').value=fv?fv.textContent:'';
-    var fm=d.querySelector('.sheet-foot .fm'); $('nwFootM').value=fm?fm.textContent:'';
-    var acVar=(d.style.getPropertyValue('--ac')||'').replace(/var\(|\)/g,'').trim();
-    $('nwHue').value=acVar||'--teal';
-    var heads=d.querySelectorAll('.sec .sec-head h3');
-    $('nwSec0').value=heads[0]?heads[0].textContent:'';
-    $('nwSec1').value=heads[1]?heads[1].textContent:'';
-    $('nwSec2').value=heads[2]?heads[2].textContent:'';
-    $('nwSave').textContent='💾 حفظ تعديلات العنوان والوصف';
-    $('nwCancelEdit').hidden=false;
-    nwMsg('تعديل ورقة أصلية «'+d.dataset.name+'» — العنوان والوصف واللون وعناوين الأقسام فقط (نص الآيات محمي)',true);
-    try{ $('nwName').focus(); panel.scrollTop=0; }catch(e){}
+    var loadP = window.ensureBodyLoaded ? window.ensureBodyLoaded(d) : Promise.resolve();
+    loadP.then(function(){
+      editingBuiltinId=id; editingWsIdx=-1;
+      $('nwSuraPick').value='';
+      $('nwCat').value=d.dataset.cat; toggleAyaField();
+      $('nwNum').value=d.dataset.surano||'';
+      $('nwAyat').value=d.dataset.ayat||'';
+      $('nwAya').value=d.dataset.ayano||'';
+      $('nwAyaTo').value='';
+      var extraMatch=(d.dataset.name||'').match(/\(([^)]+)\)\s*$/);
+      $('nwNameExtra').value=extraMatch?extraMatch[1]:'';
+      computeNwName();
+      $('nwVerse').value='(نص الورقة الأصلية — غير قابل للتعديل هنا)';
+      $('nwVerse').disabled=true; $('nwAyaMark').disabled=true;
+      var inf=d.querySelector('.sheet-head .info'); $('nwInfo').value=inf?inf.textContent:'';
+      var fv=d.querySelector('.sheet-foot .fv'); $('nwFootV').value=fv?fv.textContent:'';
+      var fm=d.querySelector('.sheet-foot .fm'); $('nwFootM').value=fm?fm.textContent:'';
+      var acVar=(d.style.getPropertyValue('--ac')||'').replace(/var\(|\)/g,'').trim();
+      $('nwHue').value=acVar||'--teal';
+      var heads=d.querySelectorAll('.sec .sec-head h3');
+      $('nwSec0').value=heads[0]?heads[0].textContent:'';
+      $('nwSec1').value=heads[1]?heads[1].textContent:'';
+      $('nwSec2').value=heads[2]?heads[2].textContent:'';
+      $('nwSave').textContent='💾 حفظ تعديلات العنوان والوصف';
+      $('nwCancelEdit').hidden=false;
+      nwMsg('تعديل ورقة أصلية «'+d.dataset.name+'» — العنوان والوصف واللون وعناوين الأقسام فقط (نص الآيات محمي)',true);
+      try{ $('nwName').focus(); panel.scrollTop=0; }catch(e){}
+    });
   }
   /* ---------- إعدادات عامة: إظهار الإجابة الصحيحة تلقائيًا بعد إجابة خاطئة ---------- */
   (function(){
@@ -931,6 +1164,18 @@ if(panel){
     box.addEventListener('change',function(){
       var s; try{ s=JSON.parse(localStorage.getItem('tahleel-settings')||'{}'); }catch(e){ s={}; }
       s.showAnswerOnMistake=box.checked;
+      try{ localStorage.setItem('tahleel-settings', JSON.stringify(s)); }catch(e){}
+    });
+  })();
+  /* ---------- إعدادات عامة: تشغيل الاستعاذة صوتيًا قبل التلاوة (يفعّلها/يعطّلها المدير فقط) ---------- */
+  (function(){
+    var box=$('setIstiadhah'); if(!box) return;
+    var cur;
+    try{ cur=JSON.parse(localStorage.getItem('tahleel-settings')||'{}'); }catch(e){ cur={}; }
+    box.checked = cur.istiadhahEnabled!==false;
+    box.addEventListener('change',function(){
+      var s; try{ s=JSON.parse(localStorage.getItem('tahleel-settings')||'{}'); }catch(e){ s={}; }
+      s.istiadhahEnabled=box.checked;
       try{ localStorage.setItem('tahleel-settings', JSON.stringify(s)); }catch(e){}
     });
   })();
@@ -950,6 +1195,12 @@ if(panel){
   }
   function renderFields(){
     var t=TYPES.filter(function(x){return x.id===$('admType').value;})[0];
+    /* #admType can still be empty here on first load — fillSecOptions is
+       async now (the worksheet body it depends on loads via its own
+       <script src>), so this can run once before that population lands.
+       Nothing to render yet in that case; fillTypeOptions calls this again
+       once #admType actually has options. */
+    if(!t){ $('admFields').innerHTML=''; return; }
     $('admFields').innerHTML=t.fields.map(function(f){
       if(f.type==='select') return '<label>'+f.label+' <select data-f="'+f.k+'">'+f.opts.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('')+'</select></label>';
       return '<label>'+f.label+' <input type="text" data-f="'+f.k+'"></label>';
@@ -960,6 +1211,7 @@ if(panel){
   function params(){ var p={}; $('admFields').querySelectorAll('[data-f]').forEach(function(el){p[el.dataset.f]=el.value;}); return p; }
   function makeQ(){
     var t=TYPES.filter(function(x){return x.id===$('admType').value;})[0];
+    if(!t) return 'الأقسام لم تُحمَّل بعد — انتظر لحظة ثم أعد المحاولة.';
     var r=t.gen(params(), $('admWs').value);
     return r;
   }
@@ -967,19 +1219,27 @@ if(panel){
   $('admPreview').addEventListener('click',function(){
     var r=makeQ();
     if(typeof r==='string'){ msg(r,false); $('admPrev').hidden=true; return; }
-    $('admPrev').textContent='السؤال: '+r.t+(r.show?'  —  الإجابة: '+r.show:'');
+    /* multiField() (see question types catalog above) returns an array when
+       several comma-separated words/letters were entered — one linked
+       sub-question per item — instead of a single question object. */
+    var list=Array.isArray(r)?r:[r];
+    $('admPrev').textContent=list.map(function(item){
+      return 'السؤال: '+item.t+(item.show?'  —  الإجابة: '+item.show:'');
+    }).join('\n');
     $('admPrev').hidden=false; msg('');
   });
   $('admAdd').addEventListener('click',function(){
     var ws=$('admWs').value, r=makeQ();
     if(typeof r==='string'){ msg(r,false); return; }
-    if(isDup(ws,r.t)){ msg('⚠️ هذا السؤال موجود مسبقًا في هذه الورقة — لن تتم إضافته مرة أخرى.',false); return; }
-    r.sec=+$('admSec').value||0;
-    (CUSTOM[ws]=CUSTOM[ws]||[]).push(r);
+    var list=Array.isArray(r)?r:[r];
+    var dup=list.filter(function(item){ return isDup(ws,item.t); });
+    if(dup.length){ msg('⚠️ '+(list.length>1?'أحد هذه الأسئلة':'هذا السؤال')+' موجود مسبقًا في هذه الورقة — لن تتم إضافة شيء.',false); return; }
+    var sec=+$('admSec').value||0;
+    list.forEach(function(item){ item.sec=sec; (CUSTOM[ws]=CUSTOM[ws]||[]).push(item); });
     saveCustom(); renderCustomAll();
     if(window.renderNwList) window.renderNwList();
     refreshStats();
-    msg('✅ تمت إضافة السؤال إلى '+wsName(ws),true);
+    msg(list.length>1 ? ('✅ تمت إضافة '+toArD2(list.length)+' أسئلة مترابطة إلى '+wsName(ws)) : ('✅ تمت إضافة السؤال إلى '+wsName(ws)), true);
   });
   function renderAdmList(){
     var curWs=$('admWs').value, curSec=+($('admSec').value||0);
@@ -1110,62 +1370,87 @@ if(panel){
   if($('admTpl1')) $('admTpl1').addEventListener('click',function(){ addTemplate(1); });
   if($('admTpl2')) $('admTpl2').addEventListener('click',function(){ addTemplate(2); });
   if($('admTplAll')) $('admTplAll').addEventListener('click',function(){ addTemplate(0); addTemplate(1); addTemplate(2); });
+  /* محتوى الأوراق يُبنى الآن كسولًا (عند الفتح فقط، انظر ensureBodyLoaded في
+     app.js) — تصدير الصفحة أو كل الأسئلة عملية إدارية نادرة ومتعمَّدة يجوز أن
+     تدفع كلفة تحميل كل الأوراق دفعة واحدة هنا تحديدًا (لا يدفعها الزوار
+     العاديون إطلاقًا)، وإلا رجعت هذه الدوال بيانات ناقصة لكل ورقة لم تُفتح بعد.
+     الآن غير متزامنة أيضًا — كل ورقة تُجلَب عبر <script src> خاص بها. */
+  function ensureAllBodiesLoaded(){
+    if(!window.ensureBodyLoaded) return Promise.resolve();
+    return Promise.all([...document.querySelectorAll('.ws-item')].map(function(d){ return window.ensureBodyLoaded(d); }));
+  }
   window.__exportHtml=function(){
-    var json=JSON.stringify(CUSTOM).replace(/</g,'\\u003c');
-    var jsonw=JSON.stringify(CUSTOMWS).replace(/</g,'\\u003c');
-    var html=ORIGINAL_HTML
-      .replace(/(<script type="application\/json" id="customq">)[\s\S]*?(<\/script>)/, '$1'+json+'$2')
-      .replace(/(<script type="application\/json" id="customws">)[\s\S]*?(<\/script>)/, '$1'+jsonw+'$2')
-      .replace(/<body class="[^"]*"/, '<body');
-    return html;
+    return ensureAllBodiesLoaded().then(function(){
+      var json=JSON.stringify(CUSTOM).replace(/</g,'\\u003c');
+      var jsonw=JSON.stringify(CUSTOMWS).replace(/</g,'\\u003c');
+      var html=currentHtml()
+        .replace(/(<script type="application\/json" id="customq">)[\s\S]*?(<\/script>)/, '$1'+json+'$2')
+        .replace(/(<script type="application\/json" id="customws">)[\s\S]*?(<\/script>)/, '$1'+jsonw+'$2')
+        .replace(/<body class="[^"]*"/, '<body');
+      /* استبدال نصّي مباشر لكل عنصر نائب (.ws[data-lazy]) بمحتوى ورقته الحقيقي —
+         الملف المُصدَّر نسخة قائمة بذاتها يجب أن تعمل بلا اعتماد على فتح كل
+         ورقة يدويًا أولًا؛ window.__WSB (مُعبَّأ للتوّ بالكامل عبر
+         ensureAllBodiesLoaded أعلاه) يوفّر نص كل ورقة دون أي بناء DOM هنا. */
+      var wsBodies=window.__WSB||{};
+      html=html.replace(/(<details class="ws-item" id="w-([^"]+)"[^>]*>[\s\S]*?)<div class="ws" data-lazy="1"><\/div>/g, function(m, prefix, id){
+        var body=wsBodies[id];
+        return prefix + (body!=null ? body : '<div class="ws"></div>');
+      });
+      return html;
+    });
   };
   $('admExport').addEventListener('click',function(){
-    try{
-      var blob=new Blob([window.__exportHtml()],{type:'text/html;charset=utf-8'});
-      var a=document.createElement('a');
-      a.href=URL.createObjectURL(blob);
-      a.download='التحليل-اللغوي-المجهري-محدث.html';
-      document.body.appendChild(a); a.click(); a.remove();
-      msg('✅ تم تنزيل نسخة تحتوي كل الأسئلة المضافة — استخدمها بدل الملف القديم.',true);
-    }catch(e){ msg('تعذر التنزيل في هذا المتصفح: '+e.message,false); }
+    window.__exportHtml().then(function(exported){
+      try{
+        var blob=new Blob([exported],{type:'text/html;charset=utf-8'});
+        var a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='التحليل-اللغوي-المجهري-محدث.html';
+        document.body.appendChild(a); a.click(); a.remove();
+        msg('✅ تم تنزيل نسخة تحتوي كل الأسئلة المضافة — استخدمها بدل الملف القديم.',true);
+      }catch(e){ msg('تعذر التنزيل في هذا المتصفح: '+e.message,false); }
+    });
   });
 
   /* ---------- تصدير/استيراد كل الأسئلة بالجملة (للمدير فقط) ---------- */
   function importMsg(s,ok){ if($('admImportMsg')){ $('admImportMsg').textContent=s||''; $('admImportMsg').className='admin-msg '+(s?(ok?'ok':'err'):''); } }
   function collectAllQuestions(){
-    var out=[];
-    document.querySelectorAll('.ws-item').forEach(function(d){
-      var wsId=d.id.slice(2);
-      var secs=d.querySelectorAll('.sec');
-      d.querySelectorAll('.q').forEach(function(q){
-        var el=q.querySelector('[data-k]'); if(!el) return;
-        var txtEl=q.querySelector('.txt');
-        var secIdx=0;
-        for(var i=0;i<secs.length;i++){ if(secs[i].contains(q)){ secIdx=i; break; } }
-        out.push({
-          ws: wsId,
-          name: d.dataset.name,
-          key: el.dataset.k,
-          sec: secIdx,
-          t: txtEl?txtEl.firstChild.textContent.replace(/\s+$/,''):'',
-          show: el.dataset.show||'',
-          ans: el.dataset.ans!==undefined?el.dataset.ans:null,
-          lvl: q.dataset.lvl||''
+    return ensureAllBodiesLoaded().then(function(){
+      var out=[];
+      document.querySelectorAll('.ws-item').forEach(function(d){
+        var wsId=d.id.slice(2);
+        var secs=d.querySelectorAll('.sec');
+        d.querySelectorAll('.q').forEach(function(q){
+          var el=q.querySelector('[data-k]'); if(!el) return;
+          var txtEl=q.querySelector('.txt');
+          var secIdx=0;
+          for(var i=0;i<secs.length;i++){ if(secs[i].contains(q)){ secIdx=i; break; } }
+          out.push({
+            ws: wsId,
+            name: d.dataset.name,
+            key: el.dataset.k,
+            sec: secIdx,
+            t: txtEl?txtEl.firstChild.textContent.replace(/\s+$/,''):'',
+            show: el.dataset.show||'',
+            ans: el.dataset.ans!==undefined?el.dataset.ans:null,
+            lvl: q.dataset.lvl||''
+          });
         });
       });
+      return out;
     });
-    return out;
   }
   if($('admExportAll')) $('admExportAll').addEventListener('click',function(){
-    try{
-      var data=collectAllQuestions();
-      var blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json;charset=utf-8'});
-      var a=document.createElement('a');
-      a.href=URL.createObjectURL(blob);
-      a.download='tahleel-all-questions.json';
-      document.body.appendChild(a); a.click(); a.remove();
-      importMsg('✅ صُدِّر '+toArD2(data.length)+' سؤالًا من كل الأوراق.',true);
-    }catch(e){ importMsg('تعذر التصدير: '+e.message,false); }
+    collectAllQuestions().then(function(data){
+      try{
+        var blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json;charset=utf-8'});
+        var a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='tahleel-all-questions.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        importMsg('✅ صُدِّر '+toArD2(data.length)+' سؤالًا من كل الأوراق.',true);
+      }catch(e){ importMsg('تعذر التصدير: '+e.message,false); }
+    }).catch(function(e){ importMsg('تعذر التصدير: '+e.message,false); });
   });
   var pendingImportRows=null;
   if($('admImportFile')) $('admImportFile').addEventListener('change',function(){

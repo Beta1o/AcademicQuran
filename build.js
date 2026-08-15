@@ -25,10 +25,16 @@ const PROD = process.env.NODE_ENV==='production' || process.argv.includes('--pro
    ================================================================================= */
 const DEFAULT_ADMIN_PASS='change-me-set-ADMIN_PASS-env-var';
 const ADMIN_PASS = process.env.ADMIN_PASS || DEFAULT_ADMIN_PASS;
+const DEFAULT_ADMIN_USER='admin';
+const ADMIN_USER = process.env.ADMIN_USER || DEFAULT_ADMIN_USER;
 if(PROD && ADMIN_PASS===DEFAULT_ADMIN_PASS){
   console.warn('⚠️  تحذير: بناء إنتاجي بكلمة مرور المدير الافتراضية. مرّر ADMIN_PASS=... لتغييرها.');
 }
+if(PROD && ADMIN_USER===DEFAULT_ADMIN_USER){
+  console.warn('⚠️  تحذير: بناء إنتاجي باسم مستخدم المدير الافتراضي. مرّر ADMIN_USER=... لتغييره.');
+}
 adminJs = adminJs.replace(/var ADMIN_PASS='[^']*';/, "var ADMIN_PASS="+JSON.stringify(ADMIN_PASS)+";");
+adminJs = adminJs.replace(/var ADMIN_USER='[^']*';/, "var ADMIN_USER="+JSON.stringify(ADMIN_USER)+";");
 
 /* ================= Arabic helpers (build-time) ================= */
 const DIAC=/[\u064B-\u0652\u0670\u0640\u06D6-\u06ED]/g;
@@ -82,7 +88,7 @@ const ANSWERS=JSON.parse(R('src/data/answers.json'));
 /* نص القرآن الكريم كاملًا (١١٤ سورة) — لتعبئة صفحة المدير تلقائيًا عند اختيار سورة */
 const QURAN_FULL=R('src/data/quran-full.json');
 /* قاموس ترجمة واجهة الموقع (الأزرار والتسميات فقط) — النصوص القرآنية والأسئلة تبقى عربية دائمًا */
-const I18N_LANGS=['ar','en','ur','tr','ug','id','fr','bn','ha','fa','ml','sw','hi'];
+const I18N_LANGS=['ar','en','ur','tr','ug','id','fr','bn','ha','fa','ml','sw','hi','es','ru','zh','so','ps'];
 /* معرّف قالب مستقر ومحايد اللغة، يُشتق من نص القالب العربي وقت البناء —
    لا يبقى أي نص عربي حرفي كمفتاح بحث وقت التشغيل، فلا صلة بين "المفتاح"
    وأي لغة بعينها. src/data/i18n/*.json نفسها مُرقَّمة بهذه المعرّفات مسبقًا
@@ -127,7 +133,13 @@ const AYAT={falaq:5,shams:15,teen:8,takwir:29,ghashiya:26,masad:5,kafirun:6,nasr
 const SURA_OF={fatiha1:'الفاتحة',kursi:'البقرة',baqara201:'البقرة',baqara286:'البقرة',sharh56:'الشرح',ibrahim7:'ابراهيم',talaq3:'الطلاق',hadid3:'الحديد',hashr22:'الحشر',ikhlas:'الإخلاص',nahl90:'النحل',anbiya87:'الأنبياء',yusuf4:'يوسف',qasas7:'القصص',nur35:'النور',kahf9:'الكهف',adam30:'البقرة',nar69:'الأنبياء',hudhud20:'النمل',jalut249:'البقرة',ayyub83:'الأنبياء',zakariya2:'مريم'};
 const AYA_NUM={kursi:'255',baqara201:'201',baqara286:'286',ibrahim7:'7',talaq3:'3',hadid3:'3',hashr22:'22',fatiha1:'1',nahl90:'90',yusuf4:'4',qasas7:'7',nur35:'35',kahf9:'9',adam30:'30',nar69:'68',hudhud20:'20',jalut249:'249',ayyub83:'83',zakariya2:'2'};
 /* نص بديل لموضع الآية عندما لا يكون رقمًا واحدًا */
-const AYA_TXT={sharh56:'الآيتان ٥ و ٦',anbiya87:'الآيتان ٨٧ و ٨٨',kahf9:'الآيات ٩-١٢',adam30:'الآيات ٣٠-٣٤',nar69:'الآيات ٦٨-٧٠',hudhud20:'الآيات ٢٠-٢٦',jalut249:'الآيات ٢٤٩-٢٥١',ayyub83:'الآيتان ٨٣ و ٨٤',zakariya2:'الآيات ٢-١١'};
+/* Formerly held irregular-range text for the standalone "featured ayah"
+   worksheets (Ayat al-Kursi, prophet-story highlights, etc.) — all deleted
+   to eliminate their overlap with the sequential chunked coverage, so this
+   is empty now. Kept (not removed outright) since locText/locHTML still
+   reference it as a first-choice override before falling back to
+   AYA_NUM for any future irregular-range worksheet. */
+const AYA_TXT={};
 /* رقم السورة في المصحف (لكل ورقة: السورة نفسها أو السورة التي منها الآية) */
 const SURA_NO={
   fatiha1:1, kursi:2, baqara201:2, baqara286:2, ibrahim7:14, nahl90:16, talaq3:65, hadid3:57, hashr22:59,
@@ -753,6 +765,23 @@ const nS=W.filter(w=>w.cat==='surah').length, nA=W.filter(w=>w.cat==='ayah').len
 let graded=0, withKey=0;
 const lvlTotals=[0,0,0,0,0];
 
+/* محتوى كل ورقة (كل الأسئلة، لا البطاقة المطوية) ثقيل جدًا مجمّعًا لـ٦٨٧ ورقة
+   دفعة واحدة (٤٢ ألف سؤال، ٤٣٥ ألف عنصر DOM) — يُبنى الآن هنا كنص خام يُخزَّن
+   في wsBodies بدل إدراجه مباشرة في HTML الصفحة الرئيسة، ويُغلَّف مكانه بعنصر
+   نائب فارغ (.ws[data-lazy]) لا يُستبدَل بالمحتوى الحقيقي إلا عند فتح تلك
+   الورقة فعليًا (app.js). يبقى الملف قائمًا بذاته تمامًا (لا طلب شبكة إضافي):
+   wsBodies نفسه نص JSON مضمَّن في <script> — لا يُبنى DOM فعلي له إلا لحظة
+   الحاجة، فتنخفض كلفة إنشاء الصفحة الأولى (Layout/Style) كثيرًا. */
+const wsBodies={};
+/* Lightweight per-worksheet summary (question count + per-level counts),
+   captured alongside the full body but kept separate and embedded inline in
+   the page — a few dozen KB total, unlike wsBodies. Lets the admin panel's
+   builtin-worksheets list show counts for all 687 worksheets immediately
+   without ever loading a single worksheet's actual body/DOM, which is the
+   only thing that needed loading all of them up front before (see
+   ensureAllBuiltinBodiesLoaded in admin.js) and was what made opening the
+   admin panel freeze the tab for several seconds. */
+const wsIndex={};
 const blockHTMLs=W.map((w,wi)=>{
   let n=0;
   const lvlCount=[0,0,0,0,0];
@@ -819,18 +848,14 @@ const blockHTMLs=W.map((w,wi)=>{
      (كمطلع آية الكرسي)، تجنّبًا لسماع تلاوة أطول مما هو ظاهر على الورقة. */
   const endMark=w.cat==='surah'||!!AYA_END[w.id];
   const juzNo=juzOf(SURA_NO[w.id], AYA_NUM[w.id]?arNum(AYA_NUM[w.id]):1);
-  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${endMark?` data-ayaend="1"`:''}${juzNo?` data-juz="${juzNo}"`:''}${ayaListAttr}>
-  <summary class="card">
-    <div class="tagrow">
-      <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':(w.group?'tagPart':'tagAyah')}">${w.cat==='surah'?'سورة كاملة':(w.group?'جزء من سورة':'آية مختارة')}</span>
-      ${(!w.group && revPlaceOf(w.id))?`<span class="tag rev-tag" data-i18n="${revPlaceOf(w.id)==='م'?'revMeccan':'revMedinan'}">${revPlaceOf(w.id)==='م'?'مكية':'مدنية'}</span>`:''}
-      ${ltag?`<span class="loc-tag">📍 ${locTagHTML(w)}</span>`:''}
-    </div>
-    <h3>${nameHTML(w)}</h3>
-    <div class="vpeek">﴿ ${verseHTML(w)} ﴾</div>
-    <div class="cmeta"><span class="prog-mini" data-i18n-tpl="${tid('{} سؤالًا')}" data-i18n-word="${toAr(total)}">${total} سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>
-  </summary>
-  <div class="ws">
+  /* الاستعاذة (أعوذ بالله من الشيطان الرجيم) تُقال قبل أي تلاوة قرآنية —
+     نصًّا ثابتًا هنا (لا صوتًا: لا يوجد مقطع صوتي موثَّق لها في مصدر التلاوة
+     المستخدَم، ولن نخترع رابطًا غير متحقَّق منه لمحتوى ديني). البسملة تُعرَض
+     كعنوان مستقل قبل كل سورة كاملة تبدأ من آيتها الأولى (ما عدا التوبة التي
+     لا بسملة في مطلعها، والفاتحة التي آيتها الأولى هي البسملة نفسها فعرضها
+     مجددًا يُكرِّرها). */
+  wsIndex[w.id] = [n, lvlCount];
+  wsBodies[w.id] = `<div class="ws">
     <div class="ws-top">
       <button class="act close" data-close="${w.id}" data-i18n="closeWs">▲ إغلاق</button>
       <div class="spacer"></div>
@@ -855,7 +880,19 @@ const blockHTMLs=W.map((w,wi)=>{
       <footer class="sheet-foot"><div class="fv">${esc(w.footV)}</div>${w.footM?`<div class="fm" data-i18n-tpl="${tid(w.footM)}">${esc(w.footM)}</div>`:''}</footer>
     </article>
     <div class="ws-close"><button class="act" data-close="${w.id}" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>
-  </div>
+  </div>`;
+  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${endMark?` data-ayaend="1"`:''}${juzNo?` data-juz="${juzNo}"`:''}${ayaListAttr}>
+  <summary class="card">
+    <div class="tagrow">
+      <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':(w.group?'tagPart':'tagAyah')}">${w.cat==='surah'?'سورة كاملة':(w.group?'جزء من سورة':'آية مختارة')}</span>
+      ${(!w.group && revPlaceOf(w.id))?`<span class="tag rev-tag" data-i18n="${revPlaceOf(w.id)==='م'?'revMeccan':'revMedinan'}">${revPlaceOf(w.id)==='م'?'مكية':'مدنية'}</span>`:''}
+      ${ltag?`<span class="loc-tag">📍 ${locTagHTML(w)}</span>`:''}
+    </div>
+    <h2>${nameHTML(w)}</h2>
+    <div class="vpeek">﴿ ${verseHTML(w)} ﴾</div>
+    <div class="cmeta"><span class="prog-mini" data-i18n-tpl="${tid('{} سؤالًا')}" data-i18n-word="${toAr(total)}">${total} سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>
+  </summary>
+  <div class="ws" data-lazy="1"></div>
 </details>`;
 });
 /* السور الطويلة المجزَّأة (group على كل ورقة جزء) تُجمَع بصريًا هنا تحت بطاقة
@@ -871,7 +908,7 @@ W.forEach((w,wi)=>{
   const suraNo=SURA_NO[w.id]||999;
   const ayaFrom=w.ayaFrom||(AYA_NUM[w.id]?arNum(AYA_NUM[w.id]):0);
   if(!w.group){
-    topEntries.push({key:[suraNo,ayaFrom,wi], html:blockHTMLs[wi]});
+    topEntries.push({key:[suraNo,ayaFrom,wi], html:blockHTMLs[wi], weight:1});
     return;
   }
   if(seenGroups.has(w.group)) return; /* أُدرِج بالفعل ضمن بطاقة المجموعة عند أول ظهور لها */
@@ -896,17 +933,33 @@ W.forEach((w,wi)=>{
       ${groupRev?`<span class="tag rev-tag" data-i18n="${groupRev==='م'?'revMeccan':'revMedinan'}">${groupRev==='م'?'مكية':'مدنية'}</span>`:''}
       ${groupJuz?`<span class="loc-tag">📍 <span data-i18n-tpl="${tid('الجزء {}')}" data-i18n-word="${toAr(groupJuz)}">الجزء ${toAr(groupJuz)}</span></span>`:''}
     </div>
-    <h3><span class="ws-group-icon">📖</span> <span data-i18n="surahWord">سورة</span> <span data-i18n-name="${esc(w.suraOf)}">${esc(w.suraOf)}</span></h3>
+    <h2><span class="ws-group-icon">📖</span> <span data-i18n="surahWord">سورة</span> <span data-i18n-name="${esc(w.suraOf)}">${esc(w.suraOf)}</span></h2>
     <div class="vpeek">﴿ ${verseHTML(first)} ﴾</div>
     <div class="cmeta"><span class="prog-mini" data-i18n-tpl="${tid('{} سؤالًا')}" data-i18n-word="${toAr(groupTotalQ)}">${toAr(groupTotalQ)} سؤالًا</span><span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>
   </summary>
   <div class="ws-group-items">
 ${groupItems}
   </div>
-</details>`});
+</details>`, weight:members.length||1});
 });
 topEntries.sort((a,b)=> a.key[0]-b.key[0] || a.key[1]-b.key[1] || a.key[2]-b.key[2]);
-const blocks=topEntries.map(e=>e.html).join('\n');
+/* الصفحة الرئيسية كانت تبني ٦٨٧ بطاقة/مجموعة في الـDOM دفعة واحدة عند
+   التحميل الأول رغم أن الزائر يرى بضع عشرات منها فقط — هذا هو السبب
+   الرئيسي لثقل Style & Layout في تقرير Lighthouse (٤.٣ ثانية). الحل:
+   أول GRID_PAGE_SIZE بطاقة تُكتب كعناصر DOM حقيقية كالمعتاد (أول ما يراه
+   الزائر)، والباقي يُخزَّن كنص HTML خام داخل <script type="application/json">
+   (يبقى الملف ذاتي الاكتفاء ويعمل بفتحه مباشرة بلا خادم) ليُدرجه app.js
+   تدريجيًا (تمرير للأسفل) أو دفعة واحدة عند البحث/التصفية. */
+const GRID_PAGE_SIZE=30;
+let gridPageCut=topEntries.length, gridWeight=0;
+for(let i=0;i<topEntries.length;i++){
+  gridWeight+=topEntries[i].weight;
+  if(gridWeight>=GRID_PAGE_SIZE){ gridPageCut=i+1; break; }
+}
+const firstPage=topEntries.slice(0,gridPageCut);
+const restPage=topEntries.slice(gridPageCut);
+const blocks=firstPage.map(e=>e.html).join('\n');
+const gridRestJSON=JSON.stringify(restPage.map(e=>e.html)).replace(/<\/script/gi,'<\\/script');
 
 
 const extraCSS = extraCSSFile;
@@ -921,9 +974,15 @@ const jsonLd = JSON.stringify({
 });
 
 const html=`<!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html dir="rtl" lang="ar" translate="no" class="notranslate">
 <head>
 <meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<!-- The Quranic text must never be machine-translated by a browser extension
+     (e.g. Google Translate) — only our own reviewed translations, via the
+     in-app language switcher, are shown. translate="no" + class="notranslate"
+     + this meta tag together are the most reliable known way to stop Chrome
+     from offering to translate the whole page. -->
 <script>
 /* إضافة class="js" على <html> فورًا هنا — لا في نهاية app.js كما كانت —
    فتظهر عناصر .js-only (التصفية، الصوت...) منذ أول رسم للصفحة بدل ومضة
@@ -954,7 +1013,7 @@ try{
 <meta name="description" content="${DESC}">
 <meta name="robots" content="index, follow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://quranapi.pages.dev https://the-quran-project.github.io https://github.com https://raw.githubusercontent.com; media-src https://the-quran-project.github.io https://github.com https://raw.githubusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; media-src 'self' https://everyayah.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 ${SITE_URL?`<link rel="canonical" href="${SITE_URL}/">`:''}
 <meta name="application-name" content="التحليل اللغوي المجهري">
 <meta property="og:title" content="التحليل اللغوي المجهري">
@@ -972,7 +1031,13 @@ ${SITE_URL?`<meta property="og:url" content="${SITE_URL}/">`:''}
 <link rel="icon" href="${favicon}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Baloo+Bhaijaan+2:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Loaded non-render-blocking (media="print" trick, swapped to "all" on
+     load): the page already stays fully hidden (visibility:hidden below)
+     until document.fonts.ready resolves, so there is no flash-of-unstyled
+     text risk to trade off here — only wasted render-blocking time from
+     loading it the normal blocking way. -->
+<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Baloo+Bhaijaan+2:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Baloo+Bhaijaan+2:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <script type="application/ld+json">${jsonLd}</script>
 <style>
 /* تمنع "الوميض": تبقى الصفحة مخفية حتى يُطبَّق السكربت اللغة والوضع الداكن/
@@ -1013,17 +1078,61 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
   <button type="button" class="lang-opt" data-lang="ml">മലയാളം</button>
   <button type="button" class="lang-opt" data-lang="sw">Kiswahili</button>
   <button type="button" class="lang-opt" data-lang="hi">हिन्दी</button>
+  <button type="button" class="lang-opt" data-lang="es">Español</button>
+  <button type="button" class="lang-opt" data-lang="ru">Русский</button>
+  <button type="button" class="lang-opt" data-lang="zh">中文</button>
+  <button type="button" class="lang-opt" data-lang="so">Soomaali</button>
+  <button type="button" class="lang-opt" data-lang="ps">پښتو</button>
 </div>
 <div id="pubAudioPanel" class="audio-settings-panel" hidden>
-  <label class="admin-field"><span data-i18n="reciterLabel">القارئ</span>
-    <select id="pubAudioReciter">
-      <option value="1">مشاري راشد العفاسي</option>
-      <option value="2">أبو بكر الشاطري</option>
-      <option value="3">ناصر القطامي</option>
-      <option value="4">ياسر الدوسري</option>
-      <option value="5">هاني الرفاعي</option>
-    </select>
-  </label>
+  <div class="admin-field"><span data-i18n="reciterLabel">القارئ</span>
+    <div id="reciterOpts" class="reciter-opts">
+      <button type="button" class="lang-opt reciter-opt" data-reciter="15" data-i18n-name="إبراهيم الأخضر">إبراهيم الأخضر</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="4" data-i18n-name="أبو بكر الشاطري">أبو بكر الشاطري</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="27" data-i18n-name="أحمد بن علي العجمي">أحمد بن علي العجمي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="36" data-i18n-name="أحمد نعانع">أحمد نعانع</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="44" data-i18n-name="أكرم العلاقمي">أكرم العلاقمي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="25" data-i18n-name="أيمن سويد">أيمن سويد</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="22" data-i18n-name="خالد القحطاني">خالد القحطاني</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="38" data-i18n-name="خليفة التنيجي">خليفة التنيجي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="13" data-i18n-name="سعد الغامدي">سعد الغامدي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="10" data-i18n-name="سعود الشريم">سعود الشريم</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="41" data-i18n-name="سهل ياسين">سهل ياسين</button>
+      <button type="button" class="lang-opt reciter-opt on" data-reciter="21" data-i18n-name="صلاح البدير">صلاح البدير</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="30" data-i18n-name="صلاح عبدالرحمن بخاطر">صلاح عبدالرحمن بخاطر</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="1" data-i18n-name="عبد الباسط عبد الصمد (مجوّد)">عبد الباسط عبد الصمد (مجوّد)</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="2" data-i18n-name="عبد الباسط عبد الصمد (مرتل)">عبد الباسط عبد الصمد (مرتل)</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="3" data-i18n-name="عبد الرحمن السديس">عبد الرحمن السديس</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="26" data-i18n-name="عبدالله بصفر">عبدالله بصفر</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="31" data-i18n-name="عبدالله عواد الجهني">عبدالله عواد الجهني</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="32" data-i18n-name="عبدالله مطرود">عبدالله مطرود</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="42" data-i18n-name="عزيز عليلي">عزيز عليلي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="14" data-i18n-name="علي الحذيفي">علي الحذيفي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="34" data-i18n-name="علي جابر">علي جابر</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="40" data-i18n-name="علي حجاج السويسي">علي حجاج السويسي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="35" data-i18n-name="فارس عباد">فارس عباد</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="39" data-i18n-name="كريم منصوري">كريم منصوري</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="16" data-i18n-name="ماهر المعيقلي">ماهر المعيقلي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="20" data-i18n-name="محسن القاسم">محسن القاسم</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="11" data-i18n-name="محمد الطبلاوي">محمد الطبلاوي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="17" data-i18n-name="محمد أيوب">محمد أيوب</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="18" data-i18n-name="محمد جبريل">محمد جبريل</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="29" data-i18n-name="محمد صديق المنشاوي (المصدر الآخر)">محمد صديق المنشاوي (المصدر الآخر)</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="8" data-i18n-name="محمد صديق المنشاوي (مجوّد)">محمد صديق المنشاوي (مجوّد)</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="9" data-i18n-name="محمد صديق المنشاوي (مرتل)">محمد صديق المنشاوي (مرتل)</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="37" data-i18n-name="محمد عبدالكريم">محمد عبدالكريم</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="6" data-i18n-name="محمود خليل الحصري">محمود خليل الحصري</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="28" data-i18n-name="محمود خليل الحصري (مجوّد)">محمود خليل الحصري (مجوّد)</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="12" data-i18n-name="محمود خليل الحصري (معلّم)">محمود خليل الحصري (معلّم)</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="33" data-i18n-name="محمود علي البنّا">محمود علي البنّا</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="7" data-i18n-name="مشاري راشد العفاسي">مشاري راشد العفاسي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="19" data-i18n-name="مصطفى إسماعيل">مصطفى إسماعيل</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="24" data-i18n-name="ناصر القطامي">ناصر القطامي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="5" data-i18n-name="هاني الرفاعي">هاني الرفاعي</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="23" data-i18n-name="ياسر الدوسري">ياسر الدوسري</button>
+      <button type="button" class="lang-opt reciter-opt" data-reciter="43" data-i18n-name="ياسر سلامة">ياسر سلامة</button>
+    </div>
+  </div>
   <span class="admin-hint" data-i18n="audioHint">يعمل تلقائيًا مع أي ورقة سورة أو آية كاملة.</span>
 </div>
 <header class="topbar">
@@ -1050,10 +1159,13 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
     <p class="sub" data-i18n="heroSub">ضع آيات القرآن الكريم تحت المجهر — اضغط أي بطاقة لفتح ورقة العمل، واكتب إجاباتك: الأسئلة القابلة للتصحيح تُصحَّح تلقائيًا (✓ صحيح / ✗ حاول مجددًا)، ويمكن طباعة أي ورقة كما هي.</p>
   </section>
   <div class="controls js-only">
-    <div class="tabs"><button class="on" data-f="all" data-i18n="fAll">كل الأوراق</button><button data-f="surah" data-i18n="fSurah">السور</button><button data-f="ayah" data-i18n="fAyah">آيات مختارة</button></div>
     <div class="flat-hint" id="flatHint" hidden data-i18n="flatHint">الأجزاء معروضة منفصلة الآن — اضغط "آيات مختارة" مجددًا أو اختر "كل الأوراق" للعودة إلى تجميعها.</div>
     <div class="juz-filter">
-      <select id="juzFilter"><option value="0" data-i18n="fJuzAll">اختر جزءًا</option>${Array.from({length:30},(_,i)=>`<option value="${i+1}" data-i18n-tpl="${tid('الجزء {}')}" data-i18n-word="${toAr(i+1)}">الجزء ${toAr(i+1)}</option>`).join('')}</select>
+      <button type="button" class="act" id="juzBtn" aria-haspopup="true" aria-expanded="false">📖 <span id="juzBtnLabel" data-i18n="fJuzAll">اختر جزءًا</span></button>
+      <div id="juzPanel" class="audio-settings-panel juz-panel" hidden>
+        <button type="button" class="lang-opt juz-opt on" data-juz="0" data-i18n="fJuzAll">اختر جزءًا</button>
+        ${Array.from({length:30},(_,i)=>`<button type="button" class="lang-opt juz-opt" data-juz="${i+1}" data-i18n-tpl="${tid('الجزء {}')}" data-i18n-word="${toAr(i+1)}">الجزء ${toAr(i+1)}</button>`).join('')}
+      </div>
     </div>
     <div class="tabs lvl-tabs"><button class="on" data-lf="all" data-i18n="lvlAll">كل المستويات</button>${LEVELS.map((L,i)=>`<button data-lf="${i+1}" class="lvl-tab lvl-${i+1}" data-i18n="lvl${i+1}">${L}</button>`).join('')}</div>
     <div class="search"><input id="q" type="text" placeholder="ابحث عن سورة أو آية..." data-i18n-ph="searchPh"></div>
@@ -1061,7 +1173,9 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
 </div>
 <section class="grid">
 ${blocks}
+<div id="gridSentinel" aria-hidden="true"></div>
 </section>
+<script type="application/json" id="gridRest">${gridRestJSON}</script>
 </main>
 ${adminHtml}
 <footer class="site-foot">
@@ -1072,6 +1186,7 @@ ${adminHtml}
 <script type="application/json" id="customq">{}</script>
 <script type="application/json" id="quranfull">${QURAN_FULL}</script>
 <script type="application/json" id="i18nData">${I18N}</script>
+<script type="application/json" id="wsIndex">${JSON.stringify(wsIndex)}</script>
 <script>
 ${js}
 </script>
@@ -1081,17 +1196,29 @@ ${adminJs}
 <script>
 if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost' || location.hostname==='127.0.0.1')){
   window.addEventListener('load',function(){
+    /* self.clients.claim() in the worker's activate handler fires
+       controllerchange even on a visitor's very first-ever page load (no
+       service worker ever controlled this page before) — not just when an
+       already-installed worker is updated, which is the only case the
+       auto-reload below was meant for. Without this check, every new
+       visitor got an unexpected forced reload moments after their first
+       load, landing at random inside whatever they were doing (typing an
+       answer, opening the admin panel while it was mid-way through loading
+       hundreds of worksheets) and reading as the page freezing or
+       resetting. Only reload when a controller already existed pre-register
+       — i.e. a real update on a returning visit, not a first visit. */
+    var hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.register('service-worker.js', {updateViaCache:'none'}).then(function(reg){
       /* تحقّق من وجود نسخة جديدة عند كل زيارة (يتجاوز أي تخزين مؤقت للمتصفح لملف الووركر نفسه) */
       reg.update().catch(function(){});
       setInterval(function(){ reg.update().catch(function(){}); }, 30*60*1000);
     }).catch(function(){});
-    /* بمجرد تفعيل نسخة جديدة من الووركر، أعد تحميل الصفحة تلقائيًا لعرض آخر تحديث
-       (أوراق/ميزات جديدة) دون الحاجة لمسح ذاكرة التخزين المؤقت يدويًا */
-    var refreshed=false;
-    navigator.serviceWorker.addEventListener('controllerchange',function(){
-      if(refreshed) return; refreshed=true; window.location.reload();
-    });
+    if(hadController){
+      var refreshed=false;
+      navigator.serviceWorker.addEventListener('controllerchange',function(){
+        if(refreshed) return; refreshed=true; window.location.reload();
+      });
+    }
   });
 }
 </script>
@@ -1099,6 +1226,11 @@ if('serviceWorker' in navigator && (location.protocol==='https:' || location.hos
 </html>`;
 /* ================= إخراج الملفات الثابتة المرافقة (PWA وSEO) ================= */
 fs.mkdirSync(path.join(__dirname,'dist'), {recursive:true});
+/* Isti'adhah audio: a local file provided by the repo owner (audios/istiadhah.mp3),
+   copied to dist/audios/ as-is — no external, unverified link. */
+fs.mkdirSync(path.join(__dirname,'dist/audios'), {recursive:true});
+const istiadhahSrc=path.join(__dirname,'audios/istiadhah.mp3');
+if(fs.existsSync(istiadhahSrc)) fs.copyFileSync(istiadhahSrc, path.join(__dirname,'dist/audios/istiadhah.mp3'));
 function writeStaticAssets(){
   const manifest = {
     name:"التحليل اللغوي المجهري", short_name:"المجهري اللغوي",
@@ -1133,6 +1265,21 @@ function writeStaticAssets(){
     fs.writeFileSync(path.join(__dirname,'dist/api/i18n/'+l+'.json'), JSON.stringify(I18N_CATALOGS[l]));
   });
   fs.writeFileSync(path.join(__dirname,'dist/api/worksheets.json'), JSON.stringify(apiWorksheets));
+  /* Each worksheet body gets its own .js file instead of all 687 (~23MB)
+     being embedded in one JSON blob inside the page itself — that forced
+     downloading/parsing every worksheet up front even though the visitor
+     may never open most of them, which is exactly what the lazy-loading
+     work (ensureBodyLoaded) was meant to avoid; it just hadn't been applied
+     to the data transfer itself yet, only to building DOM from it. Plain
+     <script src> (not fetch/XHR) so this still works when index.html is
+     opened directly by double-click (file://) with no server — fetch/XHR
+     to separate local files is blocked by browser same-origin policy under
+     file://, but <script> tags load without that restriction. */
+  fs.mkdirSync(path.join(__dirname,'dist/api/ws'), {recursive:true});
+  Object.keys(wsBodies).forEach(id=>{
+    fs.writeFileSync(path.join(__dirname,'dist/api/ws/'+id+'.js'),
+      'window.__WSB=window.__WSB||{};window.__WSB['+JSON.stringify(id)+']='+JSON.stringify(wsBodies[id])+';');
+  });
   fs.writeFileSync(path.join(__dirname,'dist/api/meta.json'), JSON.stringify({
     version: VERSION, buildDate: BUILD_DATE,
     worksheets: W.length, questions: W.reduce((a,w)=>a+w.secs.reduce((b,s)=>b+s.q.length,0),0)

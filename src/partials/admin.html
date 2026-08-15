@@ -2,6 +2,7 @@
   <form class="adm-gate-box" id="admGateForm" autocomplete="off">
     <h3 data-i18n="gateTitle">🔒 صفحة المدير</h3>
     <p data-i18n="gateDesc">هذه الصفحة للمعلّم — أدخل كلمة المرور للمتابعة</p>
+    <input id="admUser" type="text" name="username" autocomplete="username" placeholder="اسم المستخدم" aria-label="اسم المستخدم" data-i18n-ph="gateUserPh">
     <input id="admPass" type="password" inputmode="text" autocomplete="current-password" placeholder="كلمة المرور" aria-label="كلمة المرور" data-i18n-ph="gatePassPh">
     <div class="adm-gate-msg" id="admGateMsg" role="alert"></div>
     <div class="adm-gate-actions">
@@ -14,6 +15,7 @@
   <div class="admin-box">
     <div class="admin-head">
       <h2 data-i18n="adminTitle">🛠️ صفحة المدير</h2>
+      <button id="admLogout" class="act" type="button" data-i18n="adminLogout">🔒 تسجيل الخروج</button>
       <button id="admClose" class="act" type="button" data-i18n="adminClose">✕ إغلاق</button>
     </div>
 
@@ -30,84 +32,85 @@
         إظهار زر «الإجابة الصحيحة» تلقائيًا بعد إجابة خاطئة
       </label>
       <span class="admin-hint">عند إيقافه، يظل ✗ الخطأ ظاهرًا لكن دون زر يكشف الإجابة — لتشجيع المحاولة قبل الكشف.</span>
+      <label class="switch-row">
+        <input type="checkbox" id="setIstiadhah" checked>
+        تشغيل الاستعاذة صوتيًا قبل بدء التلاوة
+      </label>
+      <span class="admin-hint">صوت فقط، بلا نص ظاهر على الورقة — يُشغَّل تلقائيًا قبل أول آية عند الضغط على «استماع للتلاوة».</span>
       <span class="admin-hint">إعدادات تلاوة القرآن (تفعيلها واختيار القارئ) صارت متاحة لكل زائر من زر «🔊 إعدادات التلاوة» أعلى الصفحة، وليست حكرًا على المدير.</span>
     </div>
 
-    <div class="admin-steps">
-      <button type="button" class="step on" data-step="ws"><b>١</b> <span data-i18n="adminStep1">إضافة سورة أو آية</span></button>
-      <button type="button" class="step" data-step="q"><b>٢</b> <span data-i18n="adminStep2">إضافة الأسئلة</span></button>
+    <!-- إنشاء ورقة جديدة من الصفر أُزيل عمدًا: الإدارة تقتصر الآن على إضافة/حذف/تعديل
+         الأسئلة ضمن الأوراق الأصلية (المدمجة في الموقع) فقط، لا إنشاء أوراق جديدة كليًا.
+         تبقى عناصر النموذج القديم (nwXxx) في الشيفرة لتوافق داخلي فقط، مخفيّة دومًا هنا. -->
+    <div id="nwCreateWrap" hidden>
+      <div class="admin-grid">
+        <select id="nwSuraPick"><option value="">— اختر سورة —</option></select>
+        <select id="nwCat"><option value="surah">سورة كاملة</option><option value="ayah">آية مختارة</option></select>
+        <input type="text" id="nwName" readonly>
+        <input type="text" id="nwNameExtra">
+        <input type="text" id="nwNum" inputmode="numeric" readonly>
+        <input type="text" id="nwAyat" inputmode="numeric" readonly>
+        <label id="nwAyaWrap"><input type="text" id="nwAya" inputmode="numeric"></label>
+        <label id="nwAyaToWrap"><input type="text" id="nwAyaTo" inputmode="numeric"></label>
+        <select id="nwHue">
+          <option value="--teal">أخضر</option><option value="--gold">ذهبي</option>
+          <option value="--indigo">أزرق</option><option value="--plum">أرجواني</option>
+          <option value="--olive">زيتوني</option><option value="--amber">برتقالي</option>
+        </select>
+      </div>
+      <textarea id="nwVerse" rows="4"></textarea>
+      <button type="button" id="nwAyaMark">۝</button>
+      <input type="text" id="nwSec0" value="أولًا: لغة الأرقام">
+      <input type="text" id="nwSec1" value="ثانيًا: مهارات الاستخراج">
+      <input type="text" id="nwSec2" value="ثالثًا: التدبر والنسخ">
+      <input type="text" id="nwInfo">
+      <input type="text" id="nwFootV">
+      <input type="text" id="nwFootM">
+      <button id="nwSave" type="button">حفظ</button>
+      <button id="nwClear" type="button">مسح</button>
+      <button id="nwCancelEdit" type="button" hidden>إلغاء</button>
+      <div id="nwMsg"></div>
+      <div id="nwList"></div>
     </div>
 
-    <!-- ========== الخطوة ١: ورقة عمل جديدة ========== -->
+    <!-- ========== الأسئلة (كل سورة/جزء وأزرار إضافة/تعديل/حذف أسئلتها معًا) ========== -->
     <section id="admStepWs" class="admin-step">
-      <p class="admin-hint">أضف سورة كاملة أو آية مختارة، ثم انتقل للخطوة الثانية لإضافة أسئلتها في الأقسام الثلاثة.</p>
-      <div class="admin-grid">
-        <label>اختر سورة من القائمة (تعبئة تلقائية للاسم والرقم وعدد الآيات)
-          <select id="nwSuraPick"><option value="">— اختر سورة —</option></select>
-        </label>
-        <label>النوع
-          <select id="nwCat"><option value="surah">سورة كاملة</option><option value="ayah">آية مختارة</option></select>
-        </label>
-        <label>اسم الورقة (يُبنى تلقائيًا من السورة ورقم الآية لمنع التعارض)
-          <input type="text" id="nwName" placeholder="اختر سورة أعلاه أولًا" readonly></label>
-        <label>وصف إضافي بين قوسين (اختياري، مثل: قصة يونس عليه السلام)
-          <input type="text" id="nwNameExtra" placeholder="اختياري"></label>
-        <label>رقم السورة في المصحف (تلقائي حسب السورة المختارة)
-          <input type="text" id="nwNum" inputmode="numeric" placeholder="اختر سورة أعلاه" readonly></label>
-        <label>عدد آيات السورة (تلقائي حسب السورة المختارة)
-          <input type="text" id="nwAyat" inputmode="numeric" placeholder="اختر سورة أعلاه" readonly></label>
-        <label id="nwAyaWrap">من الآية <input type="text" id="nwAya" inputmode="numeric" placeholder="مثال: ٩٠"></label>
-        <label id="nwAyaToWrap">إلى الآية (اختياري — لتحديد مقطع من عدة آيات)<input type="text" id="nwAyaTo" inputmode="numeric" placeholder="اتركه فارغًا لآية واحدة"></label>
-        <label>لون الورقة (يُختار تلقائيًا حسب رقم السورة — نفس السورة دائمًا بنفس اللون؛ يمكن تغييره يدويًا إن أردت)
-          <select id="nwHue">
-            <option value="--teal">أخضر</option><option value="--gold">ذهبي</option>
-            <option value="--indigo">أزرق</option><option value="--plum">أرجواني</option>
-            <option value="--olive">زيتوني</option><option value="--amber">برتقالي</option>
-          </select>
-        </label>
-      </div>
-      <label class="admin-full">نص السورة أو الآية (افصل بين الآيات بعلامة ۝)
-        <textarea id="nwVerse" rows="4" placeholder="مثال: وَالضُّحَىٰ ۝ وَاللَّيْلِ إِذَا سَجَىٰ ۝ مَا وَدَّعَكَ رَبُّكَ وَمَا قَلَىٰ"></textarea>
-      </label>
-      <div class="admin-actions"><button type="button" class="act" id="nwAyaMark">۝ إدراج علامة آية</button></div>
-      <div class="admin-grid">
-        <label>عنوان القسم الأول <input type="text" id="nwSec0" value="أولًا: لغة الأرقام"></label>
-        <label>عنوان القسم الثاني <input type="text" id="nwSec1" value="ثانيًا: مهارات الاستخراج"></label>
-        <label>عنوان القسم الثالث <input type="text" id="nwSec2" value="ثالثًا: التدبر والنسخ"></label>
-      </div>
-      <div class="admin-grid">
-        <label>وصف مختصر <input type="text" id="nwInfo" placeholder="سورة كاملة · ١١ آية · النزول: مكية"></label>
-        <label>آية الختام <input type="text" id="nwFootV" placeholder="﴿ ... ﴾"></label>
-        <label>عبارة تشجيع <input type="text" id="nwFootM" placeholder="أحسنت يا باحث صغير"></label>
-      </div>
-      <div class="admin-actions">
-        <button class="act print" id="nwSave" type="button">💾 حفظ الورقة والانتقال للأسئلة</button>
-        <button class="act" id="nwClear" type="button">مسح الحقول</button>
-        <button class="act" id="nwCancelEdit" type="button" hidden>✕ إلغاء التعديل</button>
-      </div>
-      <div id="nwMsg" class="admin-msg"></div>
-      <h3 class="admin-sub">الأوراق المضافة</h3>
-      <div id="nwList" class="admin-list"></div>
-      <h3 class="admin-sub">الأوراق الأصلية (المدمجة في الموقع)</h3>
-      <p class="admin-hint">يمكن تعديل عنوان الورقة ووصفها وعناوين أقسامها ولونها من هنا. نص الآيات نفسه غير قابل للتعديل (لأن أسئلة الورقة المحسوبة تلقائيًا مرتبطة بنصّها الأصلي حرفيًا) — لتغيير النص، احذف الورقة وأضفها من جديد بنصّ جديد من الخطوة الأولى. الحذف يطلب كلمة المرور مرة أخرى للتأكيد، وهو محلي لهذا المتصفح (أو لأي نسخة HTML تُصدَّر بعده) وليس حذفًا من الموقع المنشور نفسه.</p>
+      <h3 class="admin-sub" data-i18n="adminStep2">الأسئلة</h3>
+      <p class="admin-hint">أضف سؤالًا جديدًا لأي ورقة مباشرة من زر «➕ سؤال جديد» أدناه، أو عدّل/احذف أسئلتها الحالية من «أسئلة الورقة». يمكن أيضًا حذف الورقة نفسها أو استعادتها من هنا. نص الآيات نفسه غير قابل للتعديل (لأن أسئلة الورقة المحسوبة تلقائيًا مرتبطة بنصّها الأصلي حرفيًا). الحذف يطلب كلمة المرور مرة أخرى للتأكيد، وهو محلي لهذا المتصفح (أو لأي نسخة HTML تُصدَّر بعده) وليس حذفًا من الموقع المنشور نفسه.</p>
       <div id="bwList" class="admin-list"></div>
     </section>
 
-    <!-- ========== الخطوة ٢: الأسئلة ========== -->
-    <section id="admStepQ" class="admin-step" hidden>
+    <!-- ========== نموذج إضافة سؤال — يُقفز إليه من زر «➕ سؤال جديد» في أي صف أعلاه، والورقة مُعبَّأة مسبقًا ========== -->
+    <section id="admStepQ" class="admin-step">
+      <h3 class="admin-sub">إضافة سؤال <span id="admAddForWs"></span></h3>
       <div class="admin-grid">
         <label>الورقة <select id="admWs"></select></label>
         <label>القسم <select id="admSec"></select></label>
         <label>نوع السؤال <select id="admType"></select></label>
       </div>
+      <div class="admin-actions">
+        <label>عنوان القسم الجديد <input type="text" id="admNewSecTitle" placeholder="مثال: رابعًا: تدريب إضافي"></label>
+        <button class="act" id="admAddSection" type="button">➕ إضافة قسم جديد للورقة المختارة</button>
+      </div>
+      <div id="admSecMsg" class="admin-msg"></div>
       <div id="admFields" class="admin-grid"></div>
       <div class="admin-preview" id="admPrev" hidden></div>
       <div class="admin-actions">
         <button class="act" id="admPreview" type="button">👁️ معاينة</button>
         <button class="act print" id="admAdd" type="button">➕ إضافة السؤال</button>
-        <button class="act" id="admExport" type="button">💾 تنزيل نسخة محفوظة (HTML)</button>
       </div>
       <div id="admMsg" class="admin-msg"></div>
+      <h3 class="admin-sub"><span id="admListHead">الأسئلة المضافة</span> <button class="act" id="admToggleAns" type="button">👁️ إظهار/إخفاء كل الإجابات</button></h3>
+      <div id="admList" class="admin-list"></div>
+    </section>
+
+    <!-- ========== أدوات إضافية: تصدير/استيراد بالجملة، قوالب، نسخة HTML محفوظة ========== -->
+    <section id="admStepTools" class="admin-step">
+      <h3 class="admin-sub">🧰 أدوات إضافية</h3>
+      <div class="admin-actions">
+        <button class="act" id="admExport" type="button">💾 تنزيل نسخة محفوظة (HTML)</button>
+      </div>
       <h3 class="admin-sub">تصدير/استيراد كل الأسئلة بالجملة (للمدير فقط)</h3>
       <p class="admin-hint">صدّر كل أسئلة كل الأوراق كملف JSON واحد لمراجعتها أو تعديلها خارجيًا، ثم ارفع الملف بعد التعديل لتطبيق كل التغييرات دفعة واحدة. التحديث يطبَّق على نص السؤال وإجابته فقط (لا يضيف أو يحذف أسئلة، ولا يغيّر نص الآيات).</p>
       <div class="admin-actions">
@@ -119,15 +122,13 @@
         <button class="act" id="admImportApply" type="button" disabled>✅ تطبيق التحديثات</button>
       </div>
       <div id="admImportMsg" class="admin-msg"></div>
-      <p class="admin-hint">أو أضف مجموعة أسئلة جاهزة (قالب) لقسم الورقة المختار أعلاه دفعة واحدة، ثم عدّلها أو احذف ما لا يلزم من القائمة تحت:</p>
+      <p class="admin-hint">أو أضف مجموعة أسئلة جاهزة (قالب) لقسم الورقة المختار أعلاه (في «إضافة سؤال») دفعة واحدة، ثم عدّلها أو احذف ما لا يلزم من القائمة تحت:</p>
       <div class="admin-actions">
         <button class="act" id="admTpl0" type="button">🧩 قالب «أولًا: لغة الأرقام»</button>
         <button class="act" id="admTpl1" type="button">🧩 قالب «ثانيًا: مهارات الاستخراج»</button>
         <button class="act" id="admTpl2" type="button">🧩 قالب «ثالثًا: التدبر والنسخ»</button>
         <button class="act print" id="admTplAll" type="button">✨ توليد أسئلة الأقسام الثلاثة كلها دفعة واحدة</button>
       </div>
-      <h3 class="admin-sub"><span id="admListHead">الأسئلة المضافة</span> <button class="act" id="admToggleAns" type="button">👁️ إظهار/إخفاء كل الإجابات</button></h3>
-      <div id="admList" class="admin-list"></div>
     </section>
   </div>
 </div>

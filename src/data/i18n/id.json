@@ -30,10 +30,12 @@
  "gateTitle": "🔒 Halaman admin",
  "gateDesc": "Halaman ini untuk guru — masukkan kata sandi untuk melanjutkan",
  "gatePassPh": "Kata sandi",
+ "gateUserPh": "Nama pengguna",
  "gateEnter": "Masuk",
  "gateCancel": "Batal",
  "adminTitle": "🛠️ Halaman admin",
  "adminClose": "✕ Tutup",
+ "adminLogout": "🔒 Keluar",
  "adminStep1": "Tambah surah atau ayat",
  "adminStep2": "Tambah soal",
  "tpl": {

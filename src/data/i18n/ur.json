@@ -30,10 +30,12 @@
  "gateTitle": "🔒 ایڈمن صفحہ",
  "gateDesc": "یہ صفحہ استاد کے لیے ہے — جاری رکھنے کے لیے پاس ورڈ درج کریں",
  "gatePassPh": "پاس ورڈ",
+ "gateUserPh": "صارف نام",
  "gateEnter": "داخل ہوں",
  "gateCancel": "منسوخ کریں",
  "adminTitle": "🛠️ ایڈمن صفحہ",
  "adminClose": "✕ بند کریں",
+ "adminLogout": "🔒 لاگ آؤٹ",
  "adminStep1": "سورت یا آیت شامل کریں",
  "adminStep2": "سوالات شامل کریں",
  "tpl": {
