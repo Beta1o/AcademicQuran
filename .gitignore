@@ -1,5 +1,6 @@
 node_modules/
 dist/
+reports/
 android/.gradle/
 android/app/build/
 *.keystore
