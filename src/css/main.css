@@ -109,7 +109,11 @@ html[dir="rtl"] .settings-chevron svg,html[dir="rtl"] .settings-back svg{transfo
 /* Theme row: an icon + label + an actual switch visual (not just a plain
    list item) — its state (.on) is toggled in JS alongside the sun/moon icon
    swap, both driven by the same dark/light change so they never disagree. */
-.theme-switch-row{display:flex;align-items:center;gap:12px;width:100%;text-align:start;border:none;background:none;border-radius:12px;padding:10px 12px;cursor:pointer}
+/* color:var(--ink) is required explicitly — a <button> with border/background
+   reset to none still falls back to the OS's default button-text color (a
+   washed-out gray in some browser/OS combinations) rather than the page's
+   actual text color, which is what made "Light mode" read as barely visible. */
+.theme-switch-row{display:flex;align-items:center;gap:12px;width:100%;text-align:start;border:none;background:none;border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink)}
 .theme-switch-row:hover{background:color-mix(in srgb, var(--teal) 8%, transparent)}
 .theme-switch-row .settings-cat-label{flex:1}
 .theme-switch{position:relative;flex-shrink:0;width:42px;height:24px;border-radius:999px;background:var(--line);border:1.5px solid var(--line);transition:background .18s}
