@@ -25,23 +25,6 @@ tasks.register('syncWebAssets', Sync) {
     into webAssetsDir
 }
 
-// GitHub Actions ينشئ ~/.android/debug.keystore عشوائيًا من جديد في كل
-// تشغيل (لا حالة تُحفَظ بين التشغيلات على ذلك المسار) — فكل APK كان يُوقَّع
-// بمفتاح مختلف عن السابق، ويرفض أندرويد تثبيت أي تحديث لتطبيق موقَّع بمفتاح
-// يخالف المثبَّت فعليًا (يفرض إزالة النسخة القديمة يدويًا في كل مرة). مفتاح
-// تصحيح ثابت مضمَّن هنا في المستودع (android/app/debug.keystore، كلمة مروره
-// وأسماء مفاتيحه القيم الافتراضية المعروفة لـkeytool/أدوات أندرويد — لا خطر
-// أمني هنا، فهذا توقيع تطوير لا يستخدم لأي نشر رسمي على متجر Play) يجعل كل
-// بناء مستقبلي يحمل التوقيع نفسه، فتُثبَّت التحديثات فوق بعضها طبيعيًا.
-signingConfigs {
-    debug {
-        storeFile rootProject.file('app/debug.keystore')
-        storePassword 'android'
-        keyAlias 'androiddebugkey'
-        keyPassword 'android'
-    }
-}
-
 android {
     namespace 'com.beta1o.academicquran'
     compileSdk 35
@@ -52,6 +35,23 @@ android {
         targetSdk 35
         versionCode 1
         versionName '1.1.0'
+    }
+
+    // GitHub Actions ينشئ ~/.android/debug.keystore عشوائيًا من جديد في كل
+    // تشغيل (لا حالة تُحفَظ بين التشغيلات على ذلك المسار) — فكل APK كان يُوقَّع
+    // بمفتاح مختلف عن السابق، ويرفض أندرويد تثبيت أي تحديث لتطبيق موقَّع بمفتاح
+    // يخالف المثبَّت فعليًا (يفرض إزالة النسخة القديمة يدويًا في كل مرة). مفتاح
+    // تصحيح ثابت مضمَّن هنا في المستودع (android/app/debug.keystore، كلمة مروره
+    // وأسماء مفاتيحه القيم الافتراضية المعروفة لـkeytool/أدوات أندرويد — لا خطر
+    // أمني هنا، فهذا توقيع تطوير لا يستخدم لأي نشر رسمي على متجر Play) يجعل كل
+    // بناء مستقبلي يحمل التوقيع نفسه، فتُثبَّت التحديثات فوق بعضها طبيعيًا.
+    signingConfigs {
+        debug {
+            storeFile rootProject.file('app/debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
     }
 
     sourceSets {
