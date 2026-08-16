@@ -10,6 +10,7 @@ const http = require('http');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const zlib = require('zlib');
 const { spawn } = require('child_process');
 
 const ROOT = path.join(__dirname, '..', 'dist');
@@ -35,6 +36,12 @@ if (!fs.existsSync(path.join(ROOT, 'index.html'))) {
   process.exit(1);
 }
 
+/* Real hosting (GitHub Pages, the .htaccess mod_deflate block for Apache)
+   both compress text responses automatically — this server didn't, so any
+   Lighthouse run against localhost measured an artificially worse FCP/LCP/
+   Speed Index than what visitors actually get (an uncompressed 6+MB
+   index.html vs. ~1.5MB gzipped), making local testing misleading. */
+const COMPRESSIBLE = /^text\/|javascript|json|manifest/;
 const server = http.createServer((req, res) => {
   let rel = decodeURIComponent((req.url || '/').split('?')[0]);
   if (rel.endsWith('/')) rel += 'index.html';
@@ -42,11 +49,15 @@ const server = http.createServer((req, res) => {
   if (!file.startsWith(ROOT)) { res.writeHead(403).end('403'); return; }
   fs.readFile(file, (err, buf) => {
     if (err) { res.writeHead(404, { 'Content-Type': MIME['.html'] }).end('<h1>404</h1>'); return; }
-    res.writeHead(200, {
-      'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream',
-      'Cache-Control': 'no-cache'
-    });
-    res.end(buf);
+    const type = MIME[path.extname(file).toLowerCase()] || 'application/octet-stream';
+    const acceptsGzip = /gzip/.test(req.headers['accept-encoding'] || '');
+    if (acceptsGzip && COMPRESSIBLE.test(type)) {
+      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache', 'Content-Encoding': 'gzip' });
+      res.end(zlib.gzipSync(buf, { level: 9 }));
+    } else {
+      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache' });
+      res.end(buf);
+    }
   });
 });
 
