@@ -4,6 +4,7 @@ reports/
 android/.gradle/
 android/app/build/
 *.keystore
+!android/app/debug.keystore
 *.log
 .claude/
 Admin.txt

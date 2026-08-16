@@ -56,19 +56,27 @@ input,textarea{font-family:inherit;color:var(--ink)}
 .brand .lens{width:34px;height:34px;border-radius:50%;border:3px solid var(--teal);position:relative;background:radial-gradient(circle at 35% 35%, #fff 0 30%, #CDE6E1 70%)}
 .brand .lens::after{content:"";position:absolute;bottom:-7px;left:50%;width:3px;height:9px;background:var(--teal);transform:translateX(-50%) rotate(35deg);border-radius:2px}
 .topbar .spacer{flex:1}
-#themeToggle{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;width:44px;height:44px;font-size:1rem;line-height:1;transition:border-color .18s}
-#themeToggle:hover{border-color:var(--teal)}
-.lang-switch{position:relative}
-.lang-switch #langBtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;min-height:44px;padding:8px 16px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:border-color .18s,color .18s}
-.lang-switch #langBtn:hover,.lang-switch #langBtn[aria-expanded="true"]{border-color:var(--teal);color:var(--teal)}
-#langPanel.audio-settings-panel{padding:8px;gap:2px}
+.settings-switch{position:relative}
+.settings-switch #settingsBtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;min-height:44px;padding:8px 16px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:border-color .18s,color .18s}
+.settings-switch #settingsBtn:hover,.settings-switch #settingsBtn[aria-expanded="true"]{border-color:var(--teal);color:var(--teal)}
+.settings-panel{padding:10px;gap:2px}
+.settings-root{display:flex;flex-direction:column;gap:2px}
+.settings-cat{justify-content:flex-start;gap:10px}
+.settings-cat::after{content:"‹";margin-inline-start:auto;color:var(--ink-soft);font-size:1.1rem}
+.settings-sub{display:flex;flex-direction:column;gap:2px}
+/* .settings-root/.settings-sub{display:flex} أعلاه من أصل المؤلِّف (author)
+   يتفوّق تلقائيًا على قاعدة المتصفح الافتراضية [hidden]{display:none} (من
+   ورقة أنماط user-agent، أدنى أولوية دومًا) — فتوضيح ذلك صراحة هنا إلزامي،
+   وإلا بقيت اللوحتان (الجذر والفرعية) ظاهرتين معًا رغم ضبط JS لسمة hidden. */
+.settings-root[hidden],.settings-sub[hidden]{display:none}
+.settings-back{display:flex;align-items:center;gap:6px;width:100%;text-align:start;border:none;background:none;border-radius:10px;padding:9px 12px;font-weight:700;font-size:.86rem;color:var(--ink-soft);margin-bottom:4px}
+.settings-back:hover{color:var(--teal)}
+.settings-group-title{font-size:.78rem;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;padding:0 12px 4px}
 .lang-opt{display:flex;align-items:center;min-height:44px;width:100%;text-align:start;border:none;background:none;border-radius:10px;padding:9px 12px;font-weight:700;font-size:.9rem;color:var(--ink)}
 .lang-opt:hover{background:color-mix(in srgb, var(--teal) 10%, transparent);color:var(--teal)}
 .lang-opt.on{background:color-mix(in srgb, var(--teal) 14%, transparent);color:var(--teal);font-weight:800}
 .lang-opt.on::after{content:"✓";margin-inline-start:auto;padding-inline-start:8px}
-.audio-settings{position:relative}
-.audio-settings #pubAudioBtn{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;min-height:44px;padding:8px 18px;font-weight:700;font-size:.86rem;color:var(--ink-soft);transition:border-color .18s,color .18s}
-.audio-settings #pubAudioBtn:hover,.audio-settings #pubAudioBtn[aria-expanded="true"]{border-color:var(--teal);color:var(--teal)}
+#themeToggle{gap:8px}
 /* موضع ثابت بالنسبة لنافذة العرض (لا للزر المُشغِّل) — يمنع خروج القائمة عن
    حدود الشاشة نهائيًا مهما كان مكان الزر (قريبًا من حافة الشاشة، أو ضمن شريط
    علوي ضيّق على الجوال)، ويُطبَّق تلقائيًا على أي قائمة منبثقة تستخدم هذا

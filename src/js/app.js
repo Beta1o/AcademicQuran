@@ -485,8 +485,14 @@ var Popover=(function(){
   return {open:open, close:close};
 })();
 /* ---------- إعدادات التلاوة العامة: متاحة لكل زائر من شريط الموقع، وليست حكرًا على المدير ---------- */
+/* اللغة/المظهر/القارئ كانت ثلاثة أزرار منفصلة في الشريط العلوي (تزدحم بها
+   شاشات أندرويد الضيقة تحديدًا) — أُدمجت الآن في زر واحد (settingsBtn) يفتح
+   لوحة واحدة (settingsPanel) تضم الثلاثة معًا، فيبقى منطق كل خيار كما هو
+   (نفس المعرّفات: reciterOpts، themeToggle، أزرار lang-opt) دون تغيير سوى
+   مكان الزر/اللوحة الفاتحين لها. */
 (function(){
-  var btn=document.getElementById('pubAudioBtn'), panel=document.getElementById('pubAudioPanel');
+  var btn=document.getElementById('pubAudioBtn')||document.getElementById('settingsBtn');
+  var panel=document.getElementById('pubAudioPanel')||document.getElementById('settingsPanel');
   var opts=document.getElementById('reciterOpts');
   if(!btn||!panel||!opts) return;
   var cur=audioSettings();
@@ -501,15 +507,16 @@ var Popover=(function(){
       setTimeout(Popover.close, 300); /* يُغلَق تلقائيًا بعد اختيار القارئ */
     });
   });
-  btn.addEventListener('click',function(){
-    if(panel.hidden) Popover.open(panel,btn); else Popover.close();
-  });
 })();
 /* ---------- تبديل الوضع الداكن/الفاتح يدويًا (فوق الاعتماد التلقائي على إعداد الجهاز) ---------- */
 (function(){
   var THEME_KEY='tahleel-theme';
   var btn=document.getElementById('themeToggle');
   if(!btn) return;
+  /* الأيقونة وحدها هي التي تتبدّل (☀️/🌙) — الزر أصبح يحوي أيضًا نصًّا ثابتًا
+     ("الوضع الداكن") بعد الدمج في لوحة الإعدادات؛ استبدال textContent للزر
+     كاملًا كما كان سابقًا كان سيمحو ذلك النص كل مرة. */
+  var icon=document.getElementById('themeIcon')||btn;
   var systemDark=function(){
     return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   };
@@ -517,7 +524,7 @@ var Popover=(function(){
     if(t){ document.documentElement.setAttribute('data-theme',t); }
     else { document.documentElement.removeAttribute('data-theme'); }
     var dark = t ? t==='dark' : systemDark();
-    btn.textContent = dark ? '☀️' : '🌙';
+    icon.textContent = dark ? '☀️' : '🌙';
   };
   var saved=null;
   try{ saved=localStorage.getItem(THEME_KEY); }catch(e){}
@@ -753,16 +760,61 @@ window.Locale=Locale;
 /* توافق خلفي: بقية الشيفرة (وربما ملحقات مستقبلية) تنادي t() مباشرة */
 function t(key){ return Locale.t(key); }
 (function(){
-  var btn=document.getElementById('langBtn'), panel=document.getElementById('langPanel');
+  var btn=document.getElementById('settingsBtn')||document.getElementById('langBtn');
+  var panel=document.getElementById('settingsPanel')||document.getElementById('langPanel');
   if(!btn||!panel) return;
-  panel.querySelectorAll('.lang-opt').forEach(function(o){
+  /* [data-lang] يقصر التحديد على أزرار اللغة فعلًا — بعد دمج اللوحات صار
+     .lang-opt نفسه صنفًا مشتركًا تحمله أيضًا أزرار القارئ (reciter-opt) داخل
+     اللوحة نفسها؛ تحديد بلا هذا القيد كان سيُلحق معالج Locale.set(undefined)
+     بأزرار القارئ أيضًا. */
+  panel.querySelectorAll('.lang-opt[data-lang]').forEach(function(o){
     o.addEventListener('click',function(){
       Locale.set(o.dataset.lang);
       Popover.close();
     });
   });
+  /* لوحة الإعدادات المدمَجة: مستوى جذر بثلاثة أزرار (لغة/مظهر/قارئ)، والنقر
+     على أيٍّ منها يُظهر لوحته الفرعية فقط بدل قائمة طويلة واحدة تخلط الثلاثة
+     معًا (كانت تُصعِّب إيجاد الخيار المطلوب، خاصة على شاشات أندرويد الضيقة). */
+  var root=panel.querySelector('.settings-root');
+  var subs=panel.querySelectorAll('.settings-sub');
+  function showRoot(){
+    if(root) root.hidden=false;
+    subs.forEach(function(s){ s.hidden=true; });
+  }
+  if(root){
+    root.querySelectorAll('.settings-cat').forEach(function(c){
+      c.addEventListener('click',function(){
+        var sub=panel.querySelector('.settings-sub[data-cat="'+c.dataset.cat+'"]');
+        if(!sub) return;
+        root.hidden=true;
+        subs.forEach(function(s){ s.hidden=(s!==sub); });
+      });
+    });
+    subs.forEach(function(s){
+      var back=s.querySelector('.settings-back');
+      if(back) back.addEventListener('click',showRoot);
+    });
+  }
+  /* لوحة الإعدادات وحدها (لا لوحات الجزء/غيرها) كانت تُمركَّز أفقيًا في وسط
+     الشاشة دومًا (.audio-settings-panel: left:50%) بصرف النظر عن موضع الزر
+     الفاتح لها — مقصود أصلًا لقوائم صغيرة، لكنه يُبعِد لوحة الإعدادات كثيرًا
+     عن زرّها (أعلى الشريط) خاصة على شاشات أندرويد الضيقة. تُثبَّت اللوحة هنا
+     مباشرة أسفل الزر عبر أنماط inline (تتفوّق على أي قاعدة CSS بلا !important). */
+  function positionUnderButton(){
+    var r=btn.getBoundingClientRect();
+    var margin=10, vw=window.innerWidth;
+    var panelW=Math.min(320, vw*0.92);
+    var left=r.right-panelW; /* المحاذاة بالحافة اليمنى للزر — طبيعي في RTL حيث الزر أقصى يسار الشريط */
+    if(left<margin) left=margin;
+    if(left+panelW>vw-margin) left=vw-margin-panelW;
+    panel.style.left=left+'px';
+    panel.style.transform='none';
+    panel.style.top=(r.bottom+8)+'px';
+  }
+  window.addEventListener('resize',function(){ if(!panel.hidden) positionUnderButton(); });
   btn.addEventListener('click',function(){
-    if(panel.hidden) Popover.open(panel,btn); else Popover.close();
+    if(panel.hidden){ showRoot(); positionUnderButton(); Popover.open(panel,btn); } else Popover.close();
   });
 })();
 /* ---------- شريط علوي لاصق: قياس ارتفاعه الفعلي لضبط الإزاحات ---------- */
@@ -852,6 +904,19 @@ function bindToggles(root){
         });
         var raf=window.requestAnimationFrame||function(f){return setTimeout(f,16);};
         raf(function(){ try{ d.scrollIntoView({block:'start'}); }catch(e){} });
+      }
+    });
+  });
+  /* بطاقة السورة المجزَّأة (.ws-group) لم تكن تُمرَّر إليها الشاشة عند فتحها
+     إطلاقًا — الآلية أعلاه تقتصر على .ws-item فقط — فيبقى المستخدم عند نفس
+     موضع تمريره السابق بعد فتحها، لا يرى أول أجزائها إلا بتمرير يدوي؛ هذا
+     يطبّق نفس معاملة الورقة العادية (تمرير الشاشة لبداية البطاقة عند الفتح). */
+  root.querySelectorAll('.ws-group').forEach(function(g){
+    if(isBound(g)) return;
+    g.addEventListener('toggle',function(){
+      if(g.open && !noAutoScroll){
+        var raf=window.requestAnimationFrame||function(f){return setTimeout(f,16);};
+        raf(function(){ try{ g.scrollIntoView({block:'start'}); }catch(e){} });
       }
     });
   });

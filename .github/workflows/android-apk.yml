@@ -31,6 +31,18 @@ jobs:
           ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
           SITE_URL: ${{ vars.SITE_URL }}
 
+      # مفتاح توقيع ثابت (انظر التعليق في android/app/build.gradle) — يُنشأ
+      # مرة واحدة فقط إن لم يكن موجودًا أصلًا في المستودع؛ بعد إنشائه وحفظه
+      # هناك يبقى كل بناء لاحق موقَّعًا بالمفتاح نفسه تلقائيًا.
+      - name: Generate debug keystore if missing
+        working-directory: android
+        run: |
+          if [ ! -f app/debug.keystore ]; then
+            keytool -genkeypair -v -keystore app/debug.keystore -storepass android \
+              -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=Academic Quran Debug,O=Academic Quran,C=US"
+          fi
+
       - name: Build release APK (debug-signed)
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
@@ -39,3 +51,10 @@ jobs:
         with:
           name: AcademicQuran-apk
           path: android/app/build/outputs/apk/release/app-release.apk
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: debug-keystore
+          path: android/app/debug.keystore
+          if-no-files-found: ignore

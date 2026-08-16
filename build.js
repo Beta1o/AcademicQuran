@@ -1064,28 +1064,42 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
      كانت قيمته — وهذا بالضبط ما كان يجعل الحاجز يُظلِّل القائمة ويلتقط النقر
      المقصود لأحد خياراتها بدلًا منها. القائمتان الآن أبناء مباشرون لـ body،
      في نفس سياق التكديس الجذري الذي يقارَن فيه z-index فعليًا. -->
-<div id="langPanel" class="audio-settings-panel" hidden>
-  <button type="button" class="lang-opt" data-lang="ar">العربية</button>
-  <button type="button" class="lang-opt" data-lang="en">English</button>
-  <button type="button" class="lang-opt" data-lang="ur">اردو</button>
-  <button type="button" class="lang-opt" data-lang="tr">Türkçe</button>
-  <button type="button" class="lang-opt" data-lang="ug">ئۇيغۇرچە</button>
-  <button type="button" class="lang-opt" data-lang="id">Bahasa Indonesia/Melayu</button>
-  <button type="button" class="lang-opt" data-lang="fr">Français</button>
-  <button type="button" class="lang-opt" data-lang="bn">বাংলা</button>
-  <button type="button" class="lang-opt" data-lang="ha">Hausa</button>
-  <button type="button" class="lang-opt" data-lang="fa">فارسی</button>
-  <button type="button" class="lang-opt" data-lang="ml">മലയാളം</button>
-  <button type="button" class="lang-opt" data-lang="sw">Kiswahili</button>
-  <button type="button" class="lang-opt" data-lang="hi">हिन्दी</button>
-  <button type="button" class="lang-opt" data-lang="es">Español</button>
-  <button type="button" class="lang-opt" data-lang="ru">Русский</button>
-  <button type="button" class="lang-opt" data-lang="zh">中文</button>
-  <button type="button" class="lang-opt" data-lang="so">Soomaali</button>
-  <button type="button" class="lang-opt" data-lang="ps">پښتو</button>
-</div>
-<div id="pubAudioPanel" class="audio-settings-panel" hidden>
-  <div class="admin-field"><span data-i18n="reciterLabel">القارئ</span>
+<div id="settingsPanel" class="audio-settings-panel settings-panel" hidden>
+  <div class="settings-root" id="settingsRoot">
+    <button type="button" class="lang-opt settings-cat" data-cat="lang">🌐 <span data-i18n="languageLabel">اللغة</span></button>
+    <button type="button" class="lang-opt settings-cat" data-cat="theme">🌙 <span data-i18n="themeLabel">المظهر</span></button>
+    <button type="button" class="lang-opt settings-cat" data-cat="reciter">🔊 <span data-i18n="reciterLabel">القارئ</span></button>
+  </div>
+  <div class="settings-sub" data-cat="lang" hidden>
+    <button type="button" class="settings-back">→ <span data-i18n="backWord">رجوع</span></button>
+    <div class="settings-group-title" data-i18n="languageLabel">اللغة</div>
+    <button type="button" class="lang-opt" data-lang="ar">العربية</button>
+    <button type="button" class="lang-opt" data-lang="en">English</button>
+    <button type="button" class="lang-opt" data-lang="ur">اردو</button>
+    <button type="button" class="lang-opt" data-lang="tr">Türkçe</button>
+    <button type="button" class="lang-opt" data-lang="ug">ئۇيغۇرچە</button>
+    <button type="button" class="lang-opt" data-lang="id">Bahasa Indonesia/Melayu</button>
+    <button type="button" class="lang-opt" data-lang="fr">Français</button>
+    <button type="button" class="lang-opt" data-lang="bn">বাংলা</button>
+    <button type="button" class="lang-opt" data-lang="ha">Hausa</button>
+    <button type="button" class="lang-opt" data-lang="fa">فارسی</button>
+    <button type="button" class="lang-opt" data-lang="ml">മലയാളം</button>
+    <button type="button" class="lang-opt" data-lang="sw">Kiswahili</button>
+    <button type="button" class="lang-opt" data-lang="hi">हिन्दी</button>
+    <button type="button" class="lang-opt" data-lang="es">Español</button>
+    <button type="button" class="lang-opt" data-lang="ru">Русский</button>
+    <button type="button" class="lang-opt" data-lang="zh">中文</button>
+    <button type="button" class="lang-opt" data-lang="so">Soomaali</button>
+    <button type="button" class="lang-opt" data-lang="ps">پښتو</button>
+  </div>
+  <div class="settings-sub" data-cat="theme" hidden>
+    <button type="button" class="settings-back">→ <span data-i18n="backWord">رجوع</span></button>
+    <div class="settings-group-title" data-i18n="themeLabel">المظهر</div>
+    <button type="button" class="lang-opt" id="themeToggle" aria-label="تبديل الوضع الداكن/الفاتح"><span id="themeIcon">🌙</span> <span data-i18n="themeToggleLabel">الوضع الداكن</span></button>
+  </div>
+  <div class="settings-sub" data-cat="reciter" hidden>
+    <button type="button" class="settings-back">→ <span data-i18n="backWord">رجوع</span></button>
+    <div class="settings-group-title" data-i18n="reciterLabel">القارئ</div>
     <div id="reciterOpts" class="reciter-opts">
       <button type="button" class="lang-opt reciter-opt" data-reciter="15" data-i18n-name="إبراهيم الأخضر">إبراهيم الأخضر</button>
       <button type="button" class="lang-opt reciter-opt" data-reciter="4" data-i18n-name="أبو بكر الشاطري">أبو بكر الشاطري</button>
@@ -1132,8 +1146,8 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
       <button type="button" class="lang-opt reciter-opt" data-reciter="23" data-i18n-name="ياسر الدوسري">ياسر الدوسري</button>
       <button type="button" class="lang-opt reciter-opt" data-reciter="43" data-i18n-name="ياسر سلامة">ياسر سلامة</button>
     </div>
+    <span class="admin-hint" data-i18n="audioHint">يعمل تلقائيًا مع أي ورقة سورة أو آية كاملة.</span>
   </div>
-  <span class="admin-hint" data-i18n="audioHint">يعمل تلقائيًا مع أي ورقة سورة أو آية كاملة.</span>
 </div>
 <header class="topbar">
   <div class="topbar-in">
@@ -1142,12 +1156,8 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
       <span class="bt"><span data-i18n="brand">التحليل اللغوي المجهري</span><small data-i18n="brandSub">مختبر تحليل السور والآيات — نسخة ${VERSION}</small></span>
     </div>
     <div class="spacer"></div>
-    <div class="lang-switch">
-      <button type="button" class="act" id="langBtn" aria-haspopup="true" aria-expanded="false">🌐 <span id="langBtnLabel">العربية</span></button>
-    </div>
-    <button type="button" class="act" id="themeToggle" title="الوضع الداكن/الفاتح" aria-label="تبديل الوضع الداكن/الفاتح">🌙</button>
-    <div class="audio-settings js-only">
-      <button type="button" class="act" id="pubAudioBtn" aria-haspopup="true" aria-expanded="false">🔊 <span data-i18n="audioSettingsBtn">إعدادات التلاوة</span></button>
+    <div class="settings-switch">
+      <button type="button" class="act" id="settingsBtn" aria-haspopup="true" aria-expanded="false">⚙️ <span data-i18n="settingsBtn">الإعدادات</span></button>
     </div>
   </div>
 </header>
