@@ -16,6 +16,10 @@ let adminJs=R('src/js/admin.js');
 const adminHtml=R('src/partials/admin.html');
 const VERSION='1.1.0';
 const BUILD_DATE=new Date().toISOString().slice(0,10);
+/* Fixed (not versioned like CACHE) — the audio cache's lifecycle is owned by
+   app.js (per-worksheet prefetch/eviction), not tied to app deploys. Must
+   match the AUDIO_CACHE_NAME constant in src/js/app.js exactly. */
+const AUDIO_CACHE_NAME='tahleel-audio';
 const PROD = process.env.NODE_ENV==='production' || process.argv.includes('--prod');
 
 /* ================= كلمة مرور المدير: قابلة للتهيئة عبر متغيّر بيئة =================
@@ -1302,9 +1306,14 @@ function writeStaticAssets(){
   }
   const swVersion = VERSION+'-'+BUILD_DATE;
   const sw = `const CACHE='tahleel-cache-${swVersion}';
+const AUDIO_CACHE='${AUDIO_CACHE_NAME}';
 const ASSETS=['./','./index.html','./manifest.webmanifest'];
 self.addEventListener('install',e=>{ self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS).catch(()=>{}))); });
-self.addEventListener('activate',e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
+/* AUDIO_CACHE is intentionally excluded from the versioned-cache cleanup
+   below — app.js manages its contents directly (prefetching a worksheet's
+   recitation on play, clearing it when the visitor switches worksheets),
+   independent of app deploys/versions. */
+self.addEventListener('activate',e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!==AUDIO_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
   if(e.request.mode==='navigate'){
@@ -1313,6 +1322,15 @@ self.addEventListener('fetch',e=>{
       caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});
       return res;
     }).catch(()=>caches.match(e.request).then(hit=>hit||caches.match('./index.html'))));
+    return;
+  }
+  /* Cross-origin requests (recitation audio from everyayah.com) are looked
+     up only in AUDIO_CACHE, which app.js populates explicitly per worksheet
+     — never written to from here, so this cache's contents stay exactly
+     what app.js decided to keep, not an unbounded, ever-growing archive of
+     every audio file ever played. */
+  if(new URL(e.request.url).origin!==self.location.origin){
+    e.respondWith(caches.open(AUDIO_CACHE).then(c=>c.match(e.request)).then(hit=>hit||fetch(e.request)));
     return;
   }
   e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(res=>{

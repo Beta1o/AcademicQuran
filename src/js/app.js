@@ -424,6 +424,34 @@ function needsBasmala(det){
   var start=det.dataset.ayalist?parseInt(det.dataset.ayalist.split(',')[0],10):parseInt(det.dataset.ayano,10);
   return start===1;
 }
+/* Full-worksheet audio prefetch: playAyaList only preloads one ayah ahead
+   (enough to avoid a gap between tracks), so a visitor who loses their
+   connection partway through a surah still hits a wall on whichever ayah
+   hadn't been reached yet. Prefetching every ayah's audio into a dedicated
+   cache as soon as the visitor presses play covers the whole worksheet
+   instead, so a mid-listen disconnection doesn't stop them from finishing
+   it. Scoped to one worksheet at a time (cleared on switch, not kept
+   forever) to avoid silently filling the visitor's device storage with
+   every recitation they've ever played. */
+var AUDIO_CACHE_NAME='tahleel-audio';
+var audioCachedForWs=null;
+function prefetchWorksheetAudio(det, urls){
+  if(!('caches' in window)) return; /* Cache Storage API unsupported/unavailable (e.g. some WebView contexts) — no offline benefit, but nothing breaks either */
+  var wsId=det.id;
+  if(audioCachedForWs===wsId) return; /* already prefetched for this worksheet */
+  var switching=audioCachedForWs!==null;
+  audioCachedForWs=wsId;
+  (switching ? caches.delete(AUDIO_CACHE_NAME) : Promise.resolve()).then(function(){
+    return caches.open(AUDIO_CACHE_NAME);
+  }).then(function(cache){
+    urls.forEach(function(u){
+      cache.match(u).then(function(hit){
+        if(hit) return;
+        fetch(u).then(function(res){ if(res.ok || res.type==='opaque') cache.put(u,res); }).catch(function(){});
+      });
+    });
+  }).catch(function(){});
+}
 function bindAudio(root){
   root.querySelectorAll('[data-audio]').forEach(function(b){
     if(isBound(b)) return;
@@ -456,6 +484,7 @@ function bindAudio(root){
           : Promise.resolve(playable);
         withBasmala.then(function(full){
           if(istiadhahEnabled()) full=[{aya:null, url:'audios/istiadhah.mp3'}].concat(full);
+          prefetchWorksheetAudio(det, full.map(function(it){ return it.url; }));
           playAyaList(full, b, det);
         });
       });
