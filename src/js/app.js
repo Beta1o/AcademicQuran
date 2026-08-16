@@ -554,6 +554,23 @@ var Popover=(function(){
    لوحة واحدة (settingsPanel) تضم الثلاثة معًا، فيبقى منطق كل خيار كما هو
    (نفس المعرّفات: reciterOpts، themeToggle، أزرار lang-opt) دون تغيير سوى
    مكان الزر/اللوحة الفاتحين لها. */
+/* Small preview of the current selection shown next to each category on the
+   settings root menu (e.g. "العربية" next to "اللغة") — lets a visitor see
+   their active choice without opening the submenu, standard settings-UI
+   pattern. Reads live DOM/localStorage state rather than tracking its own
+   copy, so it can't drift out of sync with whatever actually changed it. */
+function updateSettingsPreviews(){
+  var langEl=document.getElementById('settingsLangValue');
+  if(langEl){ var on=document.querySelector('#settingsPanel .settings-sub[data-cat="lang"] .lang-opt.on'); langEl.textContent = on ? on.textContent.trim() : ''; }
+  var themeEl=document.getElementById('settingsThemeValue');
+  /* Guarded: this can run before Locale is initialized (the theme toggle's
+     own IIFE calls it immediately on load, ahead of Locale's declaration
+     further down the file) — falls back to blank rather than throwing. */
+  if(themeEl && window.Locale){ var dark=document.documentElement.getAttribute('data-theme')==='dark'; themeEl.textContent = window.Locale.t(dark?'themeDarkWord':'themeLightWord'); }
+  var reciterEl=document.getElementById('settingsReciterValue');
+  if(reciterEl){ var ron=document.querySelector('#reciterOpts .reciter-opt.on'); reciterEl.textContent = ron ? ron.textContent.trim() : ''; }
+}
+window.updateSettingsPreviews=updateSettingsPreviews;
 (function(){
   var btn=document.getElementById('pubAudioBtn')||document.getElementById('settingsBtn');
   var panel=document.getElementById('pubAudioPanel')||document.getElementById('settingsPanel');
@@ -568,27 +585,47 @@ var Popover=(function(){
       try{ localStorage.setItem(AUDIO_KEY, JSON.stringify({reciter:+o.dataset.reciter||21})); }catch(e){}
       opts.querySelectorAll('.reciter-opt').forEach(function(x){ x.classList.toggle('on',x===o); });
       refreshAudioButtons();
-      setTimeout(Popover.close, 300); /* يُغلَق تلقائيًا بعد اختيار القارئ */
+      updateSettingsPreviews();
+      setTimeout(Popover.close, 300); /* closes automatically once a reciter is picked */
+    });
+  });
+  /* Filters the 44-reciter list as the visitor types — a plain scroll was a
+     lot to hunt through for one name. */
+  var search=document.getElementById('reciterSearch');
+  if(search) search.addEventListener('input',function(){
+    var q=search.value.trim().toLowerCase();
+    opts.querySelectorAll('.reciter-opt').forEach(function(o){
+      o.hidden = q!=='' && o.textContent.toLowerCase().indexOf(q)===-1;
     });
   });
 })();
-/* ---------- تبديل الوضع الداكن/الفاتح يدويًا (فوق الاعتماد التلقائي على إعداد الجهاز) ---------- */
+/* ---------- manual dark/light toggle (on top of the OS-setting default) ---------- */
 (function(){
   var THEME_KEY='tahleel-theme';
   var btn=document.getElementById('themeToggle');
   if(!btn) return;
-  /* الأيقونة وحدها هي التي تتبدّل (☀️/🌙) — الزر أصبح يحوي أيضًا نصًّا ثابتًا
-     ("الوضع الداكن") بعد الدمج في لوحة الإعدادات؛ استبدال textContent للزر
-     كاملًا كما كان سابقًا كان سيمحو ذلك النص كل مرة. */
+  /* Icon, switch state, AND label all swap together — a label fixed to
+     "Dark mode" regardless of which mode is actually active looked like the
+     switch wasn't doing anything (both states read the same), and the light
+     mode reading was easy to miss with no text spelling it out at all. */
   var icon=document.getElementById('themeIcon')||btn;
+  var label=document.getElementById('themeToggleLabel');
+  var ICON_SUN='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  var ICON_MOON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36A5.5 5.5 0 0 1 12 3Z"/></svg>';
   var systemDark=function(){
     return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   };
-  var apply=function(t){
-    if(t){ document.documentElement.setAttribute('data-theme',t); }
+  /* param named tv (not t) — this IIFE sits inside app.js's top-level scope
+     where t() is the global translation helper; naming this "t" like the
+     stored theme value used to shadow that global entirely. */
+  var apply=function(tv){
+    if(tv){ document.documentElement.setAttribute('data-theme',tv); }
     else { document.documentElement.removeAttribute('data-theme'); }
-    var dark = t ? t==='dark' : systemDark();
-    icon.textContent = dark ? '☀️' : '🌙';
+    var dark = tv ? tv==='dark' : systemDark();
+    icon.innerHTML = dark ? ICON_SUN : ICON_MOON;
+    btn.classList.toggle('on', dark);
+    if(label && window.Locale) label.textContent = window.Locale.t(dark?'themeToggleLabel':'themeToggleLabelOff');
+    updateSettingsPreviews();
   };
   var saved=null;
   try{ saved=localStorage.getItem(THEME_KEY); }catch(e){}
@@ -751,6 +788,13 @@ var Locale = (function(){
       var ar=node.dataset.i18nName, nid=tid(ar);
       node.textContent = (suraDict && suraDict[nid]) || (fbSura && fbSura[nid]) || ar;
     });
+    /* Reciter names: Arabic-script readers see the Arabic name as-is, every
+       other language gets the standard English transliteration — one name
+       to maintain per reciter instead of one per (reciter × language). */
+    root.querySelectorAll('[data-en-name]').forEach(function(node){
+      var arabicScript = current==='ar'||current==='fa'||current==='ur'||current==='ps';
+      node.textContent = arabicScript ? node.dataset.arName : node.dataset.enName;
+    });
     var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=NAMES[current]||NAMES[DEFAULT_LOCALE];
   }
 
@@ -827,19 +871,24 @@ function t(key){ return Locale.t(key); }
   var btn=document.getElementById('settingsBtn')||document.getElementById('langBtn');
   var panel=document.getElementById('settingsPanel')||document.getElementById('langPanel');
   if(!btn||!panel) return;
-  /* [data-lang] يقصر التحديد على أزرار اللغة فعلًا — بعد دمج اللوحات صار
-     .lang-opt نفسه صنفًا مشتركًا تحمله أيضًا أزرار القارئ (reciter-opt) داخل
-     اللوحة نفسها؛ تحديد بلا هذا القيد كان سيُلحق معالج Locale.set(undefined)
-     بأزرار القارئ أيضًا. */
+  /* [data-lang] restricts this to the actual language buttons — after
+     merging the panels, .lang-opt is now a class shared with reciter
+     buttons (reciter-opt) inside the same panel; selecting without this
+     restriction would also attach a Locale.set(undefined) handler to the
+     reciter buttons. */
   panel.querySelectorAll('.lang-opt[data-lang]').forEach(function(o){
+    o.classList.toggle('on', o.dataset.lang===Locale.current);
     o.addEventListener('click',function(){
+      panel.querySelectorAll('.lang-opt[data-lang]').forEach(function(x){ x.classList.toggle('on',x===o); });
       Locale.set(o.dataset.lang);
+      if(window.updateSettingsPreviews) window.updateSettingsPreviews();
       Popover.close();
     });
   });
-  /* لوحة الإعدادات المدمَجة: مستوى جذر بثلاثة أزرار (لغة/مظهر/قارئ)، والنقر
-     على أيٍّ منها يُظهر لوحته الفرعية فقط بدل قائمة طويلة واحدة تخلط الثلاثة
-     معًا (كانت تُصعِّب إيجاد الخيار المطلوب، خاصة على شاشات أندرويد الضيقة). */
+  /* Merged settings panel: a root level with three buttons (language/theme/
+     reciter) — clicking one shows only its own sub-panel instead of one
+     long list mixing all three together (made it hard to find the right
+     option, especially on narrow Android screens). */
   var root=panel.querySelector('.settings-root');
   var subs=panel.querySelectorAll('.settings-sub');
   function showRoot(){
@@ -860,16 +909,18 @@ function t(key){ return Locale.t(key); }
       if(back) back.addEventListener('click',showRoot);
     });
   }
-  /* لوحة الإعدادات وحدها (لا لوحات الجزء/غيرها) كانت تُمركَّز أفقيًا في وسط
-     الشاشة دومًا (.audio-settings-panel: left:50%) بصرف النظر عن موضع الزر
-     الفاتح لها — مقصود أصلًا لقوائم صغيرة، لكنه يُبعِد لوحة الإعدادات كثيرًا
-     عن زرّها (أعلى الشريط) خاصة على شاشات أندرويد الضيقة. تُثبَّت اللوحة هنا
-     مباشرة أسفل الزر عبر أنماط inline (تتفوّق على أي قاعدة CSS بلا !important). */
+  /* The settings panel specifically (not the juz panel or others) used to
+     always center horizontally in the middle of the screen (.audio-settings-
+     panel: left:50%) regardless of which button opened it — fine for small
+     popovers, but it put the settings panel far from its own button (top of
+     the bar), especially on narrow Android screens. Pinned directly under
+     the button here via inline styles (beats any CSS rule without needing
+     !important). */
   function positionUnderButton(){
     var r=btn.getBoundingClientRect();
     var margin=10, vw=window.innerWidth;
-    var panelW=Math.min(320, vw*0.92);
-    var left=r.right-panelW; /* المحاذاة بالحافة اليمنى للزر — طبيعي في RTL حيث الزر أقصى يسار الشريط */
+    var panelW=Math.min(280, vw*0.90);
+    var left=r.right-panelW; /* aligns to the button's right edge — natural in RTL, where the button sits at the far left of the bar */
     if(left<margin) left=margin;
     if(left+panelW>vw-margin) left=vw-margin-panelW;
     panel.style.left=left+'px';
@@ -878,7 +929,7 @@ function t(key){ return Locale.t(key); }
   }
   window.addEventListener('resize',function(){ if(!panel.hidden) positionUnderButton(); });
   btn.addEventListener('click',function(){
-    if(panel.hidden){ showRoot(); positionUnderButton(); Popover.open(panel,btn); } else Popover.close();
+    if(panel.hidden){ showRoot(); updateSettingsPreviews(); positionUnderButton(); Popover.open(panel,btn); } else Popover.close();
   });
 })();
 /* ---------- شريط علوي لاصق: قياس ارتفاعه الفعلي لضبط الإزاحات ---------- */

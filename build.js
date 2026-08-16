@@ -20,6 +20,73 @@ const BUILD_DATE=new Date().toISOString().slice(0,10);
    app.js (per-worksheet prefetch/eviction), not tied to app deploys. Must
    match the AUDIO_CACHE_NAME constant in src/js/app.js exactly. */
 const AUDIO_CACHE_NAME='tahleel-audio';
+/* Line-style SVG icons for the settings menu (gear trigger + category rows)
+   — consistent stroke weight/style across all of them, unlike mixing emoji
+   (renders differently per OS/browser) with icons. currentColor lets them
+   inherit theme color automatically in light/dark mode. */
+const ICON_GEAR='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H8a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>';
+const ICON_GLOBE='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/></svg>';
+const ICON_THEME='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36A5.5 5.5 0 0 1 12 3Z"/></svg>';
+const ICON_SPEAKER='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9v6h4l5 5V4L7 9H3Z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12"/></svg>';
+const ICON_CHEVRON='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+const ICON_BACK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
+/* Reciter names only ever had an Arabic label baked into the page — visitors
+   using any other language still saw Arabic names in that one list, since
+   the generic [data-i18n-name] lookup (built for surah names, which do have
+   full per-language dictionaries) was never actually populated for all 44
+   reciters across every language. Arabic-script readers (ar/fa/ur/ps) read
+   the Arabic name fine as-is; everyone else conventionally sees the
+   standard English transliteration instead — one name per reciter to
+   maintain, not 44 × 18 translations. [id, Arabic name, English name] */
+const RECITERS=[
+  [15,'إبراهيم الأخضر','Ibrahim Akhdar'],
+  [4,'أبو بكر الشاطري','Abu Bakr Ash-Shaatree'],
+  [27,'أحمد بن علي العجمي','Ahmed ibn Ali al-Ajamy'],
+  [36,'أحمد نعانع','Ahmed Neana'],
+  [44,'أكرم العلاقمي','Akram Al-Alaqimy'],
+  [25,'أيمن سويد','Ayman Sowaid'],
+  [22,'خالد القحطاني','Khaalid Abdullaah al-Qahtaanee'],
+  [38,'خليفة التنيجي','Khalefa Al-Tunaiji'],
+  [13,'سعد الغامدي','Saad Al-Ghamdi'],
+  [10,'سعود الشريم','Saood ash-Shuraym'],
+  [41,'سهل ياسين','Sahl Yassin'],
+  [21,'صلاح البدير','Salah Al-Budair'],
+  [30,'صلاح عبدالرحمن بخاطر','Salaah AbdulRahman Bukhatir'],
+  [1,'عبد الباسط عبد الصمد (مجوّد)','Abdul Basit (Mujawwad)'],
+  [2,'عبد الباسط عبد الصمد (مرتل)','Abdul Basit (Murattal)'],
+  [3,'عبد الرحمن السديس','Abdurrahmaan As-Sudais'],
+  [26,'عبدالله بصفر','Abdullah Basfar'],
+  [31,'عبدالله عواد الجهني','Abdullaah Awwaad Al-Juhaynee'],
+  [32,'عبدالله مطرود','Abdullah Matroud'],
+  [42,'عزيز عليلي','Aziz Alili'],
+  [14,'علي الحذيفي','Ali Al-Hudhaify'],
+  [34,'علي جابر','Ali Jaber'],
+  [40,'علي حجاج السويسي','Ali Hajjaj Al-Suesy'],
+  [35,'فارس عباد','Fares Abbad'],
+  [39,'كريم منصوري','Karim Mansoori'],
+  [16,'ماهر المعيقلي','Maher Al-Muaiqly'],
+  [20,'محسن القاسم','Muhsin Al-Qasim'],
+  [11,'محمد الطبلاوي','Mohammad Al-Tablaway'],
+  [17,'محمد أيوب','Muhammad Ayyoub'],
+  [18,'محمد جبريل','Muhammad Jibreel'],
+  [29,'محمد صديق المنشاوي (المصدر الآخر)','Muhammad Siddiq Al-Minshawi (alt.)'],
+  [8,'محمد صديق المنشاوي (مجوّد)','Minshawy (Mujawwad)'],
+  [9,'محمد صديق المنشاوي (مرتل)','Minshawy (Murattal)'],
+  [37,'محمد عبدالكريم','Muhammad AbdulKareem'],
+  [6,'محمود خليل الحصري','Mahmoud Khalil Al-Husary'],
+  [28,'محمود خليل الحصري (مجوّد)','Al-Husary (Mujawwad)'],
+  [12,'محمود خليل الحصري (معلّم)','Al-Husary (Muallim)'],
+  [33,'محمود علي البنّا','Mahmoud Ali Al-Banna'],
+  [7,'مشاري راشد العفاسي','Mishary Rashid Alafasy'],
+  [19,'مصطفى إسماعيل','Mustafa Ismail'],
+  [24,'ناصر القطامي','Nasser Alqatami'],
+  [5,'هاني الرفاعي','Hani Rifai'],
+  [23,'ياسر الدوسري','Yasser Ad-Dussary'],
+  [43,'ياسر سلامة','Yaser Salamah']
+];
+/* Arabic-script languages: the original Arabic reciter name is already the
+   natural, correctly-read form — no transliteration needed or wanted. */
+const RECITER_ARABIC_SCRIPT_LANGS=['ar','fa','ur','ps'];
 const PROD = process.env.NODE_ENV==='production' || process.argv.includes('--prod');
 
 /* ================= كلمة مرور المدير: قابلة للتهيئة عبر متغيّر بيئة =================
@@ -1070,13 +1137,31 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
      في نفس سياق التكديس الجذري الذي يقارَن فيه z-index فعليًا. -->
 <div id="settingsPanel" class="audio-settings-panel settings-panel" hidden>
   <div class="settings-root" id="settingsRoot">
-    <button type="button" class="lang-opt settings-cat" data-cat="lang">🌐 <span data-i18n="languageLabel">اللغة</span></button>
-    <button type="button" class="lang-opt settings-cat" data-cat="theme">🌙 <span data-i18n="themeLabel">المظهر</span></button>
-    <button type="button" class="lang-opt settings-cat" data-cat="reciter">🔊 <span data-i18n="reciterLabel">القارئ</span></button>
+    <div class="settings-title" data-i18n="settingsBtn">الإعدادات</div>
+    <button type="button" class="settings-cat" data-cat="lang">
+      <span class="settings-cat-icon" aria-hidden="true">${ICON_GLOBE}</span>
+      <span class="settings-cat-label" data-i18n="languageLabel">اللغة</span>
+      <span class="settings-cat-value" id="settingsLangValue"></span>
+      <span class="settings-chevron" aria-hidden="true">${ICON_CHEVRON}</span>
+    </button>
+    <button type="button" class="settings-cat" data-cat="theme">
+      <span class="settings-cat-icon" aria-hidden="true">${ICON_THEME}</span>
+      <span class="settings-cat-label" data-i18n="themeLabel">المظهر</span>
+      <span class="settings-cat-value" id="settingsThemeValue"></span>
+      <span class="settings-chevron" aria-hidden="true">${ICON_CHEVRON}</span>
+    </button>
+    <button type="button" class="settings-cat" data-cat="reciter">
+      <span class="settings-cat-icon" aria-hidden="true">${ICON_SPEAKER}</span>
+      <span class="settings-cat-label" data-i18n="reciterLabel">القارئ</span>
+      <span class="settings-cat-value" id="settingsReciterValue"></span>
+      <span class="settings-chevron" aria-hidden="true">${ICON_CHEVRON}</span>
+    </button>
   </div>
   <div class="settings-sub" data-cat="lang" hidden>
-    <button type="button" class="settings-back">→ <span data-i18n="backWord">رجوع</span></button>
-    <div class="settings-group-title" data-i18n="languageLabel">اللغة</div>
+    <div class="settings-sub-head">
+      <button type="button" class="settings-back" aria-label="رجوع" title="رجوع">${ICON_BACK}</button>
+      <div class="settings-group-title" data-i18n="languageLabel">اللغة</div>
+    </div>
     <button type="button" class="lang-opt" data-lang="ar">العربية</button>
     <button type="button" class="lang-opt" data-lang="en">English</button>
     <button type="button" class="lang-opt" data-lang="ur">اردو</button>
@@ -1097,58 +1182,24 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
     <button type="button" class="lang-opt" data-lang="ps">پښتو</button>
   </div>
   <div class="settings-sub" data-cat="theme" hidden>
-    <button type="button" class="settings-back">→ <span data-i18n="backWord">رجوع</span></button>
-    <div class="settings-group-title" data-i18n="themeLabel">المظهر</div>
-    <button type="button" class="lang-opt" id="themeToggle" aria-label="تبديل الوضع الداكن/الفاتح"><span id="themeIcon">🌙</span> <span data-i18n="themeToggleLabel">الوضع الداكن</span></button>
+    <div class="settings-sub-head">
+      <button type="button" class="settings-back" aria-label="رجوع" title="رجوع">${ICON_BACK}</button>
+      <div class="settings-group-title" data-i18n="themeLabel">المظهر</div>
+    </div>
+    <button type="button" class="theme-switch-row" id="themeToggle" aria-label="تبديل الوضع الداكن/الفاتح">
+      <span class="settings-cat-icon" id="themeIcon" aria-hidden="true">${ICON_THEME}</span>
+      <span class="settings-cat-label" id="themeToggleLabel">الوضع الداكن</span>
+      <span class="theme-switch" aria-hidden="true"><span class="theme-switch-thumb"></span></span>
+    </button>
   </div>
   <div class="settings-sub" data-cat="reciter" hidden>
-    <button type="button" class="settings-back">→ <span data-i18n="backWord">رجوع</span></button>
-    <div class="settings-group-title" data-i18n="reciterLabel">القارئ</div>
+    <div class="settings-sub-head">
+      <button type="button" class="settings-back" aria-label="رجوع" title="رجوع">${ICON_BACK}</button>
+      <div class="settings-group-title" data-i18n="reciterLabel">القارئ</div>
+    </div>
+    <div class="settings-search"><input type="text" id="reciterSearch" placeholder="ابحث عن قارئ..." data-i18n-ph="reciterSearchPh"></div>
     <div id="reciterOpts" class="reciter-opts">
-      <button type="button" class="lang-opt reciter-opt" data-reciter="15" data-i18n-name="إبراهيم الأخضر">إبراهيم الأخضر</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="4" data-i18n-name="أبو بكر الشاطري">أبو بكر الشاطري</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="27" data-i18n-name="أحمد بن علي العجمي">أحمد بن علي العجمي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="36" data-i18n-name="أحمد نعانع">أحمد نعانع</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="44" data-i18n-name="أكرم العلاقمي">أكرم العلاقمي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="25" data-i18n-name="أيمن سويد">أيمن سويد</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="22" data-i18n-name="خالد القحطاني">خالد القحطاني</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="38" data-i18n-name="خليفة التنيجي">خليفة التنيجي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="13" data-i18n-name="سعد الغامدي">سعد الغامدي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="10" data-i18n-name="سعود الشريم">سعود الشريم</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="41" data-i18n-name="سهل ياسين">سهل ياسين</button>
-      <button type="button" class="lang-opt reciter-opt on" data-reciter="21" data-i18n-name="صلاح البدير">صلاح البدير</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="30" data-i18n-name="صلاح عبدالرحمن بخاطر">صلاح عبدالرحمن بخاطر</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="1" data-i18n-name="عبد الباسط عبد الصمد (مجوّد)">عبد الباسط عبد الصمد (مجوّد)</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="2" data-i18n-name="عبد الباسط عبد الصمد (مرتل)">عبد الباسط عبد الصمد (مرتل)</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="3" data-i18n-name="عبد الرحمن السديس">عبد الرحمن السديس</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="26" data-i18n-name="عبدالله بصفر">عبدالله بصفر</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="31" data-i18n-name="عبدالله عواد الجهني">عبدالله عواد الجهني</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="32" data-i18n-name="عبدالله مطرود">عبدالله مطرود</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="42" data-i18n-name="عزيز عليلي">عزيز عليلي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="14" data-i18n-name="علي الحذيفي">علي الحذيفي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="34" data-i18n-name="علي جابر">علي جابر</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="40" data-i18n-name="علي حجاج السويسي">علي حجاج السويسي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="35" data-i18n-name="فارس عباد">فارس عباد</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="39" data-i18n-name="كريم منصوري">كريم منصوري</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="16" data-i18n-name="ماهر المعيقلي">ماهر المعيقلي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="20" data-i18n-name="محسن القاسم">محسن القاسم</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="11" data-i18n-name="محمد الطبلاوي">محمد الطبلاوي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="17" data-i18n-name="محمد أيوب">محمد أيوب</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="18" data-i18n-name="محمد جبريل">محمد جبريل</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="29" data-i18n-name="محمد صديق المنشاوي (المصدر الآخر)">محمد صديق المنشاوي (المصدر الآخر)</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="8" data-i18n-name="محمد صديق المنشاوي (مجوّد)">محمد صديق المنشاوي (مجوّد)</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="9" data-i18n-name="محمد صديق المنشاوي (مرتل)">محمد صديق المنشاوي (مرتل)</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="37" data-i18n-name="محمد عبدالكريم">محمد عبدالكريم</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="6" data-i18n-name="محمود خليل الحصري">محمود خليل الحصري</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="28" data-i18n-name="محمود خليل الحصري (مجوّد)">محمود خليل الحصري (مجوّد)</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="12" data-i18n-name="محمود خليل الحصري (معلّم)">محمود خليل الحصري (معلّم)</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="33" data-i18n-name="محمود علي البنّا">محمود علي البنّا</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="7" data-i18n-name="مشاري راشد العفاسي">مشاري راشد العفاسي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="19" data-i18n-name="مصطفى إسماعيل">مصطفى إسماعيل</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="24" data-i18n-name="ناصر القطامي">ناصر القطامي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="5" data-i18n-name="هاني الرفاعي">هاني الرفاعي</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="23" data-i18n-name="ياسر الدوسري">ياسر الدوسري</button>
-      <button type="button" class="lang-opt reciter-opt" data-reciter="43" data-i18n-name="ياسر سلامة">ياسر سلامة</button>
+${RECITERS.map(([id,ar,en])=>`      <button type="button" class="lang-opt reciter-opt${id===21?' on':''}" data-reciter="${id}" data-ar-name="${esc(ar)}" data-en-name="${esc(en)}">${esc(ar)}</button>`).join('\n')}
     </div>
     <span class="admin-hint" data-i18n="audioHint">يعمل تلقائيًا مع أي ورقة سورة أو آية كاملة.</span>
   </div>
@@ -1161,7 +1212,7 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
     </div>
     <div class="spacer"></div>
     <div class="settings-switch">
-      <button type="button" class="act" id="settingsBtn" aria-haspopup="true" aria-expanded="false">⚙️ <span data-i18n="settingsBtn">الإعدادات</span></button>
+      <button type="button" class="act icon-btn" id="settingsBtn" aria-haspopup="true" aria-expanded="false" aria-label="الإعدادات" title="الإعدادات" data-i18n-aria="settingsBtn">${ICON_GEAR}</button>
     </div>
   </div>
 </header>
