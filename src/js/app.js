@@ -562,11 +562,23 @@ var Popover=(function(){
 function updateSettingsPreviews(){
   var langEl=document.getElementById('settingsLangValue');
   if(langEl){ var on=document.querySelector('#settingsPanel .settings-sub[data-cat="lang"] .lang-opt.on'); langEl.textContent = on ? on.textContent.trim() : ''; }
-  var themeEl=document.getElementById('settingsThemeValue');
   /* Guarded: this can run before Locale is initialized (the theme toggle's
      own IIFE calls it immediately on load, ahead of Locale's declaration
-     further down the file) — falls back to blank rather than throwing. */
-  if(themeEl && window.Locale){ var dark=document.documentElement.getAttribute('data-theme')==='dark'; themeEl.textContent = window.Locale.t(dark?'themeDarkWord':'themeLightWord'); }
+     further down the file) — falls back to leaving text as-is rather than
+     throwing. Re-run here (not just inside the toggle's own apply()) matters
+     because apply() fires once at page load — before Locale exists yet — so
+     without this, the theme row's label/value stayed stuck on the Arabic
+     default text baked into the HTML until the visitor actually clicked the
+     toggle once, even on a page already showing a different language. */
+  if(window.Locale){
+    var savedTheme=null; try{ savedTheme=localStorage.getItem('tahleel-theme'); }catch(e){}
+    var systemDark=window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var dark = savedTheme ? savedTheme==='dark' : !!systemDark;
+    var themeEl=document.getElementById('settingsThemeValue');
+    if(themeEl) themeEl.textContent = window.Locale.t(dark?'themeDarkWord':'themeLightWord');
+    var themeLabelEl=document.getElementById('themeToggleLabel');
+    if(themeLabelEl) themeLabelEl.textContent = window.Locale.t(dark?'themeToggleLabel':'themeToggleLabelOff');
+  }
   var reciterEl=document.getElementById('settingsReciterValue');
   if(reciterEl){ var ron=document.querySelector('#reciterOpts .reciter-opt.on'); reciterEl.textContent = ron ? ron.textContent.trim() : ''; }
 }
