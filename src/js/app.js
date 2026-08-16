@@ -942,16 +942,28 @@ function bindToggles(root){
       }
     });
   });
-  /* بطاقة السورة المجزَّأة (.ws-group) لم تكن تُمرَّر إليها الشاشة عند فتحها
-     إطلاقًا — الآلية أعلاه تقتصر على .ws-item فقط — فيبقى المستخدم عند نفس
-     موضع تمريره السابق بعد فتحها، لا يرى أول أجزائها إلا بتمرير يدوي؛ هذا
-     يطبّق نفس معاملة الورقة العادية (تمرير الشاشة لبداية البطاقة عند الفتح). */
+  /* Split-surah group cards (.ws-group) never scrolled into view on open —
+     the mechanism above only covers .ws-item — leaving the user at their
+     previous scroll position, unable to see the first part without
+     scrolling manually; this matches the same treatment as a regular
+     worksheet (scroll to the top of the card on open). */
   root.querySelectorAll('.ws-group').forEach(function(g){
     if(isBound(g)) return;
     g.addEventListener('toggle',function(){
       if(g.open && !noAutoScroll){
         var raf=window.requestAnimationFrame||function(f){return setTimeout(f,16);};
-        raf(function(){ try{ g.scrollIntoView({block:'start'}); }catch(e){} });
+        raf(function(){
+          /* content-visibility:auto items inside .ws-group-items (still
+             closed, each with its own contain-intrinsic-size placeholder)
+             can end up painted blank if scrollIntoView jumps the viewport
+             before the browser finishes laying them out on this frame —
+             most visible on the very first nested part, which lands right
+             where the viewport settles. Reading offsetHeight forces a
+             synchronous layout pass over content-visibility:auto content
+             first, so it's already resolved by the time the scroll happens. */
+          void g.offsetHeight;
+          try{ g.scrollIntoView({block:'start'}); }catch(e){}
+        });
       }
     });
   });
