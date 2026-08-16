@@ -4,6 +4,8 @@
  "audioSettingsBtn": "Tilavet ayarları",
  "reciterLabel": "Kâri",
  "audioHint": "Tam bir sure veya ayet çalışma sayfasıyla otomatik olarak çalışır.",
+ "audioOfflineAlert": "İnternet bağlantısı yok — bağlantınızı kontrol edip tekrar deneyin.",
+ "audioAllFailedAlert": "Tilavet çalınamadı — internet bağlantınızı kontrol edin.",
  "heroTitleMain": "Mikroskobik",
  "heroTitleMag": "Dilbilimsel Analiz",
  "heroSub": "Kur'an-ı Kerim ayetlerini mikroskop altına alın — çalışma sayfasını açmak için herhangi bir karta dokunun ve cevaplarınızı yazın: değerlendirilebilir sorular otomatik olarak kontrol edilir (✓ doğru / ✗ tekrar deneyin) ve herhangi bir çalışma sayfası olduğu gibi yazdırılabilir.",

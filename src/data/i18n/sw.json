@@ -4,6 +4,8 @@
  "audioSettingsBtn": "Mipangilio ya usomaji",
  "reciterLabel": "Msomaji",
  "audioHint": "Hufanya kazi kiotomatiki na karatasi yoyote kamili ya Sura au Aya.",
+ "audioOfflineAlert": "Hakuna muunganisho wa intaneti — angalia muunganisho wako kisha jaribu tena.",
+ "audioAllFailedAlert": "Imeshindikana kucheza usomaji — angalia muunganisho wako wa intaneti.",
  "heroTitleMain": "Uchambuzi wa Kiisimu",
  "heroTitleMag": "wa Kina",
  "heroSub": "Weka aya za Qur'ani Tukufu chini ya darubini — gusa kadi yoyote kufungua karatasi yake na kuandika majibu: maswali yanayoweza kusahihishwa hukaguliwa kiotomatiki (✓ sahihi / ✗ jaribu tena), na karatasi yoyote inaweza kuchapishwa kama ilivyo.",

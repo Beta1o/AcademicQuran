@@ -4,6 +4,8 @@
  "audioSettingsBtn": "Pengaturan bacaan",
  "reciterLabel": "Qari",
  "audioHint": "Berfungsi otomatis untuk lembar kerja surah atau ayat lengkap mana pun.",
+ "audioOfflineAlert": "Tidak ada koneksi internet — periksa koneksi Anda lalu coba lagi.",
+ "audioAllFailedAlert": "Tilawah tidak dapat diputar — periksa koneksi internet Anda.",
  "heroTitleMain": "Mikroskopis",
  "heroTitleMag": "Analisis Linguistik",
  "heroSub": "Letakkan ayat-ayat Al-Qur'an di bawah mikroskop — ketuk kartu mana pun untuk membuka lembar kerjanya dan tuliskan jawaban Anda: soal yang dapat dinilai akan diperiksa secara otomatis (✓ benar / ✗ coba lagi), dan setiap lembar kerja dapat dicetak apa adanya.",

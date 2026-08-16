@@ -4,6 +4,8 @@
  "audioSettingsBtn": "朗诵设置",
  "reciterLabel": "诵读者",
  "audioHint": "自动适用于任何完整的苏拉或阿亚特工作表。",
+ "audioOfflineAlert": "没有网络连接 — 请检查您的网络连接后重试。",
+ "audioAllFailedAlert": "无法播放诵读 — 请检查您的网络连接。",
  "heroTitleMain": "语言微观",
  "heroTitleMag": "分析",
  "heroSub": "将古兰经的经文置于显微镜下——点击任意卡片打开其工作表并写下你的答案：可自动批改的问题会立即检查（✓ 正确 / ✗ 再试一次），任何工作表都可以原样打印。",

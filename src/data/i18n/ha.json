@@ -4,6 +4,8 @@
  "audioSettingsBtn": "Saitunan karatu",
  "reciterLabel": "Mai karatu",
  "audioHint": "Yana aiki ta atomatik tare da kowace cikakkiyar sura ko takardar aikin aya.",
+ "audioOfflineAlert": "Babu haɗin intanet — duba haɗin ka sannan ka sāke gwadawa.",
+ "audioAllFailedAlert": "An kasa kunna karatun — duba haɗin intanet ɗinka.",
  "heroTitleMain": "Nazarin Zurfi",
  "heroTitleMag": "na Ilimin Harshe",
  "heroSub": "Ka sanya ayoyin Alkur'ani Mai Girma a ƙarƙashin madubin ƙara girma — taɓa kowace katin don buɗe takardar aikinta ka rubuta amsoshinka: ana bincikar tambayoyin da za a iya bincikawa ta atomatik (✓ daidai / ✗ sake gwadawa), kuma ana iya buga kowace takardar aiki kamar yadda take.",

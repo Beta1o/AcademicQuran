@@ -4,6 +4,8 @@
  "audioSettingsBtn": "Ajustes de recitación",
  "reciterLabel": "Recitador",
  "audioHint": "Funciona automáticamente con cualquier hoja de sura o aya completa.",
+ "audioOfflineAlert": "Sin conexión a internet — comprueba tu conexión e inténtalo de nuevo.",
+ "audioAllFailedAlert": "No se pudo reproducir la recitación — comprueba tu conexión a internet.",
  "heroTitleMain": "Análisis Lingüístico",
  "heroTitleMag": "Microscópico",
  "heroSub": "Pon los versículos del Sagrado Corán bajo el microscopio — toca cualquier tarjeta para abrir su hoja de trabajo y escribe tus respuestas: las preguntas corregibles se verifican automáticamente (✓ correcto / ✗ inténtalo de nuevo), y cualquier hoja se puede imprimir tal cual.",

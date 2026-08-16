@@ -4,6 +4,8 @@
  "audioSettingsBtn": "Paramètres de récitation",
  "reciterLabel": "Récitateur",
  "audioHint": "Fonctionne automatiquement avec toute fiche complète de sourate ou de verset.",
+ "audioOfflineAlert": "Pas de connexion internet — vérifiez votre connexion puis réessayez.",
+ "audioAllFailedAlert": "Impossible de lire la récitation — vérifiez votre connexion internet.",
  "heroTitleMain": "Analyse Linguistique",
  "heroTitleMag": "Microscopique",
  "heroSub": "Mets les versets du Saint Coran sous le microscope — touche n'importe quelle carte pour ouvrir sa fiche et écrire tes réponses : les questions notables sont corrigées automatiquement (✓ correct / ✗ réessaie), et chaque fiche peut être imprimée telle quelle.",

@@ -4,6 +4,8 @@
  "audioSettingsBtn": "Dejinta akhrinta",
  "reciterLabel": "Akhriye",
  "audioHint": "Si otomaatig ah ayay ula shaqeysaa xaashi kasta oo suurad ama aayad dhamaystiran.",
+ "audioOfflineAlert": "Xiriir internet lama hayo — hubi xiriirkaaga kadibna isku day mar kale.",
+ "audioAllFailedAlert": "Akhrinta lama daari karin — hubi xiriirkaaga internetka.",
  "heroTitleMain": "Falanqaynta Luqadeed",
  "heroTitleMag": "ee Mikroskoobka",
  "heroSub": "Aayadaha Qur'aanka Kariimka ah geli mikroskoob — taabo kaarti kasta si aad u furto xaashideeda oo aad u qorto jawaabahaaga: su'aalaha la hagaajin karo si otomaatig ah ayaa loo hubiyaa (✓ sax / ✗ isku day mar kale), xaashi kastana waa la daabici karaa sida ay tahay.",
