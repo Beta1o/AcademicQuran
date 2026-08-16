@@ -323,9 +323,23 @@ function markReading(ayaNo){
 /* تُشغَّل الآيات كملفات منفصلة بالتتابع (لا كصوت سورة كاملة واحد) كي يمكن تمييز الآية الحالية أثناء الاستماع لمساعدة الحفظ */
 function playAyaList(items,btn,det){
   if(!items.length){ btn.textContent='🔊 لا يوجد صوت'; setTimeout(function(){ btn.textContent='🔊 استماع للتلاوة'; },1500); return; }
-  var i=0, preloaded=null; /* {idx, audio} — ملف الآية التالية يُحمَّل مسبقًا أثناء تشغيل الحالية */
+  var i=0, preloaded=null, failCount=0; /* {idx, audio} — ملف الآية التالية يُحمَّل مسبقًا أثناء تشغيل الحالية */
   curAudio=new Audio(); curBtn=btn; curDet=det; btn.textContent='⏸️ إيقاف التلاوة'; btn.classList.add('playing');
-  function bindEvents(a){ a.addEventListener('ended', next); a.addEventListener('error', next); }
+  /* When advancing to a preloaded element, the old Audio object is replaced
+     but never cleaned up — its ended/error listeners stay attached forever.
+     Reciters with larger, slower-loading files (e.g. Menshawi Mujawwad,
+     whose recitation style repeats phrases within the same file) make it
+     more likely that an abandoned element fires a late error event after
+     already being swapped out (a network request that was still pending).
+     That triggers an extra, out-of-sequence next() call, so i advances
+     faster than actual playback (skipping an ayah that hasn't played yet)
+     or finishes before the surah is actually done, with the wrong ayah
+     highlighted in the meantime. The a===curAudio guard ignores any event
+     from an element that is no longer the one actually playing. */
+  function bindEvents(a){
+    a.addEventListener('ended', function(){ if(a===curAudio) next(); });
+    a.addEventListener('error', function(){ if(a===curAudio){ failCount++; next(); } });
+  }
   /* كل آية تُقرأ كاملة من بدايتها لنهايتها ثم تنتقل تلقائيًا للتالية (حدث ended) —
      هذا سلوك مقصود، لا عطل. العطل الحقيقي هو توقّف التلاوة كلها بسبب تعثّر آية
      واحدة فقط (شبكة بطيئة، انقطاع لحظي...)، فتخطّي تلك الآية والمتابعة للتي
@@ -342,7 +356,16 @@ function playAyaList(items,btn,det){
   function next(){
     if(!curAudio) return;
     if(i>=items.length){
-      if(repeatMode){ i=0; preloaded=null; } else { stopAudio(); return; }
+      /* Every single ayah failed (zero successes) — most likely a genuine
+         internet outage rather than one bad file; continuing silently left
+         the button appearing to work (still showing "Stop recitation") with
+         no actual sound, and no explanation to the user. */
+      if(failCount>=items.length){
+        stopAudio();
+        alert(t('audioAllFailedAlert'));
+        return;
+      }
+      if(repeatMode){ i=0; failCount=0; preloaded=null; } else { stopAudio(); return; }
     }
     var it=items[i];
     var use = (preloaded && preloaded.idx===i) ? preloaded.audio : curAudio;
@@ -350,7 +373,7 @@ function playAyaList(items,btn,det){
     markReading(it.aya);
     if(use!==curAudio){ curAudio.pause(); curAudio=use; }
     else { curAudio.src=it.url; }
-    curAudio.play().catch(next);
+    curAudio.play().catch(function(){ failCount++; next(); });
     preloaded=null;
     preloadNext(i); /* حمِّل الآية التي تلي هذه فورًا، بينما هذه قيد التشغيل */
   }
@@ -407,6 +430,18 @@ function bindAudio(root){
     b.addEventListener('click',function(){
       if(curBtn===b){ stopAudio(); return; }
       stopAudio();
+      /* All recitation audio comes from everyayah.com — none of it works
+         without internet, but the button used to start a silent download
+         attempt anyway (ayaAudioUrl never checks the network, it just
+         builds the URL), leaving it looking like it's playing ("Stop
+         recitation") with no actual sound and no explanation. navigator.
+         onLine isn't perfect (it can report true on a technically-broken
+         connection), but it catches the most common case: no connection
+         at all. */
+      if(navigator.onLine===false){
+        alert(t('audioOfflineAlert'));
+        return;
+      }
       var det=document.getElementById('w-'+b.dataset.audio);
       if(!det) return;
       var s=audioSettings(), sura=det.dataset.surano;

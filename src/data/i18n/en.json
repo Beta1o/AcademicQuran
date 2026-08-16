@@ -9,6 +9,8 @@
  "backWord": "Back",
  "reciterLabel": "Reciter",
  "audioHint": "Works automatically with any complete surah or ayah worksheet.",
+ "audioOfflineAlert": "No internet connection — check your connection and try again.",
+ "audioAllFailedAlert": "Couldn't play the recitation — check your internet connection.",
  "heroTitleMain": "Microscopic",
  "heroTitleMag": "Linguistic Analysis",
  "heroSub": "Put the verses of the Holy Quran under the microscope — tap any card to open its worksheet and write your answers: gradable questions are checked automatically (✓ correct / ✗ try again), and any worksheet can be printed as-is.",
