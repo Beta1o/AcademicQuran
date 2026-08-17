@@ -858,6 +858,13 @@ const blockHTMLs=W.map((w,wi)=>{
   let n=0;
   const lvlCount=[0,0,0,0,0];
   const wordsJson=esc(JSON.stringify(verseWordsOrig(w).map(o=>[o,norm(o)])));
+  /* Diacritic-insensitive, pre-normalized search haystack: the worksheet's
+     name/title plus every word of its verse text, so searching finds a
+     card by a word or phrase from the ayah itself — not just by surah
+     name — and matches regardless of whether the visitor typed the
+     تشكيل (diacritics) or not, since both sides are normalized the same
+     way (see norm() in app.js, identical logic). */
+  const searchHay=esc(norm(w.name+' '+verseWordsOrig(w).join(' ')));
   const secs=w.secs.map((s,si)=>{
     const items=s.q.map((q,qi)=>{
       n++;
@@ -953,7 +960,7 @@ const blockHTMLs=W.map((w,wi)=>{
     </article>
     <div class="ws-close"><button class="act" data-close="${w.id}" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>
   </div>`;
-  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${endMark?` data-ayaend="1"`:''}${juzNo?` data-juz="${juzNo}"`:''}${ayaListAttr}>
+  return `<details class="ws-item" id="w-${w.id}" style="--ac:var(${w.hue})" data-cat="${w.cat}" data-name="${esc(w.name)}" data-search="${searchHay}" data-words="${wordsJson}"${SURA_NO[w.id]?` data-surano="${SURA_NO[w.id]}"`:''}${AYAT[w.id]?` data-ayat="${AYAT[w.id]}"`:''}${AYA_NUM[w.id]?` data-ayano="${AYA_NUM[w.id]}"`:''}${SURA_OF[w.id]?` data-sura="${esc(SURA_OF[w.id])}"`:''}${w.story?` data-story="1"`:''}${endMark?` data-ayaend="1"`:''}${juzNo?` data-juz="${juzNo}"`:''}${ayaListAttr}>
   <summary class="card">
     <div class="tagrow">
       <span class="tag" data-i18n="${w.cat==='surah'?'tagSurah':(w.group?'tagPart':'tagAyah')}">${w.cat==='surah'?'سورة كاملة':(w.group?'جزء من سورة':'آية مختارة')}</span>

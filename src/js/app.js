@@ -1367,11 +1367,16 @@ function applyFilter(){
      not a re-chunk: no merge-size rebuild or body network fetch happens
      until a matching card is actually opened (see bindToggles). */
   materializeAllGridCards();
-  var q=(document.getElementById('q')||{}).value||'';
+  /* data-search is a pre-normalized (diacritic-stripped) haystack built at
+     build time from the worksheet's name AND every word of its verse text
+     (see build.js) — normalizing the query the same way here means a
+     search matches a card by a word/phrase from the ayah itself, not just
+     by surah name, and works whether or not the visitor typed تشكيل. */
+  var q=norm((document.getElementById('q')||{}).value||'').trim();
   document.querySelectorAll('.grid .ws-item').forEach(function(c){
     var catOk = filter==='all' || c.dataset.cat===filter;
     var juzOk = juz==='0' || c.dataset.juz===juz;
-    var ok=catOk&&juzOk&&(!q||c.dataset.name.indexOf(q.trim())>-1);
+    var ok=catOk&&juzOk&&(!q||(c.dataset.search||c.dataset.name).indexOf(q)>-1);
     c.style.display=ok?'':'none';
   });
   /* تصفية «آيات مختارة»: تُعرَض أجزاء السور المجزَّأة منفكّة كبطاقات مستقلة
