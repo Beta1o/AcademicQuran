@@ -1169,6 +1169,11 @@ function loadWsBody(id, cb){
 function ensureBodyLoaded(det){
   var slot=det.querySelector(':scope > .ws[data-lazy]');
   if(!slot) return Promise.resolve(false); /* مُحمَّلة بالفعل، أو ورقة أُضيفت وقت التشغيل بمحتوى كامل أصلًا */
+  /* A merged/resized chunk (see buildMergedWsItemShell) has a synthetic id
+     with no matching api/ws/<id>.js file — its content is assembled from
+     its real source part(s) instead, only at this point (the moment it's
+     actually opened), not when the chunk was first created. */
+  if(det.dataset.chunkSourceIds) return fillMergedChunkBody(det, slot);
   var id=(det.id||det.dataset.origid||'').replace(/^w-/,'');
   return new Promise(function(resolve){
     loadWsBody(id, function(html){
@@ -1194,6 +1199,84 @@ function ensureBodyLoaded(det){
   });
 }
 window.ensureBodyLoaded=ensureBodyLoaded;
+/* Locates a merged chunk's real source part: a standalone worksheet's
+   original item keeps its own real "w-..." id even after being wrapped
+   (see rebuildStandaloneForSizeImpl), but a group's original parts have
+   theirs stripped and stashed in a hidden holder keyed by data-origid
+   instead (see rebuildGroupForSizeImpl) — both are checked here. */
+function findMergeSourcePart(det, sourceId){
+  var byId=document.getElementById('w-'+sourceId);
+  if(byId) return byId;
+  var group=det.closest('.ws-group');
+  var holder=group?group.querySelector(':scope > .ws-group-originals'):null;
+  return holder?holder.querySelector('[data-origid="w-'+sourceId+'"]'):null;
+}
+/* Fills a merged chunk's body the moment it's actually opened — the chunk
+   itself was created purely from locally-known ayah ranges (see
+   buildMergedWsItemShell), with zero network calls, specifically so
+   resizing many worksheets at once doesn't mean fetching every one of
+   their bodies up front. Only the source part(s) this ONE chunk actually
+   needs get fetched here. */
+function fillMergedChunkBody(det, slot){
+  var sourceIds=(det.dataset.chunkSourceIds||'').split(',').filter(Boolean);
+  var ayaNums=(det.dataset.ayalist||'').split(',').filter(Boolean).map(Number);
+  var originals=sourceIds.map(function(sid){ return findMergeSourcePart(det, sid); }).filter(Boolean);
+  return Promise.all(originals.map(function(el){ return ensureBodyLoaded(el); })).then(function(){
+    var chunk=ayaNums.map(function(a){
+      var owner=originals.find(function(o){ return (o.dataset.ayalist||'').split(',').map(Number).indexOf(a)>-1; });
+      return {aya:a, part:owner};
+    }).filter(function(c){ return c.part; });
+    var overlapping=[];
+    chunk.forEach(function(c){ if(overlapping.indexOf(c.part)===-1) overlapping.push(c.part); });
+    var secCount=Math.max.apply(null, overlapping.map(function(o){ return o.querySelectorAll(':scope .sec').length; }).concat([0]));
+    var secsHTML='';
+    for(var i=0;i<secCount;i++){
+      var refSec=null, qHTML='', num=0;
+      overlapping.forEach(function(o){
+        var sec=o.querySelectorAll(':scope .sec')[i];
+        if(!sec) return;
+        if(!refSec) refSec=sec;
+        sec.querySelectorAll(':scope .qlist > .q').forEach(function(q){
+          num++;
+          var clone=q.cloneNode(true);
+          var numEl=clone.querySelector('.num'); if(numEl) numEl.textContent=numEl.textContent.replace(/[0-9٠-٩]+/, String(num));
+          qHTML+=clone.outerHTML;
+        });
+      });
+      if(refSec) secsHTML+='<section class="sec">'+refSec.querySelector('.sec-head').outerHTML+'<div class="qlist">'+qHTML+'</div></section>';
+    }
+    var id=det.id.replace(/^w-/,'');
+    var nameEl=det.querySelector('[data-i18n-name]');
+    var suraName=nameEl?nameEl.getAttribute('data-i18n-name'):'';
+    var vpeek=det.querySelector(':scope > summary .vpeek');
+    var verseSpans=vpeek?vpeek.innerHTML.replace(/^\s*﴿\s*/,'').replace(/\s*﴾\s*$/,''):'';
+    slot.outerHTML=
+      '<div class="ws">'+
+        '<div class="ws-top">'+
+          '<button class="act close" data-close="'+id+'" data-i18n="closeWs">▲ إغلاق</button><div class="spacer"></div>'+
+          '<button class="act reset" data-reset="'+id+'" data-i18n="resetWs">تفريغ الإجابات</button>'+
+          '<button class="act print" data-print="'+id+'" data-i18n="printWs">🖨️ طباعة الورقة</button>'+
+        '</div>'+
+        '<article class="sheet">'+
+          '<header class="sheet-head">'+
+            '<h2><span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span></h2>'+
+          '</header>'+
+          '<div class="verse-wrap">'+
+            '<button class="act audio-play js-only" data-audio="'+id+'" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>'+
+            '<div class="verse"><p>﴿ '+verseSpans+' ﴾</p></div>'+
+          '</div>'+
+          secsHTML+
+          '<footer class="sheet-foot"></footer>'+
+        '</article>'+
+        '<div class="ws-close"><button class="act" data-close="'+id+'" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>'+
+      '</div>';
+    var body=det.querySelector(':scope > .ws');
+    if(body && window.Locale) Locale.render(body);
+    if(body) window.bindSheet(body, det);
+    if(body && window.applyLvlFilter) window.applyLvlFilter(body);
+    return true;
+  });
+}
 function closestTopLevelCard(d){
   var el=d;
   while(el && el.parentElement){
@@ -1586,28 +1669,32 @@ function rebuildGroupForSizeImpl(group, size){
     if(window.Locale) window.Locale.render(itemsWrap);
     return Promise.resolve();
   }
-  return Promise.all(originals.map(function(el){ return ensureBodyLoaded(el); })).then(function(){
-    /* Flatten every original part's ayah list, in order, then re-cut it
-       into runs of `size` — the source of truth for chunk boundaries, not
-       the original ~10-ayah part boundaries themselves. */
-    var ayaOwner=[]; // [{aya:Number, part:element}] in surah order
-    originals.forEach(function(el){
-      (el.dataset.ayalist||'').split(',').filter(Boolean).forEach(function(a){
-        ayaOwner.push({aya:+a, part:el});
-      });
+  /* Flatten every original part's ayah list, in order, then re-cut it into
+     runs of `size` — the source of truth for chunk boundaries, not the
+     original ~10-ayah part boundaries themselves. This needs only the
+     ayah numbers each part already carries (data-ayalist), not its actual
+     body content — so the whole rebuild is instant and network-free; each
+     chunk's real verse/question content only loads once that ONE chunk is
+     actually opened (see fillMergedChunkBody). Re-chunking every visible
+     group used to mean fetching every single one of their bodies up front
+     — hundreds of requests for a page with dozens of groups on screen. */
+  var ayaOwner=[]; // [{aya:Number, part:element}] in surah order
+  originals.forEach(function(el){
+    (el.dataset.ayalist||'').split(',').filter(Boolean).forEach(function(a){
+      ayaOwner.push({aya:+a, part:el});
     });
-    var chunks=[];
-    for(var i=0;i<ayaOwner.length;i+=size) chunks.push(ayaOwner.slice(i,i+size));
-    var sura=originals[0]?originals[0].dataset.surano:'';
-    var newEls=chunks.map(function(chunk){ return buildMergedWsItem(chunk, sura, originals); });
-    itemsWrap.innerHTML='';
-    newEls.forEach(function(el){ itemsWrap.appendChild(el); });
-    bindToggles(itemsWrap);
-    newEls.forEach(function(el){ window.bindSheet(el.querySelector('.ws'), el); });
-    if(window.Locale) window.Locale.render(itemsWrap);
   });
+  var chunks=[];
+  for(var i=0;i<ayaOwner.length;i+=size) chunks.push(ayaOwner.slice(i,i+size));
+  var sura=originals[0]?originals[0].dataset.surano:'';
+  var newEls=chunks.map(function(chunk){ return buildMergedWsItemShell(chunk, sura); });
+  itemsWrap.innerHTML='';
+  newEls.forEach(function(el){ itemsWrap.appendChild(el); });
+  bindToggles(itemsWrap);
+  if(window.Locale) window.Locale.render(itemsWrap);
+  return Promise.resolve();
 }
-function buildMergedWsItem(chunk, sura, originals){
+function buildMergedWsItemShell(chunk, sura){
   var ayaNums=chunk.map(function(c){ return c.aya; });
   var overlapping=[]; // original parts touching this chunk, each once, in order
   chunk.forEach(function(c){ if(overlapping.indexOf(c.part)===-1) overlapping.push(c.part); });
@@ -1621,39 +1708,28 @@ function buildMergedWsItem(chunk, sura, originals){
   det.dataset.ayano=String(first);
   det.dataset.ayaend='1';
   det.dataset.ayalist=ayaNums.join(',');
+  /* Which real worksheet(s) this chunk's actual content (verse + questions)
+     comes from, resolved later by fillMergedChunkBody the moment this
+     chunk is actually opened — not built now, so creating a shell never
+     needs the source part's body loaded. */
+  det.dataset.chunkSourceIds=overlapping.map(function(o){
+    return (o.dataset.origid || o.id || '').replace(/^w-/,'');
+  }).join(',');
   var refCard=overlapping[0].querySelector('.card')||overlapping[0].querySelector('summary');
   var suraName=(refCard&&refCard.querySelector('[data-i18n-name]'))?refCard.querySelector('[data-i18n-name]').getAttribute('data-i18n-name'):'';
   var wordsAll=[];
   overlapping.forEach(function(o){ try{ wordsAll=wordsAll.concat(JSON.parse(o.dataset.words||'[]')); }catch(e){} });
   det.dataset.words=JSON.stringify(wordsAll);
-  /* Verse: pull each ayah's own tagged span, in chunk order, from whichever
-     original part actually contains it — a precise slice of real, already-
-     verified text, not a re-derived or retyped copy. */
+  /* Verse preview: pulled from each ayah's own tagged span, in chunk order,
+     from whichever original part actually contains it — a precise slice of
+     real, already-verified text. This lives in the ORIGINAL's <summary>
+     (vpeek), which is never behind the lazy-body wall, so it's available
+     without loading anything over the network. */
   var verseSpans=ayaNums.map(function(n){
     var owner=chunk.find(function(c){ return c.aya===n; }).part;
     var span=owner.querySelector('.aya-seg[data-aya="'+n+'"]');
     return span?span.outerHTML:'';
   }).filter(Boolean).join(' ');
-  /* Sections: concatenate each overlapping part's own section (by index —
-     every worksheet has the same fixed 3 sections in the same order), not
-     a merge/interleave of questions across different section topics. */
-  var secCount=Math.max.apply(null, overlapping.map(function(o){ return o.querySelectorAll(':scope .sec').length; }).concat([0]));
-  var secsHTML='';
-  for(var i=0;i<secCount;i++){
-    var refSec=null, qHTML='', num=0;
-    overlapping.forEach(function(o){
-      var sec=o.querySelectorAll(':scope .sec')[i];
-      if(!sec) return;
-      if(!refSec) refSec=sec;
-      sec.querySelectorAll(':scope .qlist > .q').forEach(function(q){
-        num++;
-        var clone=q.cloneNode(true);
-        var numEl=clone.querySelector('.num'); if(numEl) numEl.textContent=numEl.textContent.replace(/[0-9٠-٩]+/, String(num));
-        qHTML+=clone.outerHTML;
-      });
-    });
-    if(refSec) secsHTML+='<section class="sec">'+refSec.querySelector('.sec-head').outerHTML+'<div class="qlist">'+qHTML+'</div></section>';
-  }
   det.innerHTML=
     '<summary class="card">'+
       '<div class="tagrow"><span class="tag" data-i18n="tagPart">جزء من سورة</span></div>'+
@@ -1661,25 +1737,7 @@ function buildMergedWsItem(chunk, sura, originals){
       '<div class="vpeek">﴿ '+verseSpans+' ﴾</div>'+
       '<div class="cmeta"><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
     '</summary>'+
-    '<div class="ws">'+
-      '<div class="ws-top">'+
-        '<button class="act close" data-close="'+id+'" data-i18n="closeWs">▲ إغلاق</button><div class="spacer"></div>'+
-        '<button class="act reset" data-reset="'+id+'" data-i18n="resetWs">تفريغ الإجابات</button>'+
-        '<button class="act print" data-print="'+id+'" data-i18n="printWs">🖨️ طباعة الورقة</button>'+
-      '</div>'+
-      '<article class="sheet">'+
-        '<header class="sheet-head">'+
-          '<h2><span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span></h2>'+
-        '</header>'+
-        '<div class="verse-wrap">'+
-          '<button class="act audio-play js-only" data-audio="'+id+'" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>'+
-          '<div class="verse"><p>﴿ '+verseSpans+' ﴾</p></div>'+
-        '</div>'+
-        secsHTML+
-        '<footer class="sheet-foot"></footer>'+
-      '</article>'+
-      '<div class="ws-close"><button class="act" data-close="'+id+'" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>'+
-    '</div>';
+    '<div class="ws" data-lazy="1"></div>';
   return det;
 }
 /* A standalone worksheet (a complete short surah, or a selected-ayah card)
@@ -1710,7 +1768,11 @@ function rebuildStandaloneForSizeImpl(item, size){
     }
     return Promise.resolve();
   }
-  return ensureBodyLoaded(item).then(function(){
+  /* Building the wrapper and its chunk shells only needs the item's own
+     <summary> content (tagrow/h2/vpeek/prog-mini text) — all already
+     present without its lazy body ever loading — so this whole rebuild is
+     instant and network-free, same reasoning as rebuildGroupForSizeImpl. */
+  {
     if(!wrapper){
       wrapper=document.createElement('details');
       wrapper.className='ws-group';
@@ -1755,21 +1817,24 @@ function rebuildStandaloneForSizeImpl(item, size){
     var chunks=[];
     for(var i=0;i<chunk.length;i+=size) chunks.push(chunk.slice(i,i+size));
     var sura=item.dataset.surano;
-    var newEls=chunks.map(function(c){ return buildMergedWsItem(c, sura, [item]); });
+    var newEls=chunks.map(function(c){ return buildMergedWsItemShell(c, sura); });
     itemsWrap.innerHTML='';
     newEls.forEach(function(el){ itemsWrap.appendChild(el); });
     bindToggles(itemsWrap);
     bindToggles(wrapper);
-    newEls.forEach(function(el){ window.bindSheet(el.querySelector('.ws'), el); });
     var vpeek=wrapper.querySelector(':scope > summary .vpeek');
     var verseSpans=ayaNums.map(function(n){
       var span=item.querySelector('.aya-seg[data-aya="'+n+'"]');
       return span?span.outerHTML:'';
     }).filter(Boolean).join(' ');
     if(vpeek) vpeek.innerHTML='﴿ '+verseSpans+' ﴾';
-    var totalQ=newEls.reduce(function(a,el){ return a+el.querySelectorAll('.q').length; },0);
+    /* Total question count doesn't change when re-chunking — only how it's
+       distributed across cards — so the item's own already-known total
+       (in its <summary>, no body load needed) is reused directly instead
+       of loading every chunk's body just to recount. */
+    var itemProgMini=item.querySelector(':scope > summary .prog-mini');
     var progMini=wrapper.querySelector(':scope > summary .prog-mini');
-    if(progMini) progMini.textContent=totalQ+' سؤالًا';
+    if(progMini && itemProgMini) progMini.textContent=itemProgMini.textContent;
     var countBadge=wrapper.querySelector(':scope > summary .ws-group-count');
     if(countBadge) countBadge.textContent=chunks.length+' جزءًا';
     var audioBtn=wrapper.querySelector(':scope > .group-audio-play');
@@ -1777,7 +1842,8 @@ function rebuildStandaloneForSizeImpl(item, size){
     if(window.bindGroupAudio) bindGroupAudio(wrapper);
     if(window.Locale) window.Locale.render(wrapper);
     positionGroupAudioBtn(wrapper);
-  });
+    return Promise.resolve();
+  }
 }
 /* ---------- ayah-per-worksheet setting (Settings panel) ---------- */
 (function(){
