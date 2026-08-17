@@ -1525,7 +1525,24 @@ function ayahMergeSize(){
   try{ var v=localStorage.getItem(AYAH_MERGE_KEY); return v?+v:10; }catch(e){ return 10; }
 }
 var mergeSeq=0;
+/* Opening a card triggers a lazy rebuild to the current size (bindToggles);
+   clicking a settings option can ALSO trigger one for that same card if
+   it's already open (refreshOpenCards) — without this guard, two
+   overlapping calls on the same element could both see no wrapper/holder
+   yet and each create their own, corrupting the DOM. Serializes calls per
+   element: a second call for the same group/item always waits for
+   whatever's already in flight to finish first. */
+var mergePending=new WeakMap();
+function serializeMerge(el, fn){
+  var prior=mergePending.get(el)||Promise.resolve();
+  var next=prior.then(fn, fn);
+  mergePending.set(el, next);
+  return next;
+}
 function rebuildGroupForSize(group, size){
+  return serializeMerge(group, function(){ return rebuildGroupForSizeImpl(group, size); });
+}
+function rebuildGroupForSizeImpl(group, size){
   var itemsWrap=group.querySelector(':scope > .ws-group-items');
   if(!itemsWrap) return Promise.resolve();
   var holder=group.querySelector(':scope > .ws-group-originals');
@@ -1680,6 +1697,9 @@ function speakerIconHTML(){
   return _speakerIconHTML;
 }
 function rebuildStandaloneForSize(item, size){
+  return serializeMerge(item, function(){ return rebuildStandaloneForSizeImpl(item, size); });
+}
+function rebuildStandaloneForSizeImpl(item, size){
   var ayaNums=(item.dataset.ayalist||'').split(',').filter(Boolean).map(Number);
   var wrapper=item.__mergeWrapper;
   if(size===10 || ayaNums.length<=size){
