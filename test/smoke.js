@@ -17,7 +17,7 @@ const t0=Date.now();
 const stamp=()=>((Date.now()-t0)/1000).toFixed(1)+'s';
 const log=(...a)=>console.log(`[${stamp()}]`,...a);
 
-const WS=668, QS=41159, PASS=process.env.ADMIN_PASS||'change-me-set-ADMIN_PASS-env-var', USER=process.env.ADMIN_USER||'admin';
+const WS=668, QS=39330, PASS=process.env.ADMIN_PASS||'change-me-set-ADMIN_PASS-env-var', USER=process.env.ADMIN_USER||'admin';
 const distPath=path.join(__dirname,'../dist/index.html');
 const distRoot=path.join(__dirname,'../dist');
 
