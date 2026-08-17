@@ -458,18 +458,14 @@ function bindAudio(root){
     b.addEventListener('click',function(){
       if(curBtn===b){ stopAudio(); return; }
       stopAudio();
-      /* All recitation audio comes from everyayah.com — none of it works
-         without internet, but the button used to start a silent download
-         attempt anyway (ayaAudioUrl never checks the network, it just
-         builds the URL), leaving it looking like it's playing ("Stop
-         recitation") with no actual sound and no explanation. navigator.
-         onLine isn't perfect (it can report true on a technically-broken
-         connection), but it catches the most common case: no connection
-         at all. */
-      if(navigator.onLine===false){
-        alert(t('audioOfflineAlert'));
-        return;
-      }
+      /* A navigator.onLine===false pre-check used to block playback here
+         with an alert before even trying — removed: on Android WebView
+         specifically, onLine can transiently report false (network handoff,
+         waking from Doze, etc.) even with a perfectly working connection,
+         so the very next worksheet would play fine right after being wrongly
+         told there's no internet. The failCount check inside playAyaList
+         (every single ayah's fetch actually failing) is the reliable signal
+         — it only fires on a real, sustained failure, not a flaky flag. */
       var det=document.getElementById('w-'+b.dataset.audio);
       if(!det) return;
       var s=audioSettings(), sura=det.dataset.surano;
