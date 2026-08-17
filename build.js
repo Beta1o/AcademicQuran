@@ -1006,7 +1006,12 @@ W.forEach((w,wi)=>{
     </div>
     <h2><span class="ws-group-icon">📖</span> <span data-i18n="surahWord">سورة</span> <span data-i18n-name="${esc(w.suraOf)}">${esc(w.suraOf)}</span></h2>
     <div class="vpeek">﴿ ${verseHTML(first)} ﴾</div>
-    <div class="cmeta"><span class="prog-mini" data-i18n-tpl="${tid('{} سؤالًا')}" data-i18n-word="${toAr(groupTotalQ)}">${toAr(groupTotalQ)} سؤالًا</span><span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>
+    <div class="cmeta">
+      <span class="prog-mini" data-i18n-tpl="${tid('{} سؤالًا')}" data-i18n-word="${toAr(groupTotalQ)}">${toAr(groupTotalQ)} سؤالًا</span>
+      <span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span>
+      <button type="button" class="act audio-play js-only" data-audio-group="${members.map(({x})=>x.id).join(',')}" hidden data-i18n="listenSurahWs">🔊 استماع لكل السورة</button>
+      <span class="go" data-i18n="openWs">افتح الورقة ▾</span>
+    </div>
   </summary>
   <div class="ws-group-items">
 ${groupItems}
@@ -1197,6 +1202,11 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
       <button type="button" class="settings-back" aria-label="رجوع" title="رجوع">${ICON_BACK}</button>
       <div class="settings-group-title" data-i18n="reciterLabel">القارئ</div>
     </div>
+    <button type="button" class="theme-switch-row" id="istiadhahToggle" aria-label="تشغيل الاستعاذة قبل التلاوة">
+      <span class="settings-cat-icon" aria-hidden="true">${ICON_SPEAKER}</span>
+      <span class="settings-cat-label" data-i18n="istiadhahToggleLabel">الاستعاذة قبل التلاوة</span>
+      <span class="theme-switch" aria-hidden="true"><span class="theme-switch-thumb"></span></span>
+    </button>
     <div class="settings-search"><input type="text" id="reciterSearch" placeholder="ابحث عن قارئ..." data-i18n-ph="reciterSearchPh"></div>
     <div id="reciterOpts" class="reciter-opts">
 ${RECITERS.map(([id,ar,en])=>`      <button type="button" class="lang-opt reciter-opt${id===21?' on':''}" data-reciter="${id}" data-ar-name="${esc(ar)}" data-en-name="${esc(en)}">${esc(ar)}</button>`).join('\n')}

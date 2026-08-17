@@ -287,7 +287,11 @@ function bindRepeatToggle(root){
 bindRepeatToggle(document);
 window.bindRepeatToggle=bindRepeatToggle;
 function clearReading(){
-  if(curDet) curDet.querySelectorAll('.sheet .verse .aya-seg.reading').forEach(function(el){ el.classList.remove('reading'); });
+  /* Clears via the tracked element itself (curSeg), not by querying curDet —
+     continuous multi-part playback (playGroupAudio) switches curDet as it
+     crosses into each part, so a query scoped to the *new* curDet would miss
+     clearing the highlight left in the *previous* part. */
+  if(curSeg) curSeg.classList.remove('reading');
   curSeg=null;
 }
 function stopAudio(onlyIfDet){
@@ -310,11 +314,12 @@ window.stopAudio=stopAudio;
    often enough (especially when a reciter repeats a word) that it did more
    harm than good. Ayah-level highlighting below is fully accurate, since it
    is driven by real audio file boundaries, not an estimate. */
-function markReading(ayaNo){
-  if(!curDet) return;
+function markReading(ayaNo,det){
+  det=det||curDet;
+  if(!det) return;
   clearReading();
   if(!ayaNo) return;
-  var seg=curDet.querySelector('.sheet .verse .aya-seg[data-aya="'+ayaNo+'"]');
+  var seg=det.querySelector('.sheet .verse .aya-seg[data-aya="'+ayaNo+'"]');
   if(seg){
     seg.classList.add('reading'); curSeg=seg;
     try{ seg.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){}
@@ -370,7 +375,14 @@ function playAyaList(items,btn,det){
     var it=items[i];
     var use = (preloaded && preloaded.idx===i) ? preloaded.audio : curAudio;
     i++;
-    markReading(it.aya);
+    /* Continuous multi-part playback (playGroupAudio): each item can carry
+       its own det (which member worksheet it belongs to). Opening it here
+       reuses the existing .ws-item toggle listener as-is — same auto-scroll,
+       same "close whichever part was open before" behavior a manual click
+       already gets, so this doesn't need its own separate handling of any
+       of that. */
+    if(it.det && it.det!==curDet){ curDet=it.det; if(!curDet.open) curDet.open=true; }
+    markReading(it.aya, it.det);
     if(use!==curAudio){ curAudio.pause(); curAudio=use; }
     else { curAudio.src=it.url; }
     curAudio.play().catch(function(){ failCount++; next(); });
@@ -398,6 +410,9 @@ function refreshAudioButtons(root){
     var det=document.getElementById('w-'+b.dataset.repeat);
     var has = det && det.dataset.surano && det.dataset.ayaend==='1' && det.dataset.ayalist;
     b.hidden = !s.enabled || !has;
+  });
+  scope.querySelectorAll('[data-audio-group]').forEach(function(b){
+    b.hidden = !s.enabled;
   });
 }
 window.refreshAudioButtons=refreshAudioButtons;
@@ -487,7 +502,62 @@ function bindAudio(root){
     });
   });
 }
+/* Continuous recitation across a whole split surah's parts — the existing
+   per-worksheet play button only ever covered one part's ayat. Isti'adhah
+   plays once at the very start of the whole sequence (not once per part,
+   which would repeat it every few ayat and get tedious fast), same for
+   Basmala (needsBasmala only ever applies to a surah's very first ayah).
+   Each item carries its own det (the specific part it belongs to) — see
+   the it.det handling in playAyaList's next(), which opens/scrolls to
+   whichever part is currently playing the same way a manual click would. */
+function bindGroupAudio(root){
+  root.querySelectorAll('[data-audio-group]').forEach(function(b){
+    if(isBound(b)) return;
+    b.addEventListener('click',function(e){
+      /* This button sits inside <summary> (visible on the closed group card,
+         not just once opened, so a visitor can start listening without
+         opening it first) — without stopping the click here, it would also
+         toggle the group's own open/close state as an unwanted side effect. */
+      e.preventDefault(); e.stopPropagation();
+      if(curBtn===b){ stopAudio(); return; }
+      stopAudio();
+      /* A native <details> hides all of its content whenever it's closed,
+         regardless of any nested [open] state on children inside it — so
+         opening a member .ws-item alone (in playAyaList's next()) does
+         nothing visible while its parent .ws-group is still collapsed. The
+         group itself has to be open too, from the very first part onward. */
+      var group=b.closest('.ws-group');
+      if(group && !group.open) group.open=true;
+      var ids=(b.dataset.audioGroup||'').split(',').filter(Boolean);
+      var dets=ids.map(function(id){ return document.getElementById('w-'+id); }).filter(Boolean);
+      if(!dets.length) return;
+      var s=audioSettings();
+      b.textContent='⏳ جاري التحميل...';
+      Promise.all(dets.map(function(det){ return ensureBodyLoaded(det); })).then(function(){
+        return Promise.all(dets.map(function(det){
+          var sura=det.dataset.surano;
+          var list=(det.dataset.ayalist?det.dataset.ayalist.split(','):[]).filter(Boolean);
+          return Promise.all(list.map(function(a){
+            return ayaAudioUrl(s.reciter,sura,a).then(function(u){ return {aya:a, url:u, det:det}; });
+          }));
+        }));
+      }).then(function(perPart){
+        var full=[].concat.apply([],perPart).filter(function(it){ return it.url; });
+        var firstDet=dets[0];
+        var withBasmala=needsBasmala(firstDet)
+          ? ayaAudioUrl(s.reciter,1,1).then(function(u){ return u?[{aya:null,url:u,det:firstDet}].concat(full):full; })
+          : Promise.resolve(full);
+        withBasmala.then(function(seq){
+          if(istiadhahEnabled()) seq=[{aya:null, url:'audios/istiadhah.mp3', det:firstDet}].concat(seq);
+          playAyaList(seq, b, firstDet);
+        });
+      });
+    });
+  });
+}
+window.bindGroupAudio=bindGroupAudio;
 bindAudio(document);
+bindGroupAudio(document);
 window.bindAudio=bindAudio;
 refreshAudioButtons();
 /* إعادة قراءة آية بعينها — يفيد المتعلم الذي يريد تكرار آية واحدة لحفظها
@@ -605,6 +675,22 @@ window.updateSettingsPreviews=updateSettingsPreviews;
     opts.querySelectorAll('.reciter-opt').forEach(function(o){
       o.hidden = q!=='' && o.textContent.toLowerCase().indexOf(q)===-1;
     });
+  });
+})();
+/* ---------- Isti'adhah toggle, publicly visible (was admin-only before) ---------- */
+(function(){
+  var btn=document.getElementById('istiadhahToggle');
+  if(!btn) return;
+  var apply=function(){
+    var on=istiadhahEnabled();
+    btn.classList.toggle('on', on);
+  };
+  apply();
+  btn.addEventListener('click',function(){
+    var s; try{ s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'); }catch(e){ s={}; }
+    s.istiadhahEnabled = !istiadhahEnabled();
+    try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }catch(e){}
+    apply();
   });
 })();
 /* ---------- manual dark/light toggle (on top of the OS-setting default) ---------- */
@@ -1083,6 +1169,14 @@ function insertGridBatch(n){
   else { var grid=document.querySelector('.grid'); if(grid) grid.insertAdjacentHTML('beforeend', batch); }
   registerWords(document);
   bindToggles(document);
+  /* The group-level "listen to the whole surah" button lives in .ws-group's
+     own <summary> (visible even closed, unlike a regular worksheet's audio
+     button which only exists once its lazy body loads) — it ships with
+     every group card's shell, including ones added here well after the
+     initial page load, so it needs its own bind/visibility pass same as
+     any other freshly-inserted content. */
+  bindGroupAudio(document);
+  refreshAudioButtons(document);
   if(window.Locale) window.Locale.render();
   if(window.applyHidden) window.applyHidden();
   if(window.applyOverrides) window.applyOverrides();
