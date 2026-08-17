@@ -1321,6 +1321,5 @@
  "tagPart": "Surah part",
  "repeatToggle": "🔁 Repeat",
  "flatHint": "Parts are shown separately now — tap \"Selected verses\" again or choose \"All worksheets\" to group them back.",
- "ayahRangeLoading": "Reorganizing worksheets…",
- "gridLoadingMore": "Loading more…"
+ "ayahRangeLoading": "Reorganizing worksheets…"
 }

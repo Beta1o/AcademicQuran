@@ -1285,7 +1285,6 @@ ${RECITERS.map(([id,ar,en])=>`      <button type="button" class="lang-opt recite
 <section class="grid">
 ${blocks}
 <div id="gridSentinel" aria-hidden="true"></div>
-<div id="gridLoading" class="grid-loading" hidden><span class="spinner"></span><span data-i18n="gridLoadingMore">جارٍ تحميل المزيد…</span></div>
 </section>
 <script type="application/json" id="gridRest">${gridRestJSON}</script>
 </main>

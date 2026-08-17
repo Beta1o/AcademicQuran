@@ -1222,10 +1222,30 @@ function bindToggles(root){
     setGoLabel();
     d.addEventListener('toggle',function(){
       setGoLabel();
-      if(d.open) ensureBodyLoaded(d);
       if(!d.open && window.stopAudio) window.stopAudio(d);
       if(d.open){
+        ensureBodyLoaded(d);
         closeOtherAccordionCards(d);
+        /* A non-default ayah-per-worksheet size is only ever applied to a
+           standalone card the moment it's actually opened — never eagerly
+           across the whole catalog on scroll/search/settings-change, which
+           is what turned a settings toggle into a multi-second freeze
+           fetching hundreds of worksheet bodies nobody was looking at. */
+        var isTopLevel = d.parentNode && d.parentNode.classList && d.parentNode.classList.contains('grid');
+        if(isTopLevel && d.dataset.ayalist && window.ayahMergeSize && window.rebuildStandaloneForSize){
+          var size=ayahMergeSize();
+          if(d.dataset.mergedSize!==String(size)){
+            rebuildStandaloneForSize(d, size).then(function(){
+              d.dataset.mergedSize=String(size);
+              var wrapper=d.__mergeWrapper;
+              if(wrapper){
+                wrapper.open=true;
+                var firstPart=wrapper.querySelector(':scope > .ws-group-items > .ws-item');
+                if(firstPart) firstPart.open=true;
+              }
+            });
+          }
+        }
         if(!noAutoScroll){
           var raf=window.requestAnimationFrame||function(f){return setTimeout(f,16);};
           raf(function(){ try{ d.scrollIntoView({block:'start'}); }catch(e){} });
@@ -1249,6 +1269,15 @@ function bindToggles(root){
          when it's actually this group's own playback still going. */
       if(!g.open && curDet && g.contains(curDet) && window.stopAudio) window.stopAudio(curDet);
       if(g.open) closeOtherAccordionCards(g);
+      /* Same lazy-on-open re-chunking as standalone items above — a group
+         only gets rebuilt to the current merge size the moment it's
+         actually opened. */
+      if(g.open && window.ayahMergeSize && window.rebuildGroupForSize){
+        var gsize=ayahMergeSize();
+        if(g.dataset.mergedSize!==String(gsize)){
+          rebuildGroupForSize(g, gsize).then(function(){ g.dataset.mergedSize=String(gsize); });
+        }
+      }
       if(g.open && !noAutoScroll){
         var raf=window.requestAnimationFrame||function(f){return setTimeout(f,16);};
         raf(function(){
@@ -1305,20 +1334,11 @@ function insertGridBatch(n){
   if(window.Locale) window.Locale.render();
   if(window.applyHidden) window.applyHidden();
   if(window.applyOverrides) window.applyOverrides();
-  /* A non-default merge size chosen earlier has to apply to cards that
-     only just scrolled into existence too — applied lazily here, batch by
-     batch, instead of forcing the whole 600+ worksheet catalog into the
-     DOM and re-chunked up front (see the fix note on
-     applyAyahMergeToAllGroups): that turned a settings toggle into a
-     multi-second freeze. This keeps each toggle's own cost bounded to
-     whatever is already on screen. */
-  if(ayahMergeSize()!==10 && window.applyAyahMergeToAllGroups){
-    var gl=document.getElementById('gridLoading');
-    if(gl) gl.hidden=false;
-    Promise.all([applyAyahMergeToAllGroups(document), applyAyahMergeToStandalone(document)]).then(function(){
-      if(gl) gl.hidden=true;
-    });
-  }
+  /* A non-default merge size is NOT applied here — cards that just scrolled
+     into existence stay at their built-in chunking until actually opened
+     (see the lazy-on-open re-chunk in bindToggles). Eagerly re-fetching and
+     re-chunking every card as it merely scrolls or matches a search is what
+     turned a settings change into a multi-second, network-bound freeze. */
   return gridRestIdx<gridRest.length;
 }
 function materializeAllGridCards(){
@@ -1342,18 +1362,11 @@ window.materializeAllGridCards=materializeAllGridCards;
 var filter='all', juz='0';
 function applyFilter(){
   /* Searching/filtering has to scan the whole catalog, not just what's on
-     screen — materializeAllGridCards() forces every remaining card into
-     the DOM right here. That (plus re-chunking all of them if a non-10
-     merge size is active) is real, visible work, so it gets the same
-     loading indicator as scrolling. */
-  var gl=document.getElementById('gridLoading');
-  if(gl) gl.hidden=false;
+     screen, so materializeAllGridCards() forces every remaining card's
+     (still-closed) HTML shell into the DOM here — but that's just markup,
+     not a re-chunk: no merge-size rebuild or body network fetch happens
+     until a matching card is actually opened (see bindToggles). */
   materializeAllGridCards();
-  if(ayahMergeSize()!==10 && window.applyAyahMergeToAllGroups){
-    Promise.all([applyAyahMergeToAllGroups(document), applyAyahMergeToStandalone(document)]).then(function(){
-      if(gl) gl.hidden=true;
-    });
-  } else if(gl) gl.hidden=true;
   var q=(document.getElementById('q')||{}).value||'';
   document.querySelectorAll('.grid .ws-item').forEach(function(c){
     var catOk = filter==='all' || c.dataset.cat===filter;
@@ -1647,20 +1660,6 @@ function buildMergedWsItem(chunk, sura, originals){
     '</div>';
   return det;
 }
-function applyAyahMergeToAllGroups(root){
-  var size=ayahMergeSize();
-  /* Only re-chunk groups whose applied size actually differs from the
-     current one — forcing every already-correct group through
-     ensureBodyLoaded's network fetch again (with 92 groups on the page)
-     is what turned a settings toggle into a multi-second, unresponsive
-     freeze the first time this shipped. */
-  var groups=[].slice.call((root||document).querySelectorAll('.grid .ws-group')).filter(function(g){
-    return g.dataset.mergedSize!==String(size);
-  });
-  return Promise.all(groups.map(function(g){
-    return rebuildGroupForSize(g, size).then(function(){ g.dataset.mergedSize=String(size); });
-  }));
-}
 /* A standalone worksheet (a complete short surah, or a selected-ayah card)
    was never split into parts, so it has no .ws-group wrapper to re-chunk —
    but if its own ayah count exceeds the chosen merge size, it still needs
@@ -1755,51 +1754,38 @@ function rebuildStandaloneForSize(item, size){
     positionGroupAudioBtn(wrapper);
   });
 }
-function applyAyahMergeToStandalone(root){
-  var size=ayahMergeSize();
-  /* Once wrapped, the real original item moves inside its own synthetic
-     .ws-group wrapper (marked data-standalone-wrap) instead of being a
-     direct child of .grid — so both the not-yet-wrapped and already-wrapped
-     cases have to be found here, or a wrapped item would never be seen
-     again on the next size change. Skips items already at the current
-     size for the same reason as applyAyahMergeToAllGroups above. */
-  var items=[].slice.call((root||document).querySelectorAll('.grid > .ws-item[data-ayalist], .grid > .ws-group[data-standalone-wrap] > .ws-item[data-ayalist]')).filter(function(it){
-    return it.dataset.mergedSize!==String(size);
-  });
-  return Promise.all(items.map(function(item){
-    return rebuildStandaloneForSize(item, size).then(function(){ item.dataset.mergedSize=String(size); });
-  }));
-}
 /* ---------- ayah-per-worksheet setting (Settings panel) ---------- */
 (function(){
   var opts=document.querySelectorAll('.ayahrange-opt');
   if(!opts.length) return;
   var cur=ayahMergeSize();
   opts.forEach(function(o){ o.classList.toggle('on', +o.dataset.ayahrange===cur); });
-  /* Only the cards already on the page (roughly the first ~30, plus
-     whatever the visitor has scrolled to) are re-chunked here — forcing
-     the ENTIRE 600+ worksheet catalog into the DOM and network-fetching
-     every part up front (what this used to do) turned a settings toggle
-     into a multi-second, unresponsive freeze. Cards that scroll into view
-     later pick up the current size lazily, in insertGridBatch. A brief
-     loading state still covers this smaller, bounded amount of work,
-     since even ~30 groups' worth of lazy body fetches is enough to be
-     visibly non-instant.
-     requestAnimationFrame is unreliable here (never fires in a
-     backgrounded/non-visible webview — a real risk inside the Android
-     wrapper, not just a headless-test quirk), so a plain setTimeout(0) is
-     used instead to guarantee the just-shown spinner actually paints
-     before the work starts. */
-  function runMergeWithLoading(){
+  /* Changing this setting doesn't touch the catalog at all — every card
+     picks up the new size lazily, the moment it's actually opened (see
+     bindToggles). Eagerly re-chunking everything on screen (or worse, the
+     whole 600+ worksheet catalog after materializeAllGridCards() from a
+     search) here is what turned a settings toggle into a multi-second,
+     network-bound freeze. The one exception: if something is already open
+     right now, it gets refreshed immediately, since the visitor is looking
+     right at it — bounded to at most a couple of cards, so a brief loading
+     state is enough to cover it. */
+  function refreshOpenCards(){
+    var size=ayahMergeSize();
+    var openGroups=[].slice.call(document.querySelectorAll('.grid > .ws-group[open]')).filter(function(g){
+      return g.dataset.mergedSize!==String(size);
+    });
+    var openItems=[].slice.call(document.querySelectorAll('.grid > .ws-item[open][data-ayalist]')).filter(function(it){
+      return it.dataset.mergedSize!==String(size);
+    });
+    if(!openGroups.length && !openItems.length) return Promise.resolve();
     var panel=document.querySelector('.settings-sub[data-cat="ayahrange"]');
     var loading=document.querySelector('.ayahrange-loading');
     if(panel) panel.classList.add('busy');
     if(loading) loading.hidden=false;
-    return new Promise(function(resolve){
-      setTimeout(function(){ setTimeout(function(){
-        Promise.all([applyAyahMergeToAllGroups(), applyAyahMergeToStandalone()]).then(resolve);
-      },0); },0);
-    }).then(function(){
+    return Promise.all(
+      openGroups.map(function(g){ return rebuildGroupForSize(g, size).then(function(){ g.dataset.mergedSize=String(size); }); })
+        .concat(openItems.map(function(it){ return rebuildStandaloneForSize(it, size).then(function(){ it.dataset.mergedSize=String(size); }); }))
+    ).then(function(){
       if(panel) panel.classList.remove('busy');
       if(loading) loading.hidden=true;
     });
@@ -1810,22 +1796,9 @@ function applyAyahMergeToStandalone(root){
       opts.forEach(function(x){ x.classList.toggle('on',x===o); });
       var valEl=document.getElementById('settingsAyahRangeValue');
       if(valEl) valEl.textContent=o.textContent.trim();
-      runMergeWithLoading().then(function(){ setTimeout(Popover.close, 300); });
+      refreshOpenCards().then(function(){ setTimeout(Popover.close, 300); });
     });
   });
-  /* A returning visitor's saved non-default size has to be re-applied on
-     load too, not just right after they click an option — otherwise the
-     setting only takes effect for the rest of that same session. The
-     settings panel isn't open yet at this point, so there's no spinner to
-     show — just defer it off the critical first-paint path instead. Only
-     the cards already materialized on load are covered here; the rest
-     pick up the size lazily as they scroll in (insertGridBatch). */
-  if(ayahMergeSize()!==10){
-    setTimeout(function(){ setTimeout(function(){
-      applyAyahMergeToAllGroups();
-      applyAyahMergeToStandalone();
-    },0); },0);
-  }
 })();
 /* ---------- إخفاء نصوص التلميح داخل الحقول عند الطباعة/التصدير PDF ----------
    الاعتماد على CSS وحده (::placeholder{color:transparent}) غير موثوق في كل

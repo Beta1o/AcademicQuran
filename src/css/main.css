@@ -106,11 +106,10 @@ html[dir="rtl"] .settings-chevron svg,html[dir="rtl"] .settings-back svg{transfo
 .lang-opt.on::after{content:"✓";margin-inline-start:auto;padding-inline-start:8px}
 .reciter-opt[hidden]{display:none}
 
-.ayahrange-loading,.grid-loading{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:.82rem;color:var(--teal);font-weight:600}
-.ayahrange-loading .spinner,.grid-loading .spinner{width:14px;height:14px;border-radius:50%;border:2px solid color-mix(in srgb, var(--teal) 25%, transparent);border-top-color:var(--teal);animation:ayahrangeSpin .7s linear infinite;flex:none}
+.ayahrange-loading{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:.82rem;color:var(--teal);font-weight:600}
+.ayahrange-loading .spinner{width:14px;height:14px;border-radius:50%;border:2px solid color-mix(in srgb, var(--teal) 25%, transparent);border-top-color:var(--teal);animation:ayahrangeSpin .7s linear infinite;flex:none}
 @keyframes ayahrangeSpin{to{transform:rotate(360deg)}}
 .settings-sub[data-cat="ayahrange"].busy .ayahrange-opt{pointer-events:none;opacity:.5}
-.grid-loading{grid-column:1/-1;justify-content:center;padding:18px 12px}
 
 /* Theme row: an icon + label + an actual switch visual (not just a plain
    list item) — its state (.on) is toggled in JS alongside the sun/moon icon
