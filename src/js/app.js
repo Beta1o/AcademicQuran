@@ -1096,7 +1096,7 @@ function loadWsBody(id, cb){
 function ensureBodyLoaded(det){
   var slot=det.querySelector(':scope > .ws[data-lazy]');
   if(!slot) return Promise.resolve(false); /* مُحمَّلة بالفعل، أو ورقة أُضيفت وقت التشغيل بمحتوى كامل أصلًا */
-  var id=det.id.replace(/^w-/,'');
+  var id=(det.id||det.dataset.origid||'').replace(/^w-/,'');
   return new Promise(function(resolve){
     loadWsBody(id, function(html){
       if(!html){ resolve(false); return; }
@@ -1121,6 +1121,24 @@ function ensureBodyLoaded(det){
   });
 }
 window.ensureBodyLoaded=ensureBodyLoaded;
+function closestTopLevelCard(d){
+  var el=d;
+  while(el && el.parentElement){
+    if(el.parentElement.classList && el.parentElement.classList.contains('grid')) return el;
+    el=el.parentElement;
+  }
+  return d;
+}
+/* Only one top-level grid card — a standalone worksheet or a whole grouped
+   surah — stays open at a time. Opening a nested part inside a group
+   doesn't close its own group (that's the ancestor staying open), only
+   every OTHER top-level card. */
+function closeOtherAccordionCards(d){
+  var topCard=closestTopLevelCard(d);
+  document.querySelectorAll('.grid > .ws-group[open], .grid > .ws-item[open]').forEach(function(o){
+    if(o!==topCard) o.removeAttribute('open');
+  });
+}
 function bindToggles(root){
   root.querySelectorAll('.ws-item').forEach(function(d){
     if(isBound(d)) return;
@@ -1133,12 +1151,12 @@ function bindToggles(root){
       setGoLabel();
       if(d.open) ensureBodyLoaded(d);
       if(!d.open && window.stopAudio) window.stopAudio(d);
-      if(d.open && !noAutoScroll){
-        document.querySelectorAll('.grid .ws-item[open]').forEach(function(o){
-          if(o!==d) o.removeAttribute('open');
-        });
-        var raf=window.requestAnimationFrame||function(f){return setTimeout(f,16);};
-        raf(function(){ try{ d.scrollIntoView({block:'start'}); }catch(e){} });
+      if(d.open){
+        closeOtherAccordionCards(d);
+        if(!noAutoScroll){
+          var raf=window.requestAnimationFrame||function(f){return setTimeout(f,16);};
+          raf(function(){ try{ d.scrollIntoView({block:'start'}); }catch(e){} });
+        }
       }
     });
   });
@@ -1157,6 +1175,7 @@ function bindToggles(root){
          different worksheet is playing; passing curDet itself only stops
          when it's actually this group's own playback still going. */
       if(!g.open && curDet && g.contains(curDet) && window.stopAudio) window.stopAudio(curDet);
+      if(g.open) closeOtherAccordionCards(g);
       if(g.open && !noAutoScroll){
         var raf=window.requestAnimationFrame||function(f){return setTimeout(f,16);};
         raf(function(){
@@ -1233,32 +1252,14 @@ function materializeAllGridCards(){
 })();
 window.materializeAllGridCards=materializeAllGridCards;
 
-var filter='all', juz='0', ayahRangeFilter='all';
-/* A worksheet's own ayah count (not the whole surah's) — data-ayalist lists
-   exactly which ayat this specific card covers, whether it's a full short
-   surah or one ≤20-ayah part of a split one. Falls back to data-ayat (the
-   surah's total) only for the rare card that has no ayalist at all. */
-function itemAyahCount(c){
-  var list=c.dataset.ayalist;
-  if(list) return list.split(',').filter(Boolean).length;
-  return +(c.dataset.ayat||0);
-}
-function matchesAyahRange(c){
-  if(ayahRangeFilter==='all') return true;
-  var n=itemAyahCount(c);
-  if(ayahRangeFilter==='1-10') return n>=1&&n<=10;
-  if(ayahRangeFilter==='11-20') return n>=11&&n<=20;
-  if(ayahRangeFilter==='21-50') return n>=21&&n<=50;
-  if(ayahRangeFilter==='50plus') return n>50;
-  return true;
-}
+var filter='all', juz='0';
 function applyFilter(){
   materializeAllGridCards();
   var q=(document.getElementById('q')||{}).value||'';
   document.querySelectorAll('.grid .ws-item').forEach(function(c){
     var catOk = filter==='all' || c.dataset.cat===filter;
     var juzOk = juz==='0' || c.dataset.juz===juz;
-    var ok=catOk&&juzOk&&matchesAyahRange(c)&&(!q||c.dataset.name.indexOf(q.trim())>-1);
+    var ok=catOk&&juzOk&&(!q||c.dataset.name.indexOf(q.trim())>-1);
     c.style.display=ok?'':'none';
   });
   /* تصفية «آيات مختارة»: تُعرَض أجزاء السور المجزَّأة منفكّة كبطاقات مستقلة
@@ -1268,7 +1269,7 @@ function applyFilter(){
   /* اختيار جزء معيّن يعني أن المستخدم يريد رؤية أجزاء السور التي تقع ضمنه
      تحديدًا — إبقاؤها مطويّة داخل غلاف السورة الكاملة يخفي أيها يطابق
      فعلًا، فيُفكّ التجميع أيضًا هنا كما في تبويب «آيات مختارة». */
-  var flat = filter==='ayah' || juz!=='0' || ayahRangeFilter!=='all';
+  var flat = filter==='ayah' || juz!=='0';
   if(grid) grid.classList.toggle('force-flat', flat);
   document.querySelectorAll('.grid .ws-group').forEach(function(g){
     if(flat) g.setAttribute('open','');
@@ -1386,20 +1387,290 @@ window.applyLvlFilter=applyLvlFilter;
     });
   });
 })();
-/* ---------- ayah-count home-grid filter (Settings panel) ---------- */
+/* ---------- merge/resize split-surah parts to a chosen ayah-per-worksheet size ----------
+   Standalone worksheets (a whole short surah, or a single selected-ayah card)
+   are unaffected — they're not chunked into parts in the first place, so
+   there's nothing to merge. This only touches .ws-group (split long surahs
+   into ~10-ayah parts): it re-chunks that group's ayat into new worksheets
+   of the chosen size, built from the *same* verified source content —
+   verse text is sliced from each original part's own per-ayah aya-seg
+   spans (already tagged with the exact ayah they belong to, see verseHTML
+   in build.js), never retyped or guessed. Each new chunk's questions are
+   every original part's full question set for any part whose ayat overlap
+   that chunk — sizes that aren't a clean multiple of the original ~10-ayah
+   parts (5/15/25) mean a part straddling a chunk boundary contributes its
+   full question set to both neighboring chunks rather than being split
+   (there's no per-ayah question data to divide it by), which is an
+   accepted tradeoff, not a bug: every question shown is still a real one
+   from that surah, just not perfectly exclusive to one chunk at the seam. */
+var AYAH_MERGE_KEY='tahleel-ayahmerge';
+function ayahMergeSize(){
+  try{ var v=localStorage.getItem(AYAH_MERGE_KEY); return v?+v:10; }catch(e){ return 10; }
+}
+var mergeSeq=0;
+function rebuildGroupForSize(group, size){
+  var itemsWrap=group.querySelector(':scope > .ws-group-items');
+  if(!itemsWrap) return Promise.resolve();
+  var holder=group.querySelector(':scope > .ws-group-originals');
+  if(!holder){
+    /* First time this group is ever re-chunked: stash the real, original
+       part elements untouched in a hidden holder — every future size
+       change (including back to the default 10) rebuilds from these, never
+       from a previously-synthesized chunk, so nothing degrades over
+       repeated switches. */
+    holder=document.createElement('div');
+    holder.className='ws-group-originals';
+    holder.hidden=true;
+    group.appendChild(holder);
+    [].slice.call(itemsWrap.children).forEach(function(el){
+      /* Hidden holder copies keep no id — the visible clone (or, for
+         size 10, the visible copy) owns the real "w-..." id, so
+         getElementById never resolves to an invisible duplicate. The
+         original id is preserved in data-origid to restore on the
+         size-10 clone. */
+      el.dataset.origid=el.id;
+      el.removeAttribute('id');
+      holder.appendChild(el);
+    });
+  }
+  var originals=[].slice.call(holder.children);
+  if(size===10){
+    /* Restore the default view from clones of the pristine originals —
+       never move the real nodes out of the holder, or a later re-chunk
+       would find it empty. */
+    itemsWrap.innerHTML='';
+    originals.forEach(function(el){
+      var clone=el.cloneNode(true);
+      if(el.dataset.origid) clone.id=el.dataset.origid;
+      itemsWrap.appendChild(clone);
+    });
+    bindToggles(itemsWrap);
+    originals.forEach(function(el,i){
+      var clone=itemsWrap.children[i];
+      window.bindSheet(clone.querySelector('.ws')||clone, clone);
+    });
+    if(window.Locale) window.Locale.render(itemsWrap);
+    return Promise.resolve();
+  }
+  return Promise.all(originals.map(function(el){ return ensureBodyLoaded(el); })).then(function(){
+    /* Flatten every original part's ayah list, in order, then re-cut it
+       into runs of `size` — the source of truth for chunk boundaries, not
+       the original ~10-ayah part boundaries themselves. */
+    var ayaOwner=[]; // [{aya:Number, part:element}] in surah order
+    originals.forEach(function(el){
+      (el.dataset.ayalist||'').split(',').filter(Boolean).forEach(function(a){
+        ayaOwner.push({aya:+a, part:el});
+      });
+    });
+    var chunks=[];
+    for(var i=0;i<ayaOwner.length;i+=size) chunks.push(ayaOwner.slice(i,i+size));
+    var sura=originals[0]?originals[0].dataset.surano:'';
+    var newEls=chunks.map(function(chunk){ return buildMergedWsItem(chunk, sura, originals); });
+    itemsWrap.innerHTML='';
+    newEls.forEach(function(el){ itemsWrap.appendChild(el); });
+    bindToggles(itemsWrap);
+    newEls.forEach(function(el){ window.bindSheet(el.querySelector('.ws'), el); });
+    if(window.Locale) window.Locale.render(itemsWrap);
+  });
+}
+function buildMergedWsItem(chunk, sura, originals){
+  var ayaNums=chunk.map(function(c){ return c.aya; });
+  var overlapping=[]; // original parts touching this chunk, each once, in order
+  chunk.forEach(function(c){ if(overlapping.indexOf(c.part)===-1) overlapping.push(c.part); });
+  var first=ayaNums[0], last=ayaNums[ayaNums.length-1];
+  var id='merge'+(mergeSeq++)+'_'+sura+'_'+first+'_'+last;
+  var det=document.createElement('details');
+  det.className='ws-item';
+  det.id='w-'+id;
+  det.dataset.cat='ayah';
+  det.dataset.surano=sura;
+  det.dataset.ayano=String(first);
+  det.dataset.ayaend='1';
+  det.dataset.ayalist=ayaNums.join(',');
+  var refCard=overlapping[0].querySelector('.card')||overlapping[0].querySelector('summary');
+  var suraName=(refCard&&refCard.querySelector('[data-i18n-name]'))?refCard.querySelector('[data-i18n-name]').getAttribute('data-i18n-name'):'';
+  var wordsAll=[];
+  overlapping.forEach(function(o){ try{ wordsAll=wordsAll.concat(JSON.parse(o.dataset.words||'[]')); }catch(e){} });
+  det.dataset.words=JSON.stringify(wordsAll);
+  /* Verse: pull each ayah's own tagged span, in chunk order, from whichever
+     original part actually contains it — a precise slice of real, already-
+     verified text, not a re-derived or retyped copy. */
+  var verseSpans=ayaNums.map(function(n){
+    var owner=chunk.find(function(c){ return c.aya===n; }).part;
+    var span=owner.querySelector('.aya-seg[data-aya="'+n+'"]');
+    return span?span.outerHTML:'';
+  }).filter(Boolean).join(' ');
+  /* Sections: concatenate each overlapping part's own section (by index —
+     every worksheet has the same fixed 3 sections in the same order), not
+     a merge/interleave of questions across different section topics. */
+  var secCount=Math.max.apply(null, overlapping.map(function(o){ return o.querySelectorAll(':scope .sec').length; }).concat([0]));
+  var secsHTML='';
+  for(var i=0;i<secCount;i++){
+    var refSec=null, qHTML='', num=0;
+    overlapping.forEach(function(o){
+      var sec=o.querySelectorAll(':scope .sec')[i];
+      if(!sec) return;
+      if(!refSec) refSec=sec;
+      sec.querySelectorAll(':scope .qlist > .q').forEach(function(q){
+        num++;
+        var clone=q.cloneNode(true);
+        var numEl=clone.querySelector('.num'); if(numEl) numEl.textContent=numEl.textContent.replace(/[0-9٠-٩]+/, String(num));
+        qHTML+=clone.outerHTML;
+      });
+    });
+    if(refSec) secsHTML+='<section class="sec">'+refSec.querySelector('.sec-head').outerHTML+'<div class="qlist">'+qHTML+'</div></section>';
+  }
+  det.innerHTML=
+    '<summary class="card">'+
+      '<div class="tagrow"><span class="tag" data-i18n="tagPart">جزء من سورة</span></div>'+
+      '<h2><span data-i18n="surahWord">سورة</span> <span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span></h2>'+
+      '<div class="vpeek">﴿ '+verseSpans+' ﴾</div>'+
+      '<div class="cmeta"><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
+    '</summary>'+
+    '<div class="ws">'+
+      '<div class="ws-top">'+
+        '<button class="act close" data-close="'+id+'" data-i18n="closeWs">▲ إغلاق</button><div class="spacer"></div>'+
+        '<button class="act reset" data-reset="'+id+'" data-i18n="resetWs">تفريغ الإجابات</button>'+
+        '<button class="act print" data-print="'+id+'" data-i18n="printWs">🖨️ طباعة الورقة</button>'+
+      '</div>'+
+      '<article class="sheet">'+
+        '<header class="sheet-head">'+
+          '<h2><span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span></h2>'+
+        '</header>'+
+        '<div class="verse-wrap">'+
+          '<button class="act audio-play js-only" data-audio="'+id+'" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>'+
+          '<div class="verse"><p>﴿ '+verseSpans+' ﴾</p></div>'+
+        '</div>'+
+        secsHTML+
+        '<footer class="sheet-foot"></footer>'+
+      '</article>'+
+      '<div class="ws-close"><button class="act" data-close="'+id+'" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>'+
+    '</div>';
+  return det;
+}
+function applyAyahMergeToAllGroups(){
+  var size=ayahMergeSize();
+  var groups=[].slice.call(document.querySelectorAll('.grid .ws-group'));
+  return Promise.all(groups.map(function(g){ return rebuildGroupForSize(g, size); }));
+}
+/* A standalone worksheet (a complete short surah, or a selected-ayah card)
+   was never split into parts, so it has no .ws-group wrapper to re-chunk —
+   but if its own ayah count exceeds the chosen merge size, it still needs
+   to become a group of that many smaller worksheets. Converts in place:
+   the real original item is stashed hidden inside the new wrapper (its own
+   holder), and reverting to a size that fits restores the plain original. */
+var _speakerIconHTML=null;
+function speakerIconHTML(){
+  if(_speakerIconHTML===null){
+    var ref=document.querySelector('.group-audio-play');
+    _speakerIconHTML=ref?ref.innerHTML:'🔊';
+  }
+  return _speakerIconHTML;
+}
+function rebuildStandaloneForSize(item, size){
+  var ayaNums=(item.dataset.ayalist||'').split(',').filter(Boolean).map(Number);
+  var wrapper=item.__mergeWrapper;
+  if(size===10 || ayaNums.length<=size){
+    if(wrapper && wrapper.parentNode){
+      wrapper.parentNode.replaceChild(item, wrapper);
+      item.hidden=false;
+      item.__mergeWrapper=null;
+    }
+    return Promise.resolve();
+  }
+  return ensureBodyLoaded(item).then(function(){
+    if(!wrapper){
+      wrapper=document.createElement('details');
+      wrapper.className='ws-group';
+      wrapper.dataset.standaloneWrap='1';
+      var tagrow=item.querySelector(':scope > summary .tagrow');
+      var h2=item.querySelector(':scope > summary h2');
+      var summary=document.createElement('summary');
+      summary.className='ws-group-head card';
+      summary.innerHTML=
+        '<div class="tagrow">'+(tagrow?tagrow.innerHTML:'')+'</div>'+
+        '<h2><span class="ws-group-icon">📖</span> '+(h2?h2.innerHTML:'')+'</h2>'+
+        '<div class="vpeek"></div>'+
+        '<div class="cmeta">'+
+          '<span class="cmeta-start"><span class="prog-mini"></span><span class="ws-group-count"></span></span>'+
+          '<span class="cmeta-end">'+
+            '<button type="button" class="icon-btn group-audio-play js-only" data-audio-group="" hidden aria-label="استماع لكامل السورة" data-i18n-aria="listenSurahWs">'+speakerIconHTML()+'</button>'+
+            '<span class="go" data-i18n="openWs">افتح الورقة ▾</span>'+
+          '</span>'+
+        '</div>';
+      wrapper.appendChild(summary);
+      var itemsWrap=document.createElement('div');
+      itemsWrap.className='ws-group-items';
+      wrapper.appendChild(itemsWrap);
+      item.parentNode.insertBefore(wrapper, item);
+      item.hidden=true;
+      wrapper.appendChild(item);
+      item.__mergeWrapper=wrapper;
+    }
+    var itemsWrap=wrapper.querySelector(':scope > .ws-group-items');
+    var chunk=ayaNums.map(function(a){ return {aya:a, part:item}; });
+    var chunks=[];
+    for(var i=0;i<chunk.length;i+=size) chunks.push(chunk.slice(i,i+size));
+    var sura=item.dataset.surano;
+    var newEls=chunks.map(function(c){ return buildMergedWsItem(c, sura, [item]); });
+    itemsWrap.innerHTML='';
+    newEls.forEach(function(el){ itemsWrap.appendChild(el); });
+    bindToggles(itemsWrap);
+    bindToggles(wrapper);
+    newEls.forEach(function(el){ window.bindSheet(el.querySelector('.ws'), el); });
+    var vpeek=wrapper.querySelector(':scope > summary .vpeek');
+    var verseSpans=ayaNums.map(function(n){
+      var span=item.querySelector('.aya-seg[data-aya="'+n+'"]');
+      return span?span.outerHTML:'';
+    }).filter(Boolean).join(' ');
+    if(vpeek) vpeek.innerHTML='﴿ '+verseSpans+' ﴾';
+    var totalQ=newEls.reduce(function(a,el){ return a+el.querySelectorAll('.q').length; },0);
+    var progMini=wrapper.querySelector(':scope > summary .prog-mini');
+    if(progMini) progMini.textContent=totalQ+' سؤالًا';
+    var countBadge=wrapper.querySelector(':scope > summary .ws-group-count');
+    if(countBadge) countBadge.textContent=chunks.length+' جزءًا';
+    var audioBtn=wrapper.querySelector(':scope > summary .group-audio-play');
+    if(audioBtn) audioBtn.dataset.audioGroup=newEls.map(function(el){ return el.id.replace(/^w-/,''); }).join(',');
+    if(window.bindGroupAudio) bindGroupAudio(wrapper);
+    if(window.Locale) window.Locale.render(wrapper);
+  });
+}
+function applyAyahMergeToStandalone(){
+  var size=ayahMergeSize();
+  /* Once wrapped, the real original item moves inside its own synthetic
+     .ws-group wrapper (marked data-standalone-wrap) instead of being a
+     direct child of .grid — so both the not-yet-wrapped and already-wrapped
+     cases have to be found here, or a wrapped item would never be seen
+     again on the next size change. */
+  var items=[].slice.call(document.querySelectorAll('.grid > .ws-item[data-ayalist], .grid > .ws-group[data-standalone-wrap] > .ws-item[data-ayalist]'));
+  return Promise.all(items.map(function(item){ return rebuildStandaloneForSize(item, size); }));
+}
+/* ---------- ayah-per-worksheet setting (Settings panel) ---------- */
 (function(){
   var opts=document.querySelectorAll('.ayahrange-opt');
   if(!opts.length) return;
+  var cur=ayahMergeSize();
+  opts.forEach(function(o){ o.classList.toggle('on', +o.dataset.ayahrange===cur); });
   opts.forEach(function(o){
     o.addEventListener('click',function(){
-      ayahRangeFilter=o.dataset.ayahrange;
+      try{ localStorage.setItem(AYAH_MERGE_KEY, o.dataset.ayahrange); }catch(e){}
       opts.forEach(function(x){ x.classList.toggle('on',x===o); });
       var valEl=document.getElementById('settingsAyahRangeValue');
-      if(valEl) valEl.textContent = ayahRangeFilter==='all' ? '' : o.textContent.trim();
-      applyFilter();
+      if(valEl) valEl.textContent=o.textContent.trim();
+      materializeAllGridCards();
+      applyAyahMergeToAllGroups();
+      applyAyahMergeToStandalone();
       setTimeout(Popover.close, 300);
     });
   });
+  /* A returning visitor's saved non-default size has to be re-applied on
+     load too, not just right after they click an option — otherwise the
+     setting only takes effect for the rest of that same session. */
+  if(ayahMergeSize()!==10){
+    materializeAllGridCards();
+    applyAyahMergeToAllGroups();
+    applyAyahMergeToStandalone();
+  }
 })();
 /* ---------- إخفاء نصوص التلميح داخل الحقول عند الطباعة/التصدير PDF ----------
    الاعتماد على CSS وحده (::placeholder{color:transparent}) غير موثوق في كل

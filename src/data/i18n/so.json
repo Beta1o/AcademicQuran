@@ -43,12 +43,7 @@
  "qCountAll": "Dhammaan su'aalaha",
  "qCountHint": "Waxay khuseysaa qaybo kasta marka xaashidu furanto — mar walba si random ah ayaa looga dooranayaa su'aalaha heerka hadda.",
  "ayahRangeLabel": "Tirada aayadaha",
- "ayahRangeAll": "Dhererka oo dhan",
- "ayahRange1": "1-10 aayado",
- "ayahRange2": "11-20 aayado",
- "ayahRange3": "21-50 aayado",
- "ayahRange4": "In ka badan 50 aayado",
- "ayahRangeHint": "Waxay ku muujinaysaa bogga hore xaashiyaha leh tiradan aayadaha oo keliya — suuradaha dhaadheer ee la kala qaybiyay si otomaatig ah ayaa loo kala saaraa.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ Xir xaashida",
  "gateTitle": "🔒 Bogga maamulka",
  "gateDesc": "Boggan waa kan macallinka — geli furaha si aad u sii wadato",
@@ -92,7 +87,8 @@
   "t1w1xgjn": "Suurada {}",
   "tqx1b4r": "{} su'aalood",
   "tk8cd4g": "{} qaybood",
-  "tsd15m4": "{} su'aalood qayb kasta"
+  "tsd15m4": "{} su'aalood qayb kasta",
+  "tln58c7": "{} aayado xaashi kasta"
  },
  "term": {},
  "sura": {

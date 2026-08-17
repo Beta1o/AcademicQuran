@@ -43,12 +43,7 @@
  "qCountAll": "എല്ലാ ചോദ്യങ്ങളും",
  "qCountHint": "ഏതെങ്കിലും വർക്ക്ഷീറ്റ് തുറക്കുമ്പോൾ എല്ലാ വിഭാഗത്തിനും ബാധകം — ഓരോ തവണയും നിലവിലെ ലെവലിന്റെ ചോദ്യങ്ങളിൽ നിന്ന് ക്രമരഹിതമായി തിരഞ്ഞെടുക്കുന്നു.",
  "ayahRangeLabel": "ആയത്തുകളുടെ എണ്ണം",
- "ayahRangeAll": "എല്ലാ ദൈർഘ്യവും",
- "ayahRange1": "1-10 ആയത്തുകൾ",
- "ayahRange2": "11-20 ആയത്തുകൾ",
- "ayahRange3": "21-50 ആയത്തുകൾ",
- "ayahRange4": "50-ൽ കൂടുതൽ ആയത്തുകൾ",
- "ayahRangeHint": "ഹോം പേജിൽ ഈ എണ്ണം ആയത്തുകളുള്ള വർക്ക്ഷീറ്റുകൾ മാത്രം കാണിക്കുന്നു — നീണ്ട വിഭജിത സൂറകൾ സ്വയമേവ വേർതിരിക്കുന്നു.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ വർക്ക്ഷീറ്റ് അടയ്ക്കുക",
  "gateTitle": "🔒 അഡ്മിൻ പേജ്",
  "gateDesc": "ഈ പേജ് അധ്യാപകനുള്ളതാണ് — തുടരാൻ പാസ്‌വേഡ് നൽകുക",
@@ -91,7 +86,8 @@
   "t1w1xgjn": "സൂറ {}",
   "tqx1b4r": "{} ചോദ്യങ്ങൾ",
   "tk8cd4g": "{} ഭാഗങ്ങൾ",
-  "tsd15m4": "ഓരോ വിഭാഗത്തിലും {} ചോദ്യങ്ങൾ"
+  "tsd15m4": "ഓരോ വിഭാഗത്തിലും {} ചോദ്യങ്ങൾ",
+  "tln58c7": "ഓരോ വർക്ക്ഷീറ്റിലും {} ആയത്തുകൾ"
  },
  "term": {},
  "sura": {

@@ -43,12 +43,7 @@
  "qCountAll": "Semua pertanyaan",
  "qCountHint": "Berlaku untuk setiap bagian saat lembar kerja dibuka — dipilih secara acak dari pertanyaan level saat ini setiap kali.",
  "ayahRangeLabel": "Jumlah ayat",
- "ayahRangeAll": "Semua panjang",
- "ayahRange1": "1–10 ayat",
- "ayahRange2": "11–20 ayat",
- "ayahRange3": "21–50 ayat",
- "ayahRange4": "Lebih dari 50 ayat",
- "ayahRangeHint": "Hanya menampilkan lembar kerja dengan jumlah ayat ini di halaman utama — surah panjang yang terbagi otomatis dipisah.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ Tutup lembar kerja",
  "gateTitle": "🔒 Halaman admin",
  "gateDesc": "Halaman ini untuk guru — masukkan kata sandi untuk melanjutkan",
@@ -1143,7 +1138,8 @@
   "t1w9gbrp": "Mihrab Tadabur — Perjalanan Mikroskopis",
   "tk8cd4g": "{} bagian",
   "t1hlv3dr": "Juz {}",
-  "tsd15m4": "{} pertanyaan per bagian"
+  "tsd15m4": "{} pertanyaan per bagian",
+  "tln58c7": "{} ayat per lembar kerja"
  },
  "revealModel": "Tampilkan jawaban model",
  "revealCorrect": "Tampilkan jawaban benar",

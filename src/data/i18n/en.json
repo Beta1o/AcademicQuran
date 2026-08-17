@@ -43,12 +43,7 @@
  "qCountAll": "All questions",
  "qCountHint": "Applies to every section when a worksheet opens — randomly picked from the current level tab's questions each time.",
  "ayahRangeLabel": "Ayah count",
- "ayahRangeAll": "All lengths",
- "ayahRange1": "1–10 ayat",
- "ayahRange2": "11–20 ayat",
- "ayahRange3": "21–50 ayat",
- "ayahRange4": "More than 50 ayat",
- "ayahRangeHint": "Shows only worksheets with this many ayat on the home page — long split surahs are automatically ungrouped so each part can match individually.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ Close worksheet",
  "gateTitle": "🔒 Admin page",
  "gateDesc": "This page is for the teacher — enter the password to continue",
@@ -1143,7 +1138,8 @@
   "t1w9gbrp": "The Mihrab of Reflection — A Microscopic Journey",
   "tk8cd4g": "{} parts",
   "t1hlv3dr": "Juz' {}",
-  "tsd15m4": "{} questions per section"
+  "tsd15m4": "{} questions per section",
+  "tln58c7": "{} ayat per worksheet"
  },
  "revealModel": "Show model answer",
  "revealCorrect": "Show correct answer",

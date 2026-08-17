@@ -43,12 +43,7 @@
  "qCountAll": "ټولې پوښتنې",
  "qCountHint": "کله چې کوم کاري پاڼه خلاصیږي پر هرې برخې تطبیقیږي — هر ځل د اوسني کچې پوښتنو څخه په ناڅاپي ډول ټاکل کیږي.",
  "ayahRangeLabel": "د آیتونو شمېر",
- "ayahRangeAll": "ټول اوږدوالي",
- "ayahRange1": "۱ څخه ۱۰ آیتونه",
- "ayahRange2": "۱۱ څخه ۲۰ آیتونه",
- "ayahRange3": "۲۱ څخه ۵۰ آیتونه",
- "ayahRange4": "د ۵۰ آیتونو څخه ډیر",
- "ayahRangeHint": "په کور پاڼه کې یوازې د دې شمېر آیتونو کاري پاڼې ښیي — اوږده وېشل شوي سورتونه په اتومات ډول جلا کیږي.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ پاڼه بندول",
  "gateTitle": "🔒 د مدیریت پاڼه",
  "gateDesc": "دا پاڼه د ښوونکي لپاره ده — د دوام لپاره پټنوم ولیکئ",
@@ -92,7 +87,8 @@
   "t1w1xgjn": "سورت {}",
   "tqx1b4r": "{} پوښتنې",
   "tk8cd4g": "{} برخې",
-  "tsd15m4": "په هره برخه کې {} پوښتنې"
+  "tsd15m4": "په هره برخه کې {} پوښتنې",
+  "tln58c7": "په هره پاڼه کې {} آیتونه"
  },
  "term": {},
  "sura": {

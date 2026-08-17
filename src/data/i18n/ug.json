@@ -43,12 +43,7 @@
  "qCountAll": "بارلىق سوئاللار",
  "qCountHint": "ھەرقانداق ۋاراقچە ئېچىلغاندا ھەر بىر بۆلەككە قوللىنىلىدۇ — ھەر قېتىم نۆۋەتتىكى دەرىجىدىكى سوئاللاردىن随ىي تاللىنىدۇ.",
  "ayahRangeLabel": "ئايەت سانى",
- "ayahRangeAll": "بارلىق ئۇزۇنلۇق",
- "ayahRange1": "1-10 ئايەت",
- "ayahRange2": "11-20 ئايەت",
- "ayahRange3": "21-50 ئايەت",
- "ayahRange4": "50 دىن ئارتۇق ئايەت",
- "ayahRangeHint": "باش بەتتە پەقەت مۇشۇ سانداق ئايەتلىك ۋاراقچىلەرنى كۆرسىتىدۇ — ئۇزۇن بۆلۈنگەن سۈرىلەر ئاپتوماتىك ئايرىلىدۇ.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ ۋاراقچىنى يېپىڭ",
  "gateTitle": "🔒 باشقۇرغۇچى بېتى",
  "gateDesc": "بۇ بەت ئوقۇتقۇچى ئۈچۈن — داۋاملاشتۇرۇش ئۈچۈن پارولنى كىرگۈزۈڭ",
@@ -1146,7 +1141,8 @@
   "t1w9gbrp": "تەپەككۇر مىھرابى — مىكروسكوپىيىلىك بىر سەپەر",
   "tk8cd4g": "{} قىسىم",
   "t1hlv3dr": "{}-جۈز",
-  "tsd15m4": "ھەر بۆلەكتە {} سوئال"
+  "tsd15m4": "ھەر بۆلەكتە {} سوئال",
+  "tln58c7": "ھەر ۋاراقچىدا {} ئايەت"
  },
  "sura": {
   "tfycc7i": "فاتىھە",

@@ -43,12 +43,7 @@
  "qCountAll": "همه سؤالات",
  "qCountHint": "در هر بخش هنگام باز کردن هر برگه اعمال می‌شود — هر بار به‌طور تصادفی از سؤالات سطح فعلی انتخاب می‌شود.",
  "ayahRangeLabel": "تعداد آیات",
- "ayahRangeAll": "همه طول‌ها",
- "ayahRange1": "۱ تا ۱۰ آیه",
- "ayahRange2": "۱۱ تا ۲۰ آیه",
- "ayahRange3": "۲۱ تا ۵۰ آیه",
- "ayahRange4": "بیش از ۵۰ آیه",
- "ayahRangeHint": "در صفحه اصلی فقط برگه‌هایی با این تعداد آیه را نشان می‌دهد — سوره‌های طولانی تقسیم‌شده به‌طور خودکار جدا می‌شوند.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ بستن برگه",
  "gateTitle": "🔒 صفحهٔ مدیریت",
  "gateDesc": "این صفحه برای معلم است — رمز عبور را برای ادامه وارد کنید",
@@ -91,7 +86,8 @@
   "t1w1xgjn": "سورهٔ {}",
   "tqx1b4r": "{} سؤال",
   "tk8cd4g": "{} بخش",
-  "tsd15m4": "{} سؤال در هر بخش"
+  "tsd15m4": "{} سؤال در هر بخش",
+  "tln58c7": "{} آیه در هر برگه"
  },
  "term": {},
  "sura": {

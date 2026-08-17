@@ -43,12 +43,7 @@
  "qCountAll": "সব প্রশ্ন",
  "qCountHint": "যেকোনো ওয়ার্কশিট খোলার সময় প্রতিটি বিভাগে প্রযোজ্য — প্রতিবার বর্তমান স্তরের প্রশ্ন থেকে এলোমেলোভাবে নির্বাচিত হয়।",
  "ayahRangeLabel": "আয়াতের সংখ্যা",
- "ayahRangeAll": "সব দৈর্ঘ্য",
- "ayahRange1": "১-১০ আয়াত",
- "ayahRange2": "১১-২০ আয়াত",
- "ayahRange3": "২১-৫০ আয়াত",
- "ayahRange4": "৫০+ আয়াত",
- "ayahRangeHint": "হোম পৃষ্ঠায় শুধুমাত্র এই সংখ্যক আয়াতের ওয়ার্কশিট দেখায় — দীর্ঘ বিভক্ত সূরাগুলো স্বয়ংক্রিয়ভাবে পৃথক করা হয়।",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ ওয়ার্কশিট বন্ধ করুন",
  "gateTitle": "🔒 প্রশাসক পাতা",
  "gateDesc": "এই পাতাটি শিক্ষকের জন্য — চালিয়ে যেতে পাসওয়ার্ড দিন",
@@ -1143,7 +1138,8 @@
   "t1w9gbrp": "চিন্তনের মিহরাব — একটি আণুবীক্ষণিক যাত্রা",
   "tk8cd4g": "{} অংশ",
   "t1hlv3dr": "পারা {}",
-  "tsd15m4": "প্রতি বিভাগে {}টি প্রশ্ন"
+  "tsd15m4": "প্রতি বিভাগে {}টি প্রশ্ন",
+  "tln58c7": "প্রতি ওয়ার্কশিটে {} আয়াত"
  },
  "revealModel": "আদর্শ উত্তর দেখান",
  "revealCorrect": "সঠিক উত্তর দেখান",

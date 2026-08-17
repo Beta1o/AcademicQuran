@@ -43,12 +43,7 @@
  "qCountAll": "Все вопросы",
  "qCountHint": "Применяется к каждому разделу при открытии листа — каждый раз случайно выбирается из вопросов текущего уровня.",
  "ayahRangeLabel": "Количество аятов",
- "ayahRangeAll": "Любая длина",
- "ayahRange1": "1–10 аятов",
- "ayahRange2": "11–20 аятов",
- "ayahRange3": "21–50 аятов",
- "ayahRange4": "Более 50 аятов",
- "ayahRangeHint": "Показывает на главной странице только листы с таким числом аятов — длинные разделённые суры автоматически разгруппировываются.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ Закрыть лист",
  "gateTitle": "🔒 Страница администратора",
  "gateDesc": "Эта страница для преподавателя — введите пароль для продолжения",
@@ -92,7 +87,8 @@
   "t1w1xgjn": "Сура {}",
   "tqx1b4r": "{} вопросов",
   "tk8cd4g": "{} частей",
-  "tsd15m4": "{} вопросов в разделе"
+  "tsd15m4": "{} вопросов в разделе",
+  "tln58c7": "{} аятов на лист"
  },
  "term": {},
  "sura": {

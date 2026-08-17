@@ -43,12 +43,7 @@
  "qCountAll": "Todas las preguntas",
  "qCountHint": "Se aplica a cada sección al abrir una hoja de trabajo; se elige al azar entre las preguntas del nivel actual cada vez.",
  "ayahRangeLabel": "Número de aleyas",
- "ayahRangeAll": "Todas las longitudes",
- "ayahRange1": "1–10 aleyas",
- "ayahRange2": "11–20 aleyas",
- "ayahRange3": "21–50 aleyas",
- "ayahRange4": "Más de 50 aleyas",
- "ayahRangeHint": "Muestra en la página principal solo hojas con esta cantidad de aleyas — las suras largas divididas se desagrupan automáticamente.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ Cerrar hoja",
  "gateTitle": "🔒 Página de administración",
  "gateDesc": "Esta página es para el profesor — introduce la contraseña para continuar",
@@ -92,7 +87,8 @@
   "t1w1xgjn": "Sura {}",
   "tqx1b4r": "{} preguntas",
   "tk8cd4g": "{} partes",
-  "tsd15m4": "{} preguntas por sección"
+  "tsd15m4": "{} preguntas por sección",
+  "tln58c7": "{} aleyas por hoja"
  },
  "term": {},
  "sura": {

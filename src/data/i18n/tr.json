@@ -43,12 +43,7 @@
  "qCountAll": "Tüm sorular",
  "qCountHint": "Bir çalışma sayfası açıldığında her bölüme uygulanır — her seferinde mevcut seviyenin sorularından rastgele seçilir.",
  "ayahRangeLabel": "Ayet sayısı",
- "ayahRangeAll": "Tüm uzunluklar",
- "ayahRange1": "1-10 ayet",
- "ayahRange2": "11-20 ayet",
- "ayahRange3": "21-50 ayet",
- "ayahRange4": "50'den fazla ayet",
- "ayahRangeHint": "Ana sayfada yalnızca bu sayıda ayete sahip çalışma sayfalarını gösterir — uzun bölünmüş sureler otomatik olarak ayrılır.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ Çalışma sayfasını kapat",
  "gateTitle": "🔒 Yönetici sayfası",
  "gateDesc": "Bu sayfa öğretmen içindir — devam etmek için şifreyi girin",
@@ -1143,7 +1138,8 @@
   "t1w9gbrp": "Tefekkür Mihrabı — Mikroskobik Bir Yolculuk",
   "tk8cd4g": "{} bölüm",
   "t1hlv3dr": "{}. Cüz",
-  "tsd15m4": "Bölüm başına {} soru"
+  "tsd15m4": "Bölüm başına {} soru",
+  "tln58c7": "Sayfa başına {} ayet"
  },
  "revealModel": "Örnek cevabı göster",
  "revealCorrect": "Doğru cevabı göster",

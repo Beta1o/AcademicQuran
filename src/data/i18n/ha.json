@@ -43,12 +43,7 @@
  "qCountAll": "Duk tambayoyi",
  "qCountHint": "Yana aiki ga kowane sashe idan an buɗe takarda — ana zaɓar bazuwar daga tambayoyin matakin yanzu a kowane lokaci.",
  "ayahRangeLabel": "Adadin aayoyi",
- "ayahRangeAll": "Dukkan tsayin",
- "ayahRange1": "Aayoyi 1-10",
- "ayahRange2": "Aayoyi 11-20",
- "ayahRange3": "Aayoyi 21-50",
- "ayahRange4": "Fiye da aayoyi 50",
- "ayahRangeHint": "Yana nuna takardun aiki masu wannan adadin aayoyi kawai a shafin farko — dogayen sura da aka rarraba ana rarrabasu ta atomatik.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ Rufe takardar aiki",
  "gateTitle": "🔒 Shafin malami",
  "gateDesc": "Wannan shafin na malami ne — shigar da kalmar sirri don ci gaba",
@@ -1305,7 +1300,8 @@
   "t1w9gbrp": "Mihrabin Tunani — Tafiya Mai Zurfi",
   "tk8cd4g": "{} sassa",
   "t1hlv3dr": "Juzu'i {}",
-  "tsd15m4": "Tambayoyi {} a kowane sashe"
+  "tsd15m4": "Tambayoyi {} a kowane sashe",
+  "tln58c7": "Aayoyi {} a kowace takarda"
  },
  "revMeccan": "Makkiyya",
  "revMedinan": "Madaniyya",

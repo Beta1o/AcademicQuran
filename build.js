@@ -1193,12 +1193,8 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
       <button type="button" class="settings-back" aria-label="رجوع">${ICON_BACK}</button>
       <div class="settings-group-title" data-i18n="ayahRangeLabel">عدد الآيات</div>
     </div>
-    <span class="admin-hint" data-i18n="ayahRangeHint">يُظهر الصفحة الرئيسة أوراقًا بعدد الآيات هذا فقط — أجزاء السور الطويلة المجزَّأة تُفكَّك تلقائيًا لتطابق الاختيار جزءًا جزءًا.</span>
-    <button type="button" class="lang-opt ayahrange-opt on" data-ayahrange="all" data-i18n="ayahRangeAll">كل الأطوال</button>
-    <button type="button" class="lang-opt ayahrange-opt" data-ayahrange="1-10" data-i18n="ayahRange1">١ – ١٠ آيات</button>
-    <button type="button" class="lang-opt ayahrange-opt" data-ayahrange="11-20" data-i18n="ayahRange2">١١ – ٢٠ آية</button>
-    <button type="button" class="lang-opt ayahrange-opt" data-ayahrange="21-50" data-i18n="ayahRange3">٢١ – ٥٠ آية</button>
-    <button type="button" class="lang-opt ayahrange-opt" data-ayahrange="50plus" data-i18n="ayahRange4">أكثر من ٥٠ آية</button>
+    <span class="admin-hint" data-i18n="ayahRangeHint">يُعيد تقسيم أجزاء السور الطويلة المجزَّأة إلى هذا العدد من الآيات لكل ورقة — الأوراق القصيرة (سور مكتملة أو آية مختارة) لا تتأثر، إذ لم تكن مجزَّأة أصلًا.</span>
+    ${[5,10,15,20,25,30].map(n=>`<button type="button" class="lang-opt ayahrange-opt${n===10?' on':''}" data-ayahrange="${n}" data-i18n-tpl="${tid('{} آيات لكل ورقة')}" data-i18n-word="${toAr(n)}">${n} آيات لكل ورقة</button>`).join('\n    ')}
   </div>
   <div class="settings-sub" data-cat="lang" hidden>
     <div class="settings-sub-head">

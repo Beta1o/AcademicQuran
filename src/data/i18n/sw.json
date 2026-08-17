@@ -43,12 +43,7 @@
  "qCountAll": "Maswali yote",
  "qCountHint": "Inatumika kwa kila sehemu wakati karatasi ya kazi inafunguliwa — huchaguliwa bila mpangilio kutoka maswali ya kiwango cha sasa kila wakati.",
  "ayahRangeLabel": "Idadi ya aya",
- "ayahRangeAll": "Urefu wote",
- "ayahRange1": "Aya 1-10",
- "ayahRange2": "Aya 11-20",
- "ayahRange3": "Aya 21-50",
- "ayahRange4": "Zaidi ya aya 50",
- "ayahRangeHint": "Inaonyesha karatasi za kazi zenye idadi hii ya aya pekee kwenye ukurasa wa nyumbani — sura ndefu zilizogawanywa hutenganishwa kiotomatiki.",
+ "ayahRangeHint": "Re-chunks split long surahs into worksheets of this many ayat each — short worksheets (a complete surah or a selected-ayah card) aren't affected, since they were never split into parts to begin with.",
  "closeWsFull": "▲ Funga karatasi",
  "gateTitle": "🔒 Ukurasa wa msimamizi",
  "gateDesc": "Ukurasa huu ni wa mwalimu — weka nenosiri ili kuendelea",
@@ -91,7 +86,8 @@
   "t1w1xgjn": "Sura {}",
   "tqx1b4r": "Maswali {}",
   "tk8cd4g": "Sehemu {}",
-  "tsd15m4": "Maswali {} kwa kila sehemu"
+  "tsd15m4": "Maswali {} kwa kila sehemu",
+  "tln58c7": "Aya {} kwa kila karatasi"
  },
  "term": {},
  "sura": {
