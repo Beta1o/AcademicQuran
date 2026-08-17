@@ -258,6 +258,15 @@ html[dir="rtl"] .settings-chevron svg,html[dir="rtl"] .settings-back svg{transfo
 .card .cmeta{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;border-top:1px dashed var(--line);font-size:.78rem;color:var(--ink-soft)}
 .card .go{font-weight:700;color:var(--ac)}
 .card .prog-mini{font-weight:600}
+.cmeta-start,.cmeta-end{display:flex;align-items:center;gap:8px}
+/* The group card's "listen to the whole surah" control sits among small text
+   badges (question count, part count) in a tight card footer — an icon-only
+   button here (same .icon-btn used for the settings gear) keeps it the same
+   visual weight as its neighbors instead of a full-size labeled button
+   competing for the same cramped row. */
+.cmeta .icon-btn{width:28px;height:28px;flex-shrink:0;border-width:1px}
+.cmeta .icon-btn svg{width:14px;height:14px}
+.cmeta .icon-btn.playing{background:var(--ac);border-color:var(--ac);color:#fff}
 
 /* ---------- worksheet page ---------- */
 .ws{max-width:960px;margin:0 auto;padding:30px 20px 80px}

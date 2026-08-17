@@ -1007,10 +1007,14 @@ W.forEach((w,wi)=>{
     <h2><span class="ws-group-icon">📖</span> <span data-i18n="surahWord">سورة</span> <span data-i18n-name="${esc(w.suraOf)}">${esc(w.suraOf)}</span></h2>
     <div class="vpeek">﴿ ${verseHTML(first)} ﴾</div>
     <div class="cmeta">
-      <span class="prog-mini" data-i18n-tpl="${tid('{} سؤالًا')}" data-i18n-word="${toAr(groupTotalQ)}">${toAr(groupTotalQ)} سؤالًا</span>
-      <span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span>
-      <button type="button" class="act audio-play js-only" data-audio-group="${members.map(({x})=>x.id).join(',')}" hidden data-i18n="listenSurahWs">🔊 استماع لكل السورة</button>
-      <span class="go" data-i18n="openWs">افتح الورقة ▾</span>
+      <span class="cmeta-start">
+        <span class="prog-mini" data-i18n-tpl="${tid('{} سؤالًا')}" data-i18n-word="${toAr(groupTotalQ)}">${toAr(groupTotalQ)} سؤالًا</span>
+        <span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span>
+      </span>
+      <span class="cmeta-end">
+        <button type="button" class="icon-btn group-audio-play js-only" data-audio-group="${members.map(({x})=>x.id).join(',')}" hidden aria-label="استماع لكامل السورة" title="استماع لكامل السورة" data-i18n-aria="listenSurahWs">${ICON_SPEAKER}</button>
+        <span class="go" data-i18n="openWs">افتح الورقة ▾</span>
+      </span>
     </div>
   </summary>
   <div class="ws-group-items">

@@ -294,10 +294,24 @@ function clearReading(){
   if(curSeg) curSeg.classList.remove('reading');
   curSeg=null;
 }
+/* The group "listen to the whole surah" button is icon-only (no text to
+   swap in/out like the regular per-worksheet button has) — its "playing"
+   state is shown purely via the .playing class (CSS highlight) instead. */
+function setAudioBtnState(btn,state){
+  if(btn.classList.contains('group-audio-play')){
+    btn.classList.toggle('playing', state==='playing');
+    return;
+  }
+  if(state==='playing') btn.textContent='⏸️ إيقاف التلاوة';
+  else if(state==='loading') btn.textContent='⏳ جاري التحميل...';
+  else if(state==='noaudio') btn.textContent='🔊 لا يوجد صوت';
+  else btn.textContent='🔊 استماع للتلاوة';
+  btn.classList.toggle('playing', state==='playing');
+}
 function stopAudio(onlyIfDet){
   if(onlyIfDet && curDet!==onlyIfDet) return; /* a different worksheet closed, not the one currently playing */
   if(curAudio){ curAudio.pause(); curAudio=null; }
-  if(curBtn){ curBtn.textContent='🔊 استماع للتلاوة'; curBtn.classList.remove('playing'); curBtn=null; }
+  if(curBtn){ setAudioBtnState(curBtn,'idle'); curBtn=null; }
   clearReading(); curDet=null;
 }
 function fullStopAudio(){
@@ -327,9 +341,9 @@ function markReading(ayaNo,det){
 }
 /* تُشغَّل الآيات كملفات منفصلة بالتتابع (لا كصوت سورة كاملة واحد) كي يمكن تمييز الآية الحالية أثناء الاستماع لمساعدة الحفظ */
 function playAyaList(items,btn,det){
-  if(!items.length){ btn.textContent='🔊 لا يوجد صوت'; setTimeout(function(){ btn.textContent='🔊 استماع للتلاوة'; },1500); return; }
+  if(!items.length){ setAudioBtnState(btn,'noaudio'); setTimeout(function(){ setAudioBtnState(btn,'idle'); },1500); return; }
   var i=0, preloaded=null, failCount=0; /* {idx, audio} — ملف الآية التالية يُحمَّل مسبقًا أثناء تشغيل الحالية */
-  curAudio=new Audio(); curBtn=btn; curDet=det; btn.textContent='⏸️ إيقاف التلاوة'; btn.classList.add('playing');
+  curAudio=new Audio(); curBtn=btn; curDet=det; setAudioBtnState(btn,'playing');
   /* When advancing to a preloaded element, the old Audio object is replaced
      but never cleaned up — its ended/error listeners stay attached forever.
      Reciters with larger, slower-loading files (e.g. Menshawi Mujawwad,
@@ -484,7 +498,7 @@ function bindAudio(root){
       var det=document.getElementById('w-'+b.dataset.audio);
       if(!det) return;
       var s=audioSettings(), sura=det.dataset.surano;
-      b.textContent='⏳ جاري التحميل...';
+      setAudioBtnState(b,'loading');
       var list=(det.dataset.ayalist?det.dataset.ayalist.split(','):[]).filter(Boolean);
       Promise.all(list.map(function(a){
         return ayaAudioUrl(s.reciter,sura,a).then(function(u){ return {aya:a, url:u}; });
@@ -532,7 +546,7 @@ function bindGroupAudio(root){
       var dets=ids.map(function(id){ return document.getElementById('w-'+id); }).filter(Boolean);
       if(!dets.length) return;
       var s=audioSettings();
-      b.textContent='⏳ جاري التحميل...';
+      setAudioBtnState(b,'loading');
       Promise.all(dets.map(function(det){ return ensureBodyLoaded(det); })).then(function(){
         return Promise.all(dets.map(function(det){
           var sura=det.dataset.surano;
@@ -1124,6 +1138,13 @@ function bindToggles(root){
   root.querySelectorAll('.ws-group').forEach(function(g){
     if(isBound(g)) return;
     g.addEventListener('toggle',function(){
+      /* Closing the group mid-playback used to leave the audio running with
+         nothing visible playing it — curDet (whichever part is currently
+         reading) lives inside this group, so closing the group hides it out
+         from under the player. stopAudio(onlyIfDet) already no-ops when a
+         different worksheet is playing; passing curDet itself only stops
+         when it's actually this group's own playback still going. */
+      if(!g.open && curDet && g.contains(curDet) && window.stopAudio) window.stopAudio(curDet);
       if(g.open && !noAutoScroll){
         var raf=window.requestAnimationFrame||function(f){return setTimeout(f,16);};
         raf(function(){
