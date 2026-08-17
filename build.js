@@ -30,6 +30,7 @@ const ICON_THEME='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" st
 const ICON_SPEAKER='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9v6h4l5 5V4L7 9H3Z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12"/></svg>';
 const ICON_CHEVRON='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 const ICON_BACK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
+const ICON_LIST='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>';
 /* Reciter names only ever had an Arabic label baked into the page — visitors
    using any other language still saw Arabic names in that one list, since
    the generic [data-i18n-name] lookup (built for surah names, which do have
@@ -1012,7 +1013,7 @@ W.forEach((w,wi)=>{
         <span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span>
       </span>
       <span class="cmeta-end">
-        <button type="button" class="icon-btn group-audio-play js-only" data-audio-group="${members.map(({x})=>x.id).join(',')}" hidden aria-label="استماع لكامل السورة" title="استماع لكامل السورة" data-i18n-aria="listenSurahWs">${ICON_SPEAKER}</button>
+        <button type="button" class="icon-btn group-audio-play js-only" data-audio-group="${members.map(({x})=>x.id).join(',')}" hidden aria-label="استماع لكامل السورة" data-i18n-aria="listenSurahWs">${ICON_SPEAKER}</button>
         <span class="go" data-i18n="openWs">افتح الورقة ▾</span>
       </span>
     </div>
@@ -1165,10 +1166,43 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
       <span class="settings-cat-value" id="settingsReciterValue"></span>
       <span class="settings-chevron" aria-hidden="true">${ICON_CHEVRON}</span>
     </button>
+    <button type="button" class="settings-cat" data-cat="qcount">
+      <span class="settings-cat-icon" aria-hidden="true">${ICON_LIST}</span>
+      <span class="settings-cat-label" data-i18n="qCountLabel">عدد الأسئلة</span>
+      <span class="settings-cat-value" id="settingsQCountValue"></span>
+      <span class="settings-chevron" aria-hidden="true">${ICON_CHEVRON}</span>
+    </button>
+    <button type="button" class="settings-cat" data-cat="ayahrange">
+      <span class="settings-cat-icon" aria-hidden="true">${ICON_LIST}</span>
+      <span class="settings-cat-label" data-i18n="ayahRangeLabel">عدد الآيات</span>
+      <span class="settings-cat-value" id="settingsAyahRangeValue"></span>
+      <span class="settings-chevron" aria-hidden="true">${ICON_CHEVRON}</span>
+    </button>
+  </div>
+  <div class="settings-sub" data-cat="qcount" hidden>
+    <div class="settings-sub-head">
+      <button type="button" class="settings-back" aria-label="رجوع">${ICON_BACK}</button>
+      <div class="settings-group-title" data-i18n="qCountLabel">عدد الأسئلة</div>
+    </div>
+    <span class="admin-hint" data-i18n="qCountHint">يطبَّق على كل قسم عند فتح أي ورقة — يُختار عشوائيًا من أسئلة المستوى الحالي (تبويب المستويات) في كل مرة.</span>
+    <button type="button" class="lang-opt qcount-opt on" data-qcount="all" data-i18n="qCountAll">كل الأسئلة</button>
+    ${[5,10,15,20,25,30].map(n=>`<button type="button" class="lang-opt qcount-opt" data-qcount="${n}" data-i18n-tpl="${tid('{} سؤالًا لكل قسم')}" data-i18n-word="${toAr(n)}">${n} سؤالًا لكل قسم</button>`).join('\n    ')}
+  </div>
+  <div class="settings-sub" data-cat="ayahrange" hidden>
+    <div class="settings-sub-head">
+      <button type="button" class="settings-back" aria-label="رجوع">${ICON_BACK}</button>
+      <div class="settings-group-title" data-i18n="ayahRangeLabel">عدد الآيات</div>
+    </div>
+    <span class="admin-hint" data-i18n="ayahRangeHint">يُظهر الصفحة الرئيسة أوراقًا بعدد الآيات هذا فقط — أجزاء السور الطويلة المجزَّأة تُفكَّك تلقائيًا لتطابق الاختيار جزءًا جزءًا.</span>
+    <button type="button" class="lang-opt ayahrange-opt on" data-ayahrange="all" data-i18n="ayahRangeAll">كل الأطوال</button>
+    <button type="button" class="lang-opt ayahrange-opt" data-ayahrange="1-10" data-i18n="ayahRange1">١ – ١٠ آيات</button>
+    <button type="button" class="lang-opt ayahrange-opt" data-ayahrange="11-20" data-i18n="ayahRange2">١١ – ٢٠ آية</button>
+    <button type="button" class="lang-opt ayahrange-opt" data-ayahrange="21-50" data-i18n="ayahRange3">٢١ – ٥٠ آية</button>
+    <button type="button" class="lang-opt ayahrange-opt" data-ayahrange="50plus" data-i18n="ayahRange4">أكثر من ٥٠ آية</button>
   </div>
   <div class="settings-sub" data-cat="lang" hidden>
     <div class="settings-sub-head">
-      <button type="button" class="settings-back" aria-label="رجوع" title="رجوع">${ICON_BACK}</button>
+      <button type="button" class="settings-back" aria-label="رجوع">${ICON_BACK}</button>
       <div class="settings-group-title" data-i18n="languageLabel">اللغة</div>
     </div>
     <button type="button" class="lang-opt" data-lang="ar">العربية</button>
@@ -1192,7 +1226,7 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
   </div>
   <div class="settings-sub" data-cat="theme" hidden>
     <div class="settings-sub-head">
-      <button type="button" class="settings-back" aria-label="رجوع" title="رجوع">${ICON_BACK}</button>
+      <button type="button" class="settings-back" aria-label="رجوع">${ICON_BACK}</button>
       <div class="settings-group-title" data-i18n="themeLabel">المظهر</div>
     </div>
     <button type="button" class="theme-switch-row" id="themeToggle" aria-label="تبديل الوضع الداكن/الفاتح">
@@ -1203,7 +1237,7 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
   </div>
   <div class="settings-sub" data-cat="reciter" hidden>
     <div class="settings-sub-head">
-      <button type="button" class="settings-back" aria-label="رجوع" title="رجوع">${ICON_BACK}</button>
+      <button type="button" class="settings-back" aria-label="رجوع">${ICON_BACK}</button>
       <div class="settings-group-title" data-i18n="reciterLabel">القارئ</div>
     </div>
     <button type="button" class="theme-switch-row" id="istiadhahToggle" aria-label="تشغيل الاستعاذة قبل التلاوة">
@@ -1226,7 +1260,7 @@ ${RECITERS.map(([id,ar,en])=>`      <button type="button" class="lang-opt recite
     </div>
     <div class="spacer"></div>
     <div class="settings-switch">
-      <button type="button" class="act icon-btn" id="settingsBtn" aria-haspopup="true" aria-expanded="false" aria-label="الإعدادات" title="الإعدادات" data-i18n-aria="settingsBtn">${ICON_GEAR}</button>
+      <button type="button" class="act icon-btn" id="settingsBtn" aria-haspopup="true" aria-expanded="false" aria-label="الإعدادات" data-i18n-aria="settingsBtn">${ICON_GEAR}</button>
     </div>
   </div>
 </header>

@@ -664,6 +664,8 @@ function updateSettingsPreviews(){
   }
   var reciterEl=document.getElementById('settingsReciterValue');
   if(reciterEl){ var ron=document.querySelector('#reciterOpts .reciter-opt.on'); reciterEl.textContent = ron ? ron.textContent.trim() : ''; }
+  var qcountEl=document.getElementById('settingsQCountValue');
+  if(qcountEl && typeof qCountSetting==='function'){ var qv=qCountSetting(); qcountEl.textContent = qv==='all' ? '' : qv; }
 }
 window.updateSettingsPreviews=updateSettingsPreviews;
 (function(){
@@ -1102,6 +1104,7 @@ function ensureBodyLoaded(det){
       var body=det.querySelector(':scope > .ws');
       if(body && window.Locale) Locale.render(body);
       if(body) window.bindSheet(body, det);
+      if(body && window.applyLvlFilter) window.applyLvlFilter(body);
       /* تعديلات المدير المحفوظة (اسم/أقسام/أسئلة مُعدَّلة) وأسئلة مُضافة سابقًا
          لهذه الورقة تحديدًا — تُعاد هنا فقط إن وُجد فعلًا تعديل/سؤال مخصَّص محفوظ
          لهذا المعرّف تحديدًا، لا لكل ورقة تُفتح دون شرط: كلتا الدالتين تفحصان
@@ -1230,14 +1233,32 @@ function materializeAllGridCards(){
 })();
 window.materializeAllGridCards=materializeAllGridCards;
 
-var filter='all', juz='0';
+var filter='all', juz='0', ayahRangeFilter='all';
+/* A worksheet's own ayah count (not the whole surah's) — data-ayalist lists
+   exactly which ayat this specific card covers, whether it's a full short
+   surah or one ≤20-ayah part of a split one. Falls back to data-ayat (the
+   surah's total) only for the rare card that has no ayalist at all. */
+function itemAyahCount(c){
+  var list=c.dataset.ayalist;
+  if(list) return list.split(',').filter(Boolean).length;
+  return +(c.dataset.ayat||0);
+}
+function matchesAyahRange(c){
+  if(ayahRangeFilter==='all') return true;
+  var n=itemAyahCount(c);
+  if(ayahRangeFilter==='1-10') return n>=1&&n<=10;
+  if(ayahRangeFilter==='11-20') return n>=11&&n<=20;
+  if(ayahRangeFilter==='21-50') return n>=21&&n<=50;
+  if(ayahRangeFilter==='50plus') return n>50;
+  return true;
+}
 function applyFilter(){
   materializeAllGridCards();
   var q=(document.getElementById('q')||{}).value||'';
   document.querySelectorAll('.grid .ws-item').forEach(function(c){
     var catOk = filter==='all' || c.dataset.cat===filter;
     var juzOk = juz==='0' || c.dataset.juz===juz;
-    var ok=catOk&&juzOk&&(!q||c.dataset.name.indexOf(q.trim())>-1);
+    var ok=catOk&&juzOk&&matchesAyahRange(c)&&(!q||c.dataset.name.indexOf(q.trim())>-1);
     c.style.display=ok?'':'none';
   });
   /* تصفية «آيات مختارة»: تُعرَض أجزاء السور المجزَّأة منفكّة كبطاقات مستقلة
@@ -1247,7 +1268,7 @@ function applyFilter(){
   /* اختيار جزء معيّن يعني أن المستخدم يريد رؤية أجزاء السور التي تقع ضمنه
      تحديدًا — إبقاؤها مطويّة داخل غلاف السورة الكاملة يخفي أيها يطابق
      فعلًا، فيُفكّ التجميع أيضًا هنا كما في تبويب «آيات مختارة». */
-  var flat = filter==='ayah' || juz!=='0';
+  var flat = filter==='ayah' || juz!=='0' || ayahRangeFilter!=='all';
   if(grid) grid.classList.toggle('force-flat', flat);
   document.querySelectorAll('.grid .ws-group').forEach(function(g){
     if(flat) g.setAttribute('open','');
@@ -1305,13 +1326,38 @@ if(qi){
     if(panel.hidden) Popover.open(panel,btn); else Popover.close();
   });
 })();
-/* ---------- تصفية الأسئلة حسب المستوى: إخفاء أي مستوى غير المختار ---------- */
+/* ---------- level filter (hide any level not selected) + optional per-section question count ---------- */
 var lvlFilter='all';
-function applyLvlFilter(){
-  document.querySelectorAll('.q[data-lvl]').forEach(function(el){
-    el.style.display=(lvlFilter==='all'||el.dataset.lvl===lvlFilter)?'':'none';
+var QCOUNT_KEY='tahleel-qcount';
+function qCountSetting(){
+  try{ var v=localStorage.getItem(QCOUNT_KEY); return v&&v!=='all' ? +v : 'all'; }catch(e){ return 'all'; }
+}
+/* Fisher–Yates — an unbiased shuffle, not just Math.random-sort (which skews
+   toward certain orderings) — matters here since "randomly" is the whole
+   point of this feature. */
+function shuffle(arr){
+  arr=arr.slice();
+  for(var i=arr.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var t=arr[i]; arr[i]=arr[j]; arr[j]=t;
+  }
+  return arr;
+}
+/* root optional: scopes to one freshly-opened worksheet (called from
+   ensureBodyLoaded) instead of re-scanning the whole document — same
+   reasoning as render(root) elsewhere in this file, and matters doubly here
+   since this runs a full reshuffle, not just a cheap show/hide toggle. */
+function applyLvlFilter(root){
+  root=root||document;
+  var n=qCountSetting();
+  root.querySelectorAll('.sec .qlist').forEach(function(qlist){
+    var all=qlist.querySelectorAll('.q[data-lvl]');
+    var matching=[].filter.call(all,function(el){ return lvlFilter==='all'||el.dataset.lvl===lvlFilter; });
+    var keep = n==='all' ? matching : shuffle(matching).slice(0,n);
+    var keepSet = new Set(keep);
+    all.forEach(function(el){ el.style.display = keepSet.has(el) ? '' : 'none'; });
   });
-  document.querySelectorAll('.lvl-legend .lvl').forEach(function(el){
+  root.querySelectorAll('.lvl-legend .lvl').forEach(function(el){
     var m=el.className.match(/lvl-(\d)/);
     el.style.display=(lvlFilter==='all'||!m||m[1]===lvlFilter)?'':'none';
   });
@@ -1324,6 +1370,37 @@ document.querySelectorAll('.lvl-tabs button').forEach(function(b){
   });
 });
 window.applyLvlFilter=applyLvlFilter;
+/* ---------- question-count setting (Settings panel) ---------- */
+(function(){
+  var opts=document.querySelectorAll('.qcount-opt');
+  if(!opts.length) return;
+  var cur=qCountSetting();
+  opts.forEach(function(o){ o.classList.toggle('on', o.dataset.qcount===String(cur)); });
+  opts.forEach(function(o){
+    o.addEventListener('click',function(){
+      try{ localStorage.setItem(QCOUNT_KEY, o.dataset.qcount); }catch(e){}
+      opts.forEach(function(x){ x.classList.toggle('on',x===o); });
+      updateSettingsPreviews();
+      applyLvlFilter(); /* re-shuffle every already-open worksheet right away */
+      setTimeout(Popover.close, 300); /* same auto-close behavior as picking a reciter */
+    });
+  });
+})();
+/* ---------- ayah-count home-grid filter (Settings panel) ---------- */
+(function(){
+  var opts=document.querySelectorAll('.ayahrange-opt');
+  if(!opts.length) return;
+  opts.forEach(function(o){
+    o.addEventListener('click',function(){
+      ayahRangeFilter=o.dataset.ayahrange;
+      opts.forEach(function(x){ x.classList.toggle('on',x===o); });
+      var valEl=document.getElementById('settingsAyahRangeValue');
+      if(valEl) valEl.textContent = ayahRangeFilter==='all' ? '' : o.textContent.trim();
+      applyFilter();
+      setTimeout(Popover.close, 300);
+    });
+  });
+})();
 /* ---------- إخفاء نصوص التلميح داخل الحقول عند الطباعة/التصدير PDF ----------
    الاعتماد على CSS وحده (::placeholder{color:transparent}) غير موثوق في كل
    المتصفحات عند الطباعة أو التصدير PDF (كروم أحيانًا يتجاهله) — فنزيل خاصية
