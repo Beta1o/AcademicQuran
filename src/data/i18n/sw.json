@@ -42,7 +42,6 @@
  "qCountLabel": "Idadi ya maswali",
  "qCountAll": "Maswali yote",
  "qCountHint": "Inatumika kwa kila sehemu wakati karatasi ya kazi inafunguliwa — huchaguliwa bila mpangilio kutoka maswali ya kiwango cha sasa kila wakati.",
- "tsd15m4": "Maswali {} kwa kila sehemu",
  "ayahRangeLabel": "Idadi ya aya",
  "ayahRangeAll": "Urefu wote",
  "ayahRange1": "Aya 1-10",
@@ -91,7 +90,8 @@
   "t1mb50eb": "kutoka Sura ya {}",
   "t1w1xgjn": "Sura {}",
   "tqx1b4r": "Maswali {}",
-  "tk8cd4g": "Sehemu {}"
+  "tk8cd4g": "Sehemu {}",
+  "tsd15m4": "Maswali {} kwa kila sehemu"
  },
  "term": {},
  "sura": {

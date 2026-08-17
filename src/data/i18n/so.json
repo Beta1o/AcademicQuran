@@ -42,7 +42,6 @@
  "qCountLabel": "Tirada su'aalaha",
  "qCountAll": "Dhammaan su'aalaha",
  "qCountHint": "Waxay khuseysaa qaybo kasta marka xaashidu furanto — mar walba si random ah ayaa looga dooranayaa su'aalaha heerka hadda.",
- "tsd15m4": "{} su'aalood qayb kasta",
  "ayahRangeLabel": "Tirada aayadaha",
  "ayahRangeAll": "Dhererka oo dhan",
  "ayahRange1": "1-10 aayado",
@@ -92,7 +91,8 @@
   "t1mb50eb": "ka mid ah Suurada {}",
   "t1w1xgjn": "Suurada {}",
   "tqx1b4r": "{} su'aalood",
-  "tk8cd4g": "{} qaybood"
+  "tk8cd4g": "{} qaybood",
+  "tsd15m4": "{} su'aalood qayb kasta"
  },
  "term": {},
  "sura": {

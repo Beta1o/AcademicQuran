@@ -42,7 +42,6 @@
  "qCountLabel": "Nombre de questions",
  "qCountAll": "Toutes les questions",
  "qCountHint": "S'applique à chaque section à l'ouverture d'une fiche — sélectionné aléatoirement parmi les questions du niveau actuel à chaque fois.",
- "tsd15m4": "{} questions par section",
  "ayahRangeLabel": "Nombre de versets",
  "ayahRangeAll": "Toutes les longueurs",
  "ayahRange1": "1 à 10 versets",
@@ -1143,7 +1142,8 @@
   "t16ca38s": "Laboratoire d'Analyse Linguistique",
   "t1w9gbrp": "Le Mihrab de la Réflexion — Un Voyage Microscopique",
   "tk8cd4g": "{} parties",
-  "t1hlv3dr": "Joz' {}"
+  "t1hlv3dr": "Joz' {}",
+  "tsd15m4": "{} questions par section"
  },
  "revealModel": "Afficher la réponse modèle",
  "revealCorrect": "Afficher la bonne réponse",

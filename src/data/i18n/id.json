@@ -42,7 +42,6 @@
  "qCountLabel": "Jumlah pertanyaan",
  "qCountAll": "Semua pertanyaan",
  "qCountHint": "Berlaku untuk setiap bagian saat lembar kerja dibuka — dipilih secara acak dari pertanyaan level saat ini setiap kali.",
- "tsd15m4": "{} pertanyaan per bagian",
  "ayahRangeLabel": "Jumlah ayat",
  "ayahRangeAll": "Semua panjang",
  "ayahRange1": "1–10 ayat",
@@ -1143,7 +1142,8 @@
   "t16ca38s": "Laboratorium Analisis Linguistik",
   "t1w9gbrp": "Mihrab Tadabur — Perjalanan Mikroskopis",
   "tk8cd4g": "{} bagian",
-  "t1hlv3dr": "Juz {}"
+  "t1hlv3dr": "Juz {}",
+  "tsd15m4": "{} pertanyaan per bagian"
  },
  "revealModel": "Tampilkan jawaban model",
  "revealCorrect": "Tampilkan jawaban benar",

@@ -42,7 +42,6 @@
  "qCountLabel": "Adadin tambayoyi",
  "qCountAll": "Duk tambayoyi",
  "qCountHint": "Yana aiki ga kowane sashe idan an buɗe takarda — ana zaɓar bazuwar daga tambayoyin matakin yanzu a kowane lokaci.",
- "tsd15m4": "Tambayoyi {} a kowane sashe",
  "ayahRangeLabel": "Adadin aayoyi",
  "ayahRangeAll": "Dukkan tsayin",
  "ayahRange1": "Aayoyi 1-10",
@@ -1305,7 +1304,8 @@
   "t16ca38s": "Dakin Nazarin Ilimin Harshe",
   "t1w9gbrp": "Mihrabin Tunani — Tafiya Mai Zurfi",
   "tk8cd4g": "{} sassa",
-  "t1hlv3dr": "Juzu'i {}"
+  "t1hlv3dr": "Juzu'i {}",
+  "tsd15m4": "Tambayoyi {} a kowane sashe"
  },
  "revMeccan": "Makkiyya",
  "revMedinan": "Madaniyya",

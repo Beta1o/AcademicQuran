@@ -42,7 +42,6 @@
  "qCountLabel": "Soru sayısı",
  "qCountAll": "Tüm sorular",
  "qCountHint": "Bir çalışma sayfası açıldığında her bölüme uygulanır — her seferinde mevcut seviyenin sorularından rastgele seçilir.",
- "tsd15m4": "Bölüm başına {} soru",
  "ayahRangeLabel": "Ayet sayısı",
  "ayahRangeAll": "Tüm uzunluklar",
  "ayahRange1": "1-10 ayet",
@@ -1143,7 +1142,8 @@
   "t16ca38s": "Dilbilimsel Analiz Laboratuvarı",
   "t1w9gbrp": "Tefekkür Mihrabı — Mikroskobik Bir Yolculuk",
   "tk8cd4g": "{} bölüm",
-  "t1hlv3dr": "{}. Cüz"
+  "t1hlv3dr": "{}. Cüz",
+  "tsd15m4": "Bölüm başına {} soru"
  },
  "revealModel": "Örnek cevabı göster",
  "revealCorrect": "Doğru cevabı göster",

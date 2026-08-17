@@ -42,7 +42,6 @@
  "qCountLabel": "Número de preguntas",
  "qCountAll": "Todas las preguntas",
  "qCountHint": "Se aplica a cada sección al abrir una hoja de trabajo; se elige al azar entre las preguntas del nivel actual cada vez.",
- "tsd15m4": "{} preguntas por sección",
  "ayahRangeLabel": "Número de aleyas",
  "ayahRangeAll": "Todas las longitudes",
  "ayahRange1": "1–10 aleyas",
@@ -92,7 +91,8 @@
   "t1mb50eb": "de la sura {}",
   "t1w1xgjn": "Sura {}",
   "tqx1b4r": "{} preguntas",
-  "tk8cd4g": "{} partes"
+  "tk8cd4g": "{} partes",
+  "tsd15m4": "{} preguntas por sección"
  },
  "term": {},
  "sura": {

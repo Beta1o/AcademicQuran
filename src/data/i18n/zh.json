@@ -42,7 +42,6 @@
  "qCountLabel": "问题数量",
  "qCountAll": "所有问题",
  "qCountHint": "打开任意工作表时应用于每个部分 — 每次从当前难度标签的问题中随机选择。",
- "tsd15m4": "每部分 {} 个问题",
  "ayahRangeLabel": "经文数量",
  "ayahRangeAll": "所有长度",
  "ayahRange1": "1–10节",
@@ -92,7 +91,8 @@
   "t1mb50eb": "来自{}章",
   "t1w1xgjn": "第{}章",
   "tqx1b4r": "{}道题",
-  "tk8cd4g": "{}个部分"
+  "tk8cd4g": "{}个部分",
+  "tsd15m4": "每部分 {} 个问题"
  },
  "term": {},
  "sura": {
