@@ -1785,31 +1785,32 @@ function rebuildStandaloneForSizeImpl(item, size){
   if(!opts.length) return;
   var cur=ayahMergeSize();
   opts.forEach(function(o){ o.classList.toggle('on', +o.dataset.ayahrange===cur); });
-  /* Changing this setting doesn't touch the catalog at all — every card
-     picks up the new size lazily, the moment it's actually opened (see
-     bindToggles). Eagerly re-chunking everything on screen (or worse, the
-     whole 600+ worksheet catalog after materializeAllGridCards() from a
-     search) here is what turned a settings toggle into a multi-second,
-     network-bound freeze. The one exception: if something is already open
-     right now, it gets refreshed immediately, since the visitor is looking
-     right at it — bounded to at most a couple of cards, so a brief loading
-     state is enough to cover it. */
-  function refreshOpenCards(){
+  /* Every card already sitting in the DOM right now — whatever's visible
+     on the home grid without scrolling or searching, typically ~30 cards —
+     is rebuilt to the new size immediately, so the visitor sees the actual
+     split without having to open anything first. This is a bounded,
+     one-time cost (not the whole 600+ worksheet catalog), covered by the
+     loading indicator. Cards that only materialize LATER via scrolling or
+     search still pick up the size lazily, the moment they're actually
+     opened (see bindToggles) — eagerly re-chunking those too (what this
+     used to do, via insertGridBatch/applyFilter) is what turned scrolling
+     and searching into their own multi-second, network-bound freezes. */
+  function refreshVisibleCards(){
     var size=ayahMergeSize();
-    var openGroups=[].slice.call(document.querySelectorAll('.grid > .ws-group[open]')).filter(function(g){
+    var groups=[].slice.call(document.querySelectorAll('.grid > .ws-group')).filter(function(g){
       return g.dataset.mergedSize!==String(size);
     });
-    var openItems=[].slice.call(document.querySelectorAll('.grid > .ws-item[open][data-ayalist]')).filter(function(it){
+    var items=[].slice.call(document.querySelectorAll('.grid > .ws-item[data-ayalist]')).filter(function(it){
       return it.dataset.mergedSize!==String(size);
     });
-    if(!openGroups.length && !openItems.length) return Promise.resolve();
+    if(!groups.length && !items.length) return Promise.resolve();
     var panel=document.querySelector('.settings-sub[data-cat="ayahrange"]');
     var loading=document.querySelector('.ayahrange-loading');
     if(panel) panel.classList.add('busy');
     if(loading) loading.hidden=false;
     return Promise.all(
-      openGroups.map(function(g){ return rebuildGroupForSize(g, size).then(function(){ g.dataset.mergedSize=String(size); }); })
-        .concat(openItems.map(function(it){ return rebuildStandaloneForSize(it, size).then(function(){ it.dataset.mergedSize=String(size); }); }))
+      groups.map(function(g){ return rebuildGroupForSize(g, size).then(function(){ g.dataset.mergedSize=String(size); }); })
+        .concat(items.map(function(it){ return rebuildStandaloneForSize(it, size).then(function(){ it.dataset.mergedSize=String(size); }); }))
     ).then(function(){
       if(panel) panel.classList.remove('busy');
       if(loading) loading.hidden=true;
@@ -1821,14 +1822,21 @@ function rebuildStandaloneForSizeImpl(item, size){
       opts.forEach(function(x){ x.classList.toggle('on',x===o); });
       var valEl=document.getElementById('settingsAyahRangeValue');
       if(valEl) valEl.textContent=o.textContent.trim();
-      refreshOpenCards().then(function(){ setTimeout(Popover.close, 300); });
+      refreshVisibleCards().then(function(){ setTimeout(Popover.close, 300); });
     });
   });
+  /* A returning visitor's saved non-default size has to apply on load too,
+     not just right after clicking an option — bounded the same way, to
+     whatever cards are materialized on initial load. */
+  if(ayahMergeSize()!==10){
+    setTimeout(function(){ setTimeout(refreshVisibleCards,0); },0);
+  }
 })();
-/* ---------- إخفاء نصوص التلميح داخل الحقول عند الطباعة/التصدير PDF ----------
-   الاعتماد على CSS وحده (::placeholder{color:transparent}) غير موثوق في كل
-   المتصفحات عند الطباعة أو التصدير PDF (كروم أحيانًا يتجاهله) — فنزيل خاصية
-   placeholder فعليًا قبل الطباعة ونعيدها بعدها، ليبقى الحقل فارغًا تمامًا على الورق. */
+/* ---------- Hide input placeholder text when printing/exporting to PDF ----------
+   Relying on CSS alone (::placeholder{color:transparent}) isn't reliable
+   across every browser's print/PDF export path (Chrome sometimes ignores
+   it) — so the placeholder attribute is actually removed before printing
+   and restored after, leaving the field genuinely blank on paper. */
 window.addEventListener('beforeprint',function(){
   document.querySelectorAll('input[placeholder],textarea[placeholder]').forEach(function(el){
     el.dataset.phSaved=el.getAttribute('placeholder');

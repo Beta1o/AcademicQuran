@@ -242,6 +242,11 @@ html[dir="rtl"] .settings-chevron svg,html[dir="rtl"] .settings-back svg{transfo
    شبه فارغ، وهو بالضبط ما كان يحدث قبل تقييد الخاصية بحالة الإغلاق. */
 .ws-item:not([open]){height:100%;display:flex;flex-direction:column}
 .ws-item:not([open]) .card{flex:1}
+/* An explicit display value in author CSS beats the UA-default
+   [hidden]{display:none} outright, so a merged-away original part (stashed
+   hidden inside its new .ws-group wrapper — see rebuildStandaloneForSize)
+   would still render via the rule above unless this wins back over it. */
+.ws-item[hidden]{display:none!important}
 .ws-group:not([open]) .ws-group-head{flex:1}
 /* المتصفح يتخطّى تخطيط/رسم أي بطاقة أو مجموعة خارج الشاشة تمامًا (بلا أي
    تغيير في الشجرة الفعلية نفسها — لا خطر على التصدير أو الطباعة أو فحوص
