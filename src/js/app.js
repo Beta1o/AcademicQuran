@@ -527,9 +527,76 @@ function bindAudio(root){
    Each item carries its own det (the specific part it belongs to) — see
    the it.det handling in playAyaList's next(), which opens/scrolls to
    whichever part is currently playing the same way a manual click would. */
+/* The group audio button lives as a direct child of <details class="ws-group">
+   (not inside <summary>, where a nested interactive element is invalid/
+   inaccessible) — this syncs its absolute position to sit exactly over the
+   invisible .group-audio-slot placeholder reserving its spot in the
+   summary's normal flex layout, in both the closed and open card layouts. */
+function positionGroupAudioBtn(group){
+  var btn=group.querySelector(':scope > .group-audio-play');
+  var slot=group.querySelector('.group-audio-slot');
+  if(!btn || !slot) return;
+  var gr=group.getBoundingClientRect(), sr=slot.getBoundingClientRect();
+  btn.style.top=(sr.top-gr.top)+'px';
+  btn.style.left=(sr.left-gr.left)+'px';
+  btn.style.width=sr.width+'px';
+  btn.style.height=sr.height+'px';
+}
+/* Positions many groups' buttons in one pass — all the getBoundingClientRect
+   reads happen first, then all the style writes, instead of interleaving
+   read/write per element (each write invalidates layout, forcing the next
+   element's read to trigger a fresh synchronous reflow — measured costing
+   250ms+ of forced-reflow time across ~30 initial groups when done
+   naively one at a time). */
+function positionGroupAudioBtns(groups){
+  var measurements=groups.map(function(group){
+    var btn=group.querySelector(':scope > .group-audio-play');
+    var slot=group.querySelector('.group-audio-slot');
+    if(!btn || !slot) return null;
+    var gr=group.getBoundingClientRect(), sr=slot.getBoundingClientRect();
+    return {btn:btn, top:sr.top-gr.top, left:sr.left-gr.left, w:sr.width, h:sr.height};
+  });
+  measurements.forEach(function(m){
+    if(!m) return;
+    m.btn.style.top=m.top+'px'; m.btn.style.left=m.left+'px';
+    m.btn.style.width=m.w+'px'; m.btn.style.height=m.h+'px';
+  });
+}
+function positionGroupAudioBtn(group){ positionGroupAudioBtns([group]); }
+function positionAllGroupAudioBtns(){
+  positionGroupAudioBtns([].slice.call(document.querySelectorAll('.ws-group')));
+}
+window.positionAllGroupAudioBtns=positionAllGroupAudioBtns;
+window.addEventListener('resize',positionAllGroupAudioBtns);
+/* Closed cards below the fold render with a content-visibility:auto
+   placeholder size, not their real one — a position computed right at bind
+   time (before the card is ever actually visible) can be stale by however
+   much the placeholder guess was off. Re-synced the moment each card
+   actually becomes relevant to the viewport, when its real layout is
+   guaranteed settled — batched across everything that became relevant in
+   the same tick (see positionGroupAudioBtns above). */
+var groupAudioPosIO = window.IntersectionObserver ? new IntersectionObserver(function(entries){
+  var targets=entries.filter(function(e){ return e.isIntersecting; }).map(function(e){ return e.target; });
+  if(targets.length) positionGroupAudioBtns(targets);
+},{rootMargin:'200px'}) : null;
+function observeGroupAudioPos(root){
+  if(!groupAudioPosIO) return;
+  (root||document).querySelectorAll('.ws-group').forEach(function(g){
+    if(g.dataset.audioPosObserved) return;
+    g.dataset.audioPosObserved='1';
+    groupAudioPosIO.observe(g);
+  });
+}
 function bindGroupAudio(root){
+  var newlyBoundGroups=[];
   root.querySelectorAll('[data-audio-group]').forEach(function(b){
     if(isBound(b)) return;
+    var group=b.closest('.ws-group');
+    if(group){
+      newlyBoundGroups.push(group);
+      observeGroupAudioPos(document);
+      group.addEventListener('toggle',function(){ positionGroupAudioBtn(group); });
+    }
     b.addEventListener('click',function(e){
       /* This button sits inside <summary> (visible on the closed group card,
          not just once opened, so a visitor can start listening without
@@ -571,6 +638,7 @@ function bindGroupAudio(root){
       });
     });
   });
+  if(newlyBoundGroups.length) positionGroupAudioBtns(newlyBoundGroups);
 }
 window.bindGroupAudio=bindGroupAudio;
 bindAudio(document);
@@ -915,6 +983,11 @@ var Locale = (function(){
       node.textContent = arabicScript ? node.dataset.arName : node.dataset.enName;
     });
     var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=NAMES[current]||NAMES[DEFAULT_LOCALE];
+    /* Switching language can reflow the group card header (different text
+       lengths/line wraps), which would leave the absolutely-positioned
+       group audio button (see positionGroupAudioBtn) misaligned with its
+       .group-audio-slot placeholder otherwise. */
+    if(root===document && window.positionAllGroupAudioBtns) window.positionAllGroupAudioBtns();
   }
 
   /* fetch() غير موثوق لملفات file:// محلية في WebView (تطبيق أندرويد يحمّل
@@ -1232,6 +1305,20 @@ function insertGridBatch(n){
   if(window.Locale) window.Locale.render();
   if(window.applyHidden) window.applyHidden();
   if(window.applyOverrides) window.applyOverrides();
+  /* A non-default merge size chosen earlier has to apply to cards that
+     only just scrolled into existence too — applied lazily here, batch by
+     batch, instead of forcing the whole 600+ worksheet catalog into the
+     DOM and re-chunked up front (see the fix note on
+     applyAyahMergeToAllGroups): that turned a settings toggle into a
+     multi-second freeze. This keeps each toggle's own cost bounded to
+     whatever is already on screen. */
+  if(ayahMergeSize()!==10 && window.applyAyahMergeToAllGroups){
+    var gl=document.getElementById('gridLoading');
+    if(gl) gl.hidden=false;
+    Promise.all([applyAyahMergeToAllGroups(document), applyAyahMergeToStandalone(document)]).then(function(){
+      if(gl) gl.hidden=true;
+    });
+  }
   return gridRestIdx<gridRest.length;
 }
 function materializeAllGridCards(){
@@ -1254,7 +1341,19 @@ window.materializeAllGridCards=materializeAllGridCards;
 
 var filter='all', juz='0';
 function applyFilter(){
+  /* Searching/filtering has to scan the whole catalog, not just what's on
+     screen — materializeAllGridCards() forces every remaining card into
+     the DOM right here. That (plus re-chunking all of them if a non-10
+     merge size is active) is real, visible work, so it gets the same
+     loading indicator as scrolling. */
+  var gl=document.getElementById('gridLoading');
+  if(gl) gl.hidden=false;
   materializeAllGridCards();
+  if(ayahMergeSize()!==10 && window.applyAyahMergeToAllGroups){
+    Promise.all([applyAyahMergeToAllGroups(document), applyAyahMergeToStandalone(document)]).then(function(){
+      if(gl) gl.hidden=true;
+    });
+  } else if(gl) gl.hidden=true;
   var q=(document.getElementById('q')||{}).value||'';
   document.querySelectorAll('.grid .ws-item').forEach(function(c){
     var catOk = filter==='all' || c.dataset.cat===filter;
@@ -1548,10 +1647,19 @@ function buildMergedWsItem(chunk, sura, originals){
     '</div>';
   return det;
 }
-function applyAyahMergeToAllGroups(){
+function applyAyahMergeToAllGroups(root){
   var size=ayahMergeSize();
-  var groups=[].slice.call(document.querySelectorAll('.grid .ws-group'));
-  return Promise.all(groups.map(function(g){ return rebuildGroupForSize(g, size); }));
+  /* Only re-chunk groups whose applied size actually differs from the
+     current one — forcing every already-correct group through
+     ensureBodyLoaded's network fetch again (with 92 groups on the page)
+     is what turned a settings toggle into a multi-second, unresponsive
+     freeze the first time this shipped. */
+  var groups=[].slice.call((root||document).querySelectorAll('.grid .ws-group')).filter(function(g){
+    return g.dataset.mergedSize!==String(size);
+  });
+  return Promise.all(groups.map(function(g){
+    return rebuildGroupForSize(g, size).then(function(){ g.dataset.mergedSize=String(size); });
+  }));
 }
 /* A standalone worksheet (a complete short surah, or a selected-ayah card)
    was never split into parts, so it has no .ws-group wrapper to re-chunk —
@@ -1594,10 +1702,21 @@ function rebuildStandaloneForSize(item, size){
         '<div class="cmeta">'+
           '<span class="cmeta-start"><span class="prog-mini"></span><span class="ws-group-count"></span></span>'+
           '<span class="cmeta-end">'+
-            '<button type="button" class="icon-btn group-audio-play js-only" data-audio-group="" hidden aria-label="استماع لكامل السورة" data-i18n-aria="listenSurahWs">'+speakerIconHTML()+'</button>'+
+            '<span class="group-audio-slot" aria-hidden="true"></span>'+
             '<span class="go" data-i18n="openWs">افتح الورقة ▾</span>'+
           '</span>'+
         '</div>';
+      /* Kept as a direct child of <details>, sibling of <summary> — same
+         reasoning as the real built-in groups (see positionGroupAudioBtn). */
+      var audioBtnEl=document.createElement('button');
+      audioBtnEl.type='button';
+      audioBtnEl.className='icon-btn group-audio-play js-only';
+      audioBtnEl.dataset.audioGroup='';
+      audioBtnEl.hidden=true;
+      audioBtnEl.setAttribute('aria-label','استماع لكامل السورة');
+      audioBtnEl.setAttribute('data-i18n-aria','listenSurahWs');
+      audioBtnEl.innerHTML=speakerIconHTML();
+      wrapper.appendChild(audioBtnEl);
       wrapper.appendChild(summary);
       var itemsWrap=document.createElement('div');
       itemsWrap.className='ws-group-items';
@@ -1629,21 +1748,27 @@ function rebuildStandaloneForSize(item, size){
     if(progMini) progMini.textContent=totalQ+' سؤالًا';
     var countBadge=wrapper.querySelector(':scope > summary .ws-group-count');
     if(countBadge) countBadge.textContent=chunks.length+' جزءًا';
-    var audioBtn=wrapper.querySelector(':scope > summary .group-audio-play');
+    var audioBtn=wrapper.querySelector(':scope > .group-audio-play');
     if(audioBtn) audioBtn.dataset.audioGroup=newEls.map(function(el){ return el.id.replace(/^w-/,''); }).join(',');
     if(window.bindGroupAudio) bindGroupAudio(wrapper);
     if(window.Locale) window.Locale.render(wrapper);
+    positionGroupAudioBtn(wrapper);
   });
 }
-function applyAyahMergeToStandalone(){
+function applyAyahMergeToStandalone(root){
   var size=ayahMergeSize();
   /* Once wrapped, the real original item moves inside its own synthetic
      .ws-group wrapper (marked data-standalone-wrap) instead of being a
      direct child of .grid — so both the not-yet-wrapped and already-wrapped
      cases have to be found here, or a wrapped item would never be seen
-     again on the next size change. */
-  var items=[].slice.call(document.querySelectorAll('.grid > .ws-item[data-ayalist], .grid > .ws-group[data-standalone-wrap] > .ws-item[data-ayalist]'));
-  return Promise.all(items.map(function(item){ return rebuildStandaloneForSize(item, size); }));
+     again on the next size change. Skips items already at the current
+     size for the same reason as applyAyahMergeToAllGroups above. */
+  var items=[].slice.call((root||document).querySelectorAll('.grid > .ws-item[data-ayalist], .grid > .ws-group[data-standalone-wrap] > .ws-item[data-ayalist]')).filter(function(it){
+    return it.dataset.mergedSize!==String(size);
+  });
+  return Promise.all(items.map(function(item){
+    return rebuildStandaloneForSize(item, size).then(function(){ item.dataset.mergedSize=String(size); });
+  }));
 }
 /* ---------- ayah-per-worksheet setting (Settings panel) ---------- */
 (function(){
@@ -1651,25 +1776,55 @@ function applyAyahMergeToStandalone(){
   if(!opts.length) return;
   var cur=ayahMergeSize();
   opts.forEach(function(o){ o.classList.toggle('on', +o.dataset.ayahrange===cur); });
+  /* Only the cards already on the page (roughly the first ~30, plus
+     whatever the visitor has scrolled to) are re-chunked here — forcing
+     the ENTIRE 600+ worksheet catalog into the DOM and network-fetching
+     every part up front (what this used to do) turned a settings toggle
+     into a multi-second, unresponsive freeze. Cards that scroll into view
+     later pick up the current size lazily, in insertGridBatch. A brief
+     loading state still covers this smaller, bounded amount of work,
+     since even ~30 groups' worth of lazy body fetches is enough to be
+     visibly non-instant.
+     requestAnimationFrame is unreliable here (never fires in a
+     backgrounded/non-visible webview — a real risk inside the Android
+     wrapper, not just a headless-test quirk), so a plain setTimeout(0) is
+     used instead to guarantee the just-shown spinner actually paints
+     before the work starts. */
+  function runMergeWithLoading(){
+    var panel=document.querySelector('.settings-sub[data-cat="ayahrange"]');
+    var loading=document.querySelector('.ayahrange-loading');
+    if(panel) panel.classList.add('busy');
+    if(loading) loading.hidden=false;
+    return new Promise(function(resolve){
+      setTimeout(function(){ setTimeout(function(){
+        Promise.all([applyAyahMergeToAllGroups(), applyAyahMergeToStandalone()]).then(resolve);
+      },0); },0);
+    }).then(function(){
+      if(panel) panel.classList.remove('busy');
+      if(loading) loading.hidden=true;
+    });
+  }
   opts.forEach(function(o){
     o.addEventListener('click',function(){
       try{ localStorage.setItem(AYAH_MERGE_KEY, o.dataset.ayahrange); }catch(e){}
       opts.forEach(function(x){ x.classList.toggle('on',x===o); });
       var valEl=document.getElementById('settingsAyahRangeValue');
       if(valEl) valEl.textContent=o.textContent.trim();
-      materializeAllGridCards();
-      applyAyahMergeToAllGroups();
-      applyAyahMergeToStandalone();
-      setTimeout(Popover.close, 300);
+      runMergeWithLoading().then(function(){ setTimeout(Popover.close, 300); });
     });
   });
   /* A returning visitor's saved non-default size has to be re-applied on
      load too, not just right after they click an option — otherwise the
-     setting only takes effect for the rest of that same session. */
+     setting only takes effect for the rest of that same session. The
+     settings panel isn't open yet at this point, so there's no spinner to
+     show — just defer it off the critical first-paint path instead. Only
+     the cards already materialized on load are covered here; the rest
+     pick up the size lazily as they scroll in (insertGridBatch). */
   if(ayahMergeSize()!==10){
-    materializeAllGridCards();
-    applyAyahMergeToAllGroups();
-    applyAyahMergeToStandalone();
+    setTimeout(function(){ setTimeout(function(){
+      applyAyahMergeToAllGroups();
+      applyAyahMergeToStandalone();
+    },0); },0);
   }
 })();
 /* ---------- إخفاء نصوص التلميح داخل الحقول عند الطباعة/التصدير PDF ----------

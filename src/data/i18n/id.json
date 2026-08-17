@@ -1308,5 +1308,7 @@
  "fJuzAll": "Pilih juz",
  "tagPart": "Bagian surah",
  "repeatToggle": "🔁 Ulangi",
- "flatHint": "Bagian-bagian kini ditampilkan terpisah — ketuk lagi \"Ayat pilihan\" atau pilih \"Semua lembar kerja\" untuk mengelompokkannya kembali."
+ "flatHint": "Bagian-bagian kini ditampilkan terpisah — ketuk lagi \"Ayat pilihan\" atau pilih \"Semua lembar kerja\" untuk mengelompokkannya kembali.",
+ "ayahRangeLoading": "Menata ulang lembar kerja…",
+ "gridLoadingMore": "Memuat lebih banyak…"
 }

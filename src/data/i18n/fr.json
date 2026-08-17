@@ -1308,5 +1308,7 @@
  "fJuzAll": "Choisir un joz'",
  "tagPart": "Partie de sourate",
  "repeatToggle": "🔁 Répéter",
- "flatHint": "Les parties sont maintenant affichées séparément — appuyez à nouveau sur \"Versets sélectionnés\" ou choisissez \"Toutes les fiches\" pour les regrouper."
+ "flatHint": "Les parties sont maintenant affichées séparément — appuyez à nouveau sur \"Versets sélectionnés\" ou choisissez \"Toutes les fiches\" pour les regrouper.",
+ "ayahRangeLoading": "Réorganisation des fiches…",
+ "gridLoadingMore": "Chargement en cours…"
 }

@@ -1308,5 +1308,7 @@
  "fJuzAll": "Bir cüz seçin",
  "tagPart": "Sure bölümü",
  "repeatToggle": "🔁 Tekrarla",
- "flatHint": "Bölümler artık ayrı ayrı gösteriliyor — tekrar gruplamak için \"Seçilmiş ayetler\"e tekrar dokunun veya \"Tüm çalışma sayfaları\"nı seçin."
+ "flatHint": "Bölümler artık ayrı ayrı gösteriliyor — tekrar gruplamak için \"Seçilmiş ayetler\"e tekrar dokunun veya \"Tüm çalışma sayfaları\"nı seçin.",
+ "ayahRangeLoading": "Sayfalar yeniden düzenleniyor…",
+ "gridLoadingMore": "Daha fazla yükleniyor…"
 }

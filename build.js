@@ -999,6 +999,7 @@ W.forEach((w,wi)=>{
   const groupRev=revPlaceOf(first.id);
   const groupJuz=juzOf(SURA_NO[first.id], AYA_NUM[first.id]?arNum(AYA_NUM[first.id]):1);
   topEntries.push({key:[suraNo,groupMinAya,wi], html:`<details class="ws-group">
+  <button type="button" class="icon-btn group-audio-play js-only" data-audio-group="${members.map(({x})=>x.id).join(',')}" hidden aria-label="استماع لكامل السورة" data-i18n-aria="listenSurahWs">${ICON_SPEAKER}</button>
   <summary class="ws-group-head card">
     <div class="tagrow">
       <span class="tag" data-i18n="tagSurah">سورة كاملة</span>
@@ -1013,7 +1014,7 @@ W.forEach((w,wi)=>{
         <span class="ws-group-count" data-i18n-tpl="${tid('{} جزءًا')}" data-i18n-word="${toAr(w.groupTotal)}">${toAr(w.groupTotal)} جزءًا</span>
       </span>
       <span class="cmeta-end">
-        <button type="button" class="icon-btn group-audio-play js-only" data-audio-group="${members.map(({x})=>x.id).join(',')}" hidden aria-label="استماع لكامل السورة" data-i18n-aria="listenSurahWs">${ICON_SPEAKER}</button>
+        <span class="group-audio-slot" aria-hidden="true"></span>
         <span class="go" data-i18n="openWs">افتح الورقة ▾</span>
       </span>
     </div>
@@ -1194,6 +1195,7 @@ setTimeout(function(){ document.documentElement.setAttribute('data-ready','1'); 
       <div class="settings-group-title" data-i18n="ayahRangeLabel">عدد الآيات</div>
     </div>
     <span class="admin-hint" data-i18n="ayahRangeHint">يُعيد تقسيم أجزاء السور الطويلة المجزَّأة إلى هذا العدد من الآيات لكل ورقة — الأوراق القصيرة (سور مكتملة أو آية مختارة) لا تتأثر، إذ لم تكن مجزَّأة أصلًا.</span>
+    <span class="ayahrange-loading" hidden><span class="spinner"></span><span data-i18n="ayahRangeLoading">جارٍ إعادة تنظيم الأوراق…</span></span>
     ${[5,10,15,20,25,30].map(n=>`<button type="button" class="lang-opt ayahrange-opt${n===10?' on':''}" data-ayahrange="${n}" data-i18n-tpl="${tid('{} آيات لكل ورقة')}" data-i18n-word="${toAr(n)}">${n} آيات لكل ورقة</button>`).join('\n    ')}
   </div>
   <div class="settings-sub" data-cat="lang" hidden>
@@ -1283,6 +1285,7 @@ ${RECITERS.map(([id,ar,en])=>`      <button type="button" class="lang-opt recite
 <section class="grid">
 ${blocks}
 <div id="gridSentinel" aria-hidden="true"></div>
+<div id="gridLoading" class="grid-loading" hidden><span class="spinner"></span><span data-i18n="gridLoadingMore">جارٍ تحميل المزيد…</span></div>
 </section>
 <script type="application/json" id="gridRest">${gridRestJSON}</script>
 </main>

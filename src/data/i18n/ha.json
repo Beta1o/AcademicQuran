@@ -1308,5 +1308,7 @@
  "fJuzAll": "Zaɓi juzu'i",
  "tagPart": "Sashin surah",
  "repeatToggle": "🔁 Maimaitawa",
- "flatHint": "Yanzu ana nuna sassan daban-daban — danna \"Zaɓaɓɓun ayoyi\" kuma ko zaɓi \"Duk takardun aiki\" don haɗa su kuma."
+ "flatHint": "Yanzu ana nuna sassan daban-daban — danna \"Zaɓaɓɓun ayoyi\" kuma ko zaɓi \"Duk takardun aiki\" don haɗa su kuma.",
+ "ayahRangeLoading": "Ana sake shirya takardu…",
+ "gridLoadingMore": "Ana ɗaukar ƙari…"
 }

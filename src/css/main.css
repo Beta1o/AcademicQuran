@@ -106,6 +106,12 @@ html[dir="rtl"] .settings-chevron svg,html[dir="rtl"] .settings-back svg{transfo
 .lang-opt.on::after{content:"✓";margin-inline-start:auto;padding-inline-start:8px}
 .reciter-opt[hidden]{display:none}
 
+.ayahrange-loading,.grid-loading{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:.82rem;color:var(--teal);font-weight:600}
+.ayahrange-loading .spinner,.grid-loading .spinner{width:14px;height:14px;border-radius:50%;border:2px solid color-mix(in srgb, var(--teal) 25%, transparent);border-top-color:var(--teal);animation:ayahrangeSpin .7s linear infinite;flex:none}
+@keyframes ayahrangeSpin{to{transform:rotate(360deg)}}
+.settings-sub[data-cat="ayahrange"].busy .ayahrange-opt{pointer-events:none;opacity:.5}
+.grid-loading{grid-column:1/-1;justify-content:center;padding:18px 12px}
+
 /* Theme row: an icon + label + an actual switch visual (not just a plain
    list item) — its state (.on) is toggled in JS alongside the sun/moon icon
    swap, both driven by the same dark/light change so they never disagree. */
@@ -264,9 +270,18 @@ html[dir="rtl"] .settings-chevron svg,html[dir="rtl"] .settings-back svg{transfo
    button here (same .icon-btn used for the settings gear) keeps it the same
    visual weight as its neighbors instead of a full-size labeled button
    competing for the same cramped row. */
-.cmeta .icon-btn{width:28px;height:28px;flex-shrink:0;border-width:1px}
+.cmeta .icon-btn,.group-audio-slot{width:28px;height:28px;flex-shrink:0}
+.cmeta .icon-btn{border-width:1px}
 .cmeta .icon-btn svg{width:14px;height:14px}
 .cmeta .icon-btn.playing{background:var(--ac);border-color:var(--ac);color:#fff}
+/* Moved out of <summary> (a nested <button> inside <summary> is flagged as
+   invalid/inaccessible interactive-content nesting) — this button is a
+   direct child of <details class="ws-group"> instead, positioned via JS
+   (positionGroupAudioBtn) to sit exactly over the invisible
+   .group-audio-slot placeholder that reserves its spot inside the
+   <summary>'s normal flex layout. */
+.ws-group{position:relative}
+.ws-group>.group-audio-play{position:absolute;z-index:3}
 
 /* ---------- worksheet page ---------- */
 .ws{max-width:960px;margin:0 auto;padding:30px 20px 80px}
