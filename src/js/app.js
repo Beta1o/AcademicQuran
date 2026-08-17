@@ -394,8 +394,11 @@ function playAyaList(items,btn,det){
        reuses the existing .ws-item toggle listener as-is — same auto-scroll,
        same "close whichever part was open before" behavior a manual click
        already gets, so this doesn't need its own separate handling of any
-       of that. */
-    if(it.det && it.det!==curDet){ curDet=it.det; if(!curDet.open) curDet.open=true; }
+       of that. Checked unconditionally (not just on a det *change*): the
+       very first item's det is already equal to curDet (playAyaList's own
+       det argument set it before next() ever ran), so a change-only check
+       skipped opening it entirely — the first part silently never expanded. */
+    if(it.det){ curDet=it.det; if(!curDet.open) curDet.open=true; }
     markReading(it.aya, it.det);
     if(use!==curAudio){ curAudio.pause(); curAudio=use; }
     else { curAudio.src=it.url; }
@@ -855,7 +858,13 @@ var Locale = (function(){
     });
     root.querySelectorAll('[data-i18n-aria]').forEach(function(node){
       var k=node.dataset.i18nAria;
-      if(cat[k]) node.setAttribute('aria-label', cat[k]);
+      if(cat[k]){
+        node.setAttribute('aria-label', cat[k]);
+        /* The group audio button also has a title attribute (for the mouse-
+           hover tooltip) — aria-label alone left that tooltip stuck showing
+           Arabic regardless of the page's actual selected language. */
+        if(node.hasAttribute('title')) node.setAttribute('title', cat[k]);
+      }
     });
     /* أسئلة الأوراق (وعناوين الأقسام والمعلومات وعدد الأسئلة، المدمَجة في نفس
        القاموس): تُترجَم الصياغة المحيطة عبر قاموس القوالب، بينما تبقى الكلمة/
