@@ -37,7 +37,7 @@
  "resetWs": "ځوابونه پاکول",
  "printWs": "🖨️ پاڼه چاپول",
  "lvlLegendLabel": "د پوښتنو درجې:",
- "listenWs": "🔊 تلاوت ته غوږ نیول",
+ "listenWs": "تلاوت ته غوږ نیول",
  "listenSurahWs": "🔊 د ټول سورت اورېدل",
  "qCountLabel": "د پوښتنو شمېر",
  "qCountAll": "ټولې پوښتنې",
@@ -76,7 +76,7 @@
  "revMedinan": "مدني",
  "fJuzAll": "یو جز غوره کړئ",
  "tagPart": "د سورت یوه برخه",
- "repeatToggle": "🔁 تکرار",
+ "repeatToggle": "تکرار",
  "flatHint": "برخې اوس په جلا ډول ښودل کیږي — بیا \"غوره شوي آیتونه\" کېکاږئ یا \"ټولې پاڼې\" غوره کړئ چې بیا یوځای شي.",
  "tpl": {
   "t1hlv3dr": "جز {}",
@@ -209,5 +209,8 @@
  },
  "ayahRangeLoading": "د پاڼو بیا تنظیمول…",
  "answerCorrectMsg": "✓ سم دی",
- "answerWrongMsg": "✗ بیا هڅه وکړئ"
+ "answerWrongMsg": "✗ بیا هڅه وکړئ",
+ "listenWsPlaying": "تلاوت درول",
+ "listenWsLoading": "بارېدل...",
+ "listenWsNoAudio": "غږ نشته"
 }

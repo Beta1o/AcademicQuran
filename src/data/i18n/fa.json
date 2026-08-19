@@ -37,7 +37,7 @@
  "resetWs": "پاک کردن پاسخ‌ها",
  "printWs": "🖨️ چاپ برگه",
  "lvlLegendLabel": "سطوح سؤالات:",
- "listenWs": "🔊 گوش دادن به تلاوت",
+ "listenWs": "گوش دادن به تلاوت",
  "listenSurahWs": "🔊 شنیدن کل سوره",
  "qCountLabel": "تعداد سؤالات",
  "qCountAll": "همه سؤالات",
@@ -76,7 +76,7 @@
  "revMedinan": "مدنی",
  "fJuzAll": "انتخاب جزء",
  "tagPart": "بخشی از سوره",
- "repeatToggle": "🔁 تکرار",
+ "repeatToggle": "تکرار",
  "tpl": {
   "t1hlv3dr": "جزء {}",
   "tfoh4sh": "سورهٔ شمارهٔ {} در مصحف",
@@ -209,5 +209,8 @@
  "flatHint": "بخش‌ها اکنون جداگانه نمایش داده می‌شوند — دوباره روی «آیات منتخب» بزنید یا «همهٔ برگه‌ها» را انتخاب کنید تا دوباره گروه‌بندی شوند.",
  "ayahRangeLoading": "در حال بازآرایی برگه‌ها…",
  "answerCorrectMsg": "✓ درست",
- "answerWrongMsg": "✗ دوباره تلاش کنید"
+ "answerWrongMsg": "✗ دوباره تلاش کنید",
+ "listenWsPlaying": "توقف تلاوت",
+ "listenWsLoading": "در حال بارگذاری...",
+ "listenWsNoAudio": "صدایی موجود نیست"
 }

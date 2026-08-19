@@ -313,15 +313,23 @@ function clearReading(){
 /* The group "listen to the whole surah" button is icon-only (no text to
    swap in/out like the regular per-worksheet button has) — its "playing"
    state is shown purely via the .playing class (CSS highlight) instead. */
+/* Was overwriting the whole button with a hardcoded Arabic string per
+   state — ignored the selected language entirely (regardless of which
+   language was active, this always showed Arabic), and would also wipe
+   out the button's icon (see ICON_SPEAKER_SM in the audio-play template)
+   since textContent strips all markup. Only the label span's text is
+   touched now, and data-fb-state (reused from the same pattern as
+   setQFeedback) lets Locale.render() retranslate the CURRENT state on a
+   language switch instead of just the idle one. */
 function setAudioBtnState(btn,state){
   if(btn.classList.contains('group-audio-play')){
     btn.classList.toggle('playing', state==='playing');
     return;
   }
-  if(state==='playing') btn.textContent='⏸️ إيقاف التلاوة';
-  else if(state==='loading') btn.textContent='⏳ جاري التحميل...';
-  else if(state==='noaudio') btn.textContent='🔊 لا يوجد صوت';
-  else btn.textContent='🔊 استماع للتلاوة';
+  var label=btn.querySelector('.act-label');
+  var key = state==='playing'?'listenWsPlaying' : state==='loading'?'listenWsLoading' : state==='noaudio'?'listenWsNoAudio' : 'listenWs';
+  if(label){ label.dataset.audioState=key; label.textContent=t(key); }
+  else btn.textContent=t(key);
   btn.classList.toggle('playing', state==='playing');
 }
 function stopAudio(onlyIfDet){
@@ -1297,8 +1305,8 @@ function fillMergedChunkBody(det, slot){
             '<h2>'+headerH2Html+'</h2>'+
           '</header>'+
           '<div class="verse-wrap">'+
-            '<button class="act audio-play js-only" data-audio="'+id+'" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>'+
-            '<button class="act repeat-toggle js-only" data-repeat="'+id+'" hidden data-i18n="repeatToggle">🔁 تكرار</button>'+
+            '<button class="act audio-play js-only" data-audio="'+id+'" hidden>'+ICON_SPEAKER_SM+' <span class="act-label" data-i18n="listenWs">استماع للتلاوة</span></button>'+
+            '<button class="act repeat-toggle js-only" data-repeat="'+id+'" hidden>'+ICON_REPEAT+' <span data-i18n="repeatToggle">تكرار</span></button>'+
             '<div class="verse"><p>﴿ '+verseSpans+' ﴾</p></div>'+
           '</div>'+
           '<div class="progress js-only"><div class="pbar"><i data-pfill="'+id+'" style="width:0%"></i></div><b data-ptxt="'+id+'">0 / '+qTotal+'</b><b class="score" data-score="'+id+'"></b></div>'+
@@ -1797,9 +1805,14 @@ function buildMergedWsItemShell(chunk, sura){
      title showing only the surah name, with no way to tell which ayat it
      actually covers. */
   var rangeSuffix = first===last ? (' — الآية '+first) : (' — الآيات '+first+'-'+last);
+  /* The location badge ("📍 السورة N") is otherwise only present on an
+     ORIGINAL, un-merged part's card — omitting it here (as this used to)
+     left every merged chunk's tagrow visibly missing a badge that its own
+     un-merged siblings still show, an inconsistent layout at a glance. */
+  var locTag='<span class="loc-tag">📍 <span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span> '+first+'</span>';
   det.innerHTML=
     '<summary class="card">'+
-      '<div class="tagrow"><span class="tag" data-i18n="tagPart">جزء من سورة</span></div>'+
+      '<div class="tagrow"><span class="tag" data-i18n="tagPart">جزء من سورة</span>'+locTag+'</div>'+
       '<h2><span data-i18n="surahWord">سورة</span> <span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span>'+rangeSuffix+'</h2>'+
       '<div class="vpeek">﴿ '+verseSpans+' ﴾</div>'+
       '<div class="cmeta"><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
@@ -1813,6 +1826,11 @@ function buildMergedWsItemShell(chunk, sura){
    to become a group of that many smaller worksheets. Converts in place:
    the real original item is stashed hidden inside the new wrapper (its own
    holder), and reverting to a size that fits restores the plain original. */
+/* Same small icon set as build.js's ICON_SPEAKER_SM/ICON_REPEAT — used
+   here for the fillMergedChunkBody body template, which is assembled
+   client-side and has no access to those build-time constants. */
+var ICON_SPEAKER_SM='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9v6h4l5 5V4L7 9H3Z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12"/></svg>';
+var ICON_REPEAT='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
 var _speakerIconHTML=null;
 function speakerIconHTML(){
   if(_speakerIconHTML===null){

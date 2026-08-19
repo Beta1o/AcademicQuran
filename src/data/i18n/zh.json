@@ -37,7 +37,7 @@
  "resetWs": "清除答案",
  "printWs": "🖨️ 打印工作表",
  "lvlLegendLabel": "问题级别：",
- "listenWs": "🔊 聆听朗诵",
+ "listenWs": "聆听朗诵",
  "listenSurahWs": "🔊 收听整章经文",
  "qCountLabel": "问题数量",
  "qCountAll": "所有问题",
@@ -76,7 +76,7 @@
  "revMedinan": "麦地那的",
  "fJuzAll": "选择一个朱兹",
  "tagPart": "苏拉的一部分",
- "repeatToggle": "🔁 重复",
+ "repeatToggle": "重复",
  "flatHint": "各部分现已单独显示——再次点击“精选经文”或选择“所有工作表”以重新分组。",
  "tpl": {
   "t1hlv3dr": "第{}卷",
@@ -209,5 +209,8 @@
  },
  "ayahRangeLoading": "正在重新整理工作表…",
  "answerCorrectMsg": "✓ 正确",
- "answerWrongMsg": "✗ 请再试一次"
+ "answerWrongMsg": "✗ 请再试一次",
+ "listenWsPlaying": "停止朗诵",
+ "listenWsLoading": "正在加载...",
+ "listenWsNoAudio": "暂无音频"
 }

@@ -37,7 +37,7 @@
  "resetWs": "উত্তর মুছুন",
  "printWs": "🖨️ ওয়ার্কশিট প্রিন্ট করুন",
  "lvlLegendLabel": "প্রশ্নের স্তর:",
- "listenWs": "🔊 তিলাওয়াত শুনুন",
+ "listenWs": "তিলাওয়াত শুনুন",
  "listenSurahWs": "🔊 পুরো সূরা শুনুন",
  "qCountLabel": "প্রশ্নের সংখ্যা",
  "qCountAll": "সব প্রশ্ন",
@@ -1307,9 +1307,12 @@
  "revMedinan": "মাদানী",
  "fJuzAll": "একটি পারা বেছে নিন",
  "tagPart": "সূরার অংশ",
- "repeatToggle": "🔁 পুনরাবৃত্তি",
+ "repeatToggle": "পুনরাবৃত্তি",
  "flatHint": "অংশগুলো এখন আলাদাভাবে দেখানো হচ্ছে — আবার \"নির্বাচিত আয়াত\" চাপুন অথবা \"সব ওয়ার্কশিট\" বেছে নিয়ে পুনরায় গ্রুপ করুন।",
  "ayahRangeLoading": "ওয়ার্কশিট পুনর্বিন্যাস করা হচ্ছে…",
  "answerCorrectMsg": "✓ সঠিক",
- "answerWrongMsg": "✗ আবার চেষ্টা করুন"
+ "answerWrongMsg": "✗ আবার চেষ্টা করুন",
+ "listenWsPlaying": "তিলাওয়াত থামান",
+ "listenWsLoading": "লোড হচ্ছে...",
+ "listenWsNoAudio": "কোনো অডিও নেই"
 }

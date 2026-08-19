@@ -37,7 +37,7 @@
  "resetWs": "Clear answers",
  "printWs": "🖨️ Print worksheet",
  "lvlLegendLabel": "Question levels:",
- "listenWs": "🔊 Listen to recitation",
+ "listenWs": "Listen to recitation",
  "listenSurahWs": "🔊 Listen to the whole surah",
  "qCountLabel": "Question count",
  "qCountAll": "All questions",
@@ -1319,9 +1319,12 @@
  "revMedinan": "Medinan",
  "fJuzAll": "Choose a juz'",
  "tagPart": "Surah part",
- "repeatToggle": "🔁 Repeat",
+ "repeatToggle": "Repeat",
  "flatHint": "Parts are shown separately now — tap \"Selected verses\" again or choose \"All worksheets\" to group them back.",
  "ayahRangeLoading": "Reorganizing worksheets…",
  "answerCorrectMsg": "✓ Correct",
- "answerWrongMsg": "✗ Try again"
+ "answerWrongMsg": "✗ Try again",
+ "listenWsPlaying": "Stop recitation",
+ "listenWsLoading": "Loading...",
+ "listenWsNoAudio": "No audio available"
 }

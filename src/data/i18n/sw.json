@@ -37,7 +37,7 @@
  "resetWs": "Futa majibu",
  "printWs": "🖨️ Chapisha karatasi",
  "lvlLegendLabel": "Ngazi za maswali:",
- "listenWs": "🔊 Sikiliza usomaji",
+ "listenWs": "Sikiliza usomaji",
  "listenSurahWs": "🔊 Sikiliza sura nzima",
  "qCountLabel": "Idadi ya maswali",
  "qCountAll": "Maswali yote",
@@ -76,7 +76,7 @@
  "revMedinan": "Madaniyyah",
  "fJuzAll": "Chagua juzuu",
  "tagPart": "Sehemu ya Sura",
- "repeatToggle": "🔁 Rudia",
+ "repeatToggle": "Rudia",
  "tpl": {
   "t1hlv3dr": "Juzuu {}",
   "tfoh4sh": "Sura namba {} katika Msahafu",
@@ -209,5 +209,8 @@
  "flatHint": "Sehemu sasa zinaonyeshwa tofauti — gusa tena \"Aya zilizochaguliwa\" au chagua \"Karatasi zote\" ili kuzikusanya tena.",
  "ayahRangeLoading": "Inapanga upya karatasi za kazi…",
  "answerCorrectMsg": "✓ Sahihi",
- "answerWrongMsg": "✗ Jaribu tena"
+ "answerWrongMsg": "✗ Jaribu tena",
+ "listenWsPlaying": "Simamisha usomaji",
+ "listenWsLoading": "Inapakia...",
+ "listenWsNoAudio": "Hakuna sauti"
 }

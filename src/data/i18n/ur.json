@@ -37,7 +37,7 @@
  "resetWs": "جوابات صاف کریں",
  "printWs": "🖨️ ورک شیٹ پرنٹ کریں",
  "lvlLegendLabel": "سوالات کے درجات:",
- "listenWs": "🔊 تلاوت سنیں",
+ "listenWs": "تلاوت سنیں",
  "listenSurahWs": "🔊 پوری سورت سنیں",
  "qCountLabel": "سوالات کی تعداد",
  "qCountAll": "تمام سوالات",
@@ -1307,9 +1307,12 @@
  "revMedinan": "مدنی",
  "fJuzAll": "ایک پارہ منتخب کریں",
  "tagPart": "سورت کا حصہ",
- "repeatToggle": "🔁 دہرائیں",
+ "repeatToggle": "دہرائیں",
  "flatHint": "اجزاء اب الگ الگ دکھائے جا رہے ہیں — دوبارہ \"منتخب آیات\" دبائیں یا \"تمام ورک شیٹس\" منتخب کریں تاکہ دوبارہ گروپ ہو جائیں۔",
  "ayahRangeLoading": "ورک شیٹس دوبارہ ترتیب دی جا رہی ہیں…",
  "answerCorrectMsg": "✓ درست",
- "answerWrongMsg": "✗ دوبارہ کوشش کریں"
+ "answerWrongMsg": "✗ دوبارہ کوشش کریں",
+ "listenWsPlaying": "تلاوت روکیں",
+ "listenWsLoading": "لوڈ ہو رہا ہے...",
+ "listenWsNoAudio": "کوئی آڈیو دستیاب نہیں"
 }

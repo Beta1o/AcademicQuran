@@ -37,7 +37,7 @@
  "resetWs": "उत्तर साफ़ करें",
  "printWs": "🖨️ वर्कशीट प्रिंट करें",
  "lvlLegendLabel": "प्रश्न स्तर:",
- "listenWs": "🔊 तिलावत सुनें",
+ "listenWs": "तिलावत सुनें",
  "listenSurahWs": "🔊 पूरी सूरत सुनें",
  "qCountLabel": "प्रश्नों की संख्या",
  "qCountAll": "सभी प्रश्न",
@@ -76,7 +76,7 @@
  "revMedinan": "मदनी",
  "fJuzAll": "एक पारा चुनें",
  "tagPart": "सूरत का भाग",
- "repeatToggle": "🔁 दोहराएँ",
+ "repeatToggle": "दोहराएँ",
  "tpl": {
   "t1hlv3dr": "पारा {}",
   "tfoh4sh": "मुसहफ़ में सूरत संख्या {}",
@@ -209,5 +209,8 @@
  "flatHint": "भाग अब अलग-अलग दिखाए जा रहे हैं — दोबारा समूहित करने के लिए \"चयनित आयतें\" पर फिर टैप करें या \"सभी वर्कशीट\" चुनें।",
  "ayahRangeLoading": "वर्कशीट पुनर्व्यवस्थित हो रही हैं…",
  "answerCorrectMsg": "✓ सही",
- "answerWrongMsg": "✗ फिर से प्रयास करें"
+ "answerWrongMsg": "✗ फिर से प्रयास करें",
+ "listenWsPlaying": "तिलावत रोकें",
+ "listenWsLoading": "लोड हो रहा है...",
+ "listenWsNoAudio": "कोई ऑडियो उपलब्ध नहीं"
 }

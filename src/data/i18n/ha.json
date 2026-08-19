@@ -37,7 +37,7 @@
  "resetWs": "Share amsoshi",
  "printWs": "🖨️ Buga takardar aiki",
  "lvlLegendLabel": "Matakan tambayoyi:",
- "listenWs": "🔊 Saurari karatu",
+ "listenWs": "Saurari karatu",
  "listenSurahWs": "🔊 Saurari duka sura",
  "qCountLabel": "Adadin tambayoyi",
  "qCountAll": "Duk tambayoyi",
@@ -1307,9 +1307,12 @@
  "revMedinan": "Madaniyya",
  "fJuzAll": "Zaɓi juzu'i",
  "tagPart": "Sashin surah",
- "repeatToggle": "🔁 Maimaitawa",
+ "repeatToggle": "Maimaitawa",
  "flatHint": "Yanzu ana nuna sassan daban-daban — danna \"Zaɓaɓɓun ayoyi\" kuma ko zaɓi \"Duk takardun aiki\" don haɗa su kuma.",
  "ayahRangeLoading": "Ana sake shirya takardu…",
  "answerCorrectMsg": "✓ Daidai",
- "answerWrongMsg": "✗ Sake gwadawa"
+ "answerWrongMsg": "✗ Sake gwadawa",
+ "listenWsPlaying": "Tsayar da karatu",
+ "listenWsLoading": "Ana ɗauka...",
+ "listenWsNoAudio": "Babu murya"
 }

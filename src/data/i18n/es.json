@@ -37,7 +37,7 @@
  "resetWs": "Borrar respuestas",
  "printWs": "🖨️ Imprimir hoja",
  "lvlLegendLabel": "Niveles de preguntas:",
- "listenWs": "🔊 Escuchar recitación",
+ "listenWs": "Escuchar recitación",
  "listenSurahWs": "🔊 Escuchar la sura completa",
  "qCountLabel": "Número de preguntas",
  "qCountAll": "Todas las preguntas",
@@ -76,7 +76,7 @@
  "revMedinan": "Medinesa",
  "fJuzAll": "Elige un juz'",
  "tagPart": "Parte de una sura",
- "repeatToggle": "🔁 Repetir",
+ "repeatToggle": "Repetir",
  "flatHint": "Las partes se muestran ahora por separado — toca de nuevo \"Versículos seleccionados\" o elige \"Todas las hojas\" para volver a agruparlas.",
  "tpl": {
   "t1hlv3dr": "Juz' {}",
@@ -209,5 +209,8 @@
  },
  "ayahRangeLoading": "Reorganizando las hojas…",
  "answerCorrectMsg": "✓ Correcto",
- "answerWrongMsg": "✗ Inténtalo de nuevo"
+ "answerWrongMsg": "✗ Inténtalo de nuevo",
+ "listenWsPlaying": "Detener recitación",
+ "listenWsLoading": "Cargando...",
+ "listenWsNoAudio": "Sin audio disponible"
 }

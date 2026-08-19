@@ -37,7 +37,7 @@
  "resetWs": "Hapus jawaban",
  "printWs": "🖨️ Cetak lembar kerja",
  "lvlLegendLabel": "Tingkat soal:",
- "listenWs": "🔊 Dengarkan bacaan",
+ "listenWs": "Dengarkan bacaan",
  "listenSurahWs": "🔊 Dengarkan seluruh surah",
  "qCountLabel": "Jumlah pertanyaan",
  "qCountAll": "Semua pertanyaan",
@@ -1307,9 +1307,12 @@
  "revMedinan": "Madaniyah",
  "fJuzAll": "Pilih juz",
  "tagPart": "Bagian surah",
- "repeatToggle": "🔁 Ulangi",
+ "repeatToggle": "Ulangi",
  "flatHint": "Bagian-bagian kini ditampilkan terpisah — ketuk lagi \"Ayat pilihan\" atau pilih \"Semua lembar kerja\" untuk mengelompokkannya kembali.",
  "ayahRangeLoading": "Menata ulang lembar kerja…",
  "answerCorrectMsg": "✓ Benar",
- "answerWrongMsg": "✗ Coba lagi"
+ "answerWrongMsg": "✗ Coba lagi",
+ "listenWsPlaying": "Hentikan bacaan",
+ "listenWsLoading": "Memuat...",
+ "listenWsNoAudio": "Audio tidak tersedia"
 }

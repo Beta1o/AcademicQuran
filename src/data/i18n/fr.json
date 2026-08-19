@@ -37,7 +37,7 @@
  "resetWs": "Effacer les réponses",
  "printWs": "🖨️ Imprimer la fiche",
  "lvlLegendLabel": "Niveaux des questions :",
- "listenWs": "🔊 Écouter la récitation",
+ "listenWs": "Écouter la récitation",
  "listenSurahWs": "🔊 Écouter toute la sourate",
  "qCountLabel": "Nombre de questions",
  "qCountAll": "Toutes les questions",
@@ -1307,9 +1307,12 @@
  "revMedinan": "Médinoise",
  "fJuzAll": "Choisir un joz'",
  "tagPart": "Partie de sourate",
- "repeatToggle": "🔁 Répéter",
+ "repeatToggle": "Répéter",
  "flatHint": "Les parties sont maintenant affichées séparément — appuyez à nouveau sur \"Versets sélectionnés\" ou choisissez \"Toutes les fiches\" pour les regrouper.",
  "ayahRangeLoading": "Réorganisation des fiches…",
  "answerCorrectMsg": "✓ Correct",
- "answerWrongMsg": "✗ Réessayez"
+ "answerWrongMsg": "✗ Réessayez",
+ "listenWsPlaying": "Arrêter la récitation",
+ "listenWsLoading": "Chargement...",
+ "listenWsNoAudio": "Aucun audio disponible"
 }

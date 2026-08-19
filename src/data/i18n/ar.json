@@ -37,7 +37,7 @@
  "resetWs": "تفريغ الإجابات",
  "printWs": "🖨️ طباعة الورقة",
  "lvlLegendLabel": "مستويات الأسئلة:",
- "listenWs": "🔊 استماع للتلاوة",
+ "listenWs": "استماع للتلاوة",
  "listenSurahWs": "🔊 استماع لكامل السورة",
  "qCountLabel": "عدد الأسئلة",
  "qCountAll": "كل الأسئلة",
@@ -1307,9 +1307,12 @@
  "revMedinan": "مدنية",
  "fJuzAll": "اختر جزءًا",
  "tagPart": "جزء من سورة",
- "repeatToggle": "🔁 تكرار",
+ "repeatToggle": "تكرار",
  "flatHint": "الأجزاء معروضة منفصلة الآن — اضغط \"آيات مختارة\" مجددًا أو اختر \"كل الأوراق\" للعودة إلى تجميعها.",
  "ayahRangeLoading": "جارٍ إعادة تنظيم الأوراق…",
  "answerCorrectMsg": "✓ صحيح",
- "answerWrongMsg": "✗ حاول مجددًا"
+ "answerWrongMsg": "✗ حاول مجددًا",
+ "listenWsPlaying": "إيقاف التلاوة",
+ "listenWsLoading": "جاري التحميل...",
+ "listenWsNoAudio": "لا يوجد صوت"
 }

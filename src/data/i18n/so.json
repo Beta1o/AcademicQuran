@@ -37,7 +37,7 @@
  "resetWs": "Nadiifi jawaabaha",
  "printWs": "🖨️ Daabac xaashida",
  "lvlLegendLabel": "Heerarka su'aalaha:",
- "listenWs": "🔊 Dhagayso akhrinta",
+ "listenWs": "Dhagayso akhrinta",
  "listenSurahWs": "🔊 Dhageyso suuradda oo dhan",
  "qCountLabel": "Tirada su'aalaha",
  "qCountAll": "Dhammaan su'aalaha",
@@ -76,7 +76,7 @@
  "revMedinan": "Madani",
  "fJuzAll": "Dooro juz'",
  "tagPart": "Qayb ka mid ah suurad",
- "repeatToggle": "🔁 Ku celi",
+ "repeatToggle": "Ku celi",
  "flatHint": "Qaybaha hadda si gaar ah ayaa loo muujiyaa — mar kale taabo \"Aayado la doortay\" ama dooro \"Dhammaan xaashiyaha\" si aad mar kale u kooxeyso.",
  "tpl": {
   "t1hlv3dr": "Juz'da {}",
@@ -209,5 +209,8 @@
  },
  "ayahRangeLoading": "Dib-u-habaynta xaashiyada…",
  "answerCorrectMsg": "✓ Sax",
- "answerWrongMsg": "✗ Mar kale isku day"
+ "answerWrongMsg": "✗ Mar kale isku day",
+ "listenWsPlaying": "Jooji akhrinta",
+ "listenWsLoading": "Waa la soo dejinayaa...",
+ "listenWsNoAudio": "Cod lama helin"
 }

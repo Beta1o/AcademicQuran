@@ -37,7 +37,7 @@
  "resetWs": "Очистить ответы",
  "printWs": "🖨️ Печать листа",
  "lvlLegendLabel": "Уровни вопросов:",
- "listenWs": "🔊 Слушать чтение",
+ "listenWs": "Слушать чтение",
  "listenSurahWs": "🔊 Слушать всю суру",
  "qCountLabel": "Количество вопросов",
  "qCountAll": "Все вопросы",
@@ -76,7 +76,7 @@
  "revMedinan": "Мединская",
  "fJuzAll": "Выберите джуз",
  "tagPart": "Часть суры",
- "repeatToggle": "🔁 Повтор",
+ "repeatToggle": "Повтор",
  "flatHint": "Части теперь показаны отдельно — нажмите снова «Избранные аяты» или выберите «Все листы», чтобы сгруппировать их снова.",
  "tpl": {
   "t1hlv3dr": "Джуз {}",
@@ -209,5 +209,8 @@
  },
  "ayahRangeLoading": "Реорганизация листов…",
  "answerCorrectMsg": "✓ Верно",
- "answerWrongMsg": "✗ Попробуйте снова"
+ "answerWrongMsg": "✗ Попробуйте снова",
+ "listenWsPlaying": "Остановить чтение",
+ "listenWsLoading": "Загрузка...",
+ "listenWsNoAudio": "Аудио недоступно"
 }

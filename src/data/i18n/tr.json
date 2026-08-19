@@ -37,7 +37,7 @@
  "resetWs": "Cevapları temizle",
  "printWs": "🖨️ Çalışma sayfasını yazdır",
  "lvlLegendLabel": "Soru seviyeleri:",
- "listenWs": "🔊 Tilaveti dinle",
+ "listenWs": "Tilaveti dinle",
  "listenSurahWs": "🔊 Tüm sureyi dinle",
  "qCountLabel": "Soru sayısı",
  "qCountAll": "Tüm sorular",
@@ -1307,9 +1307,12 @@
  "revMedinan": "Medenî",
  "fJuzAll": "Bir cüz seçin",
  "tagPart": "Sure bölümü",
- "repeatToggle": "🔁 Tekrarla",
+ "repeatToggle": "Tekrarla",
  "flatHint": "Bölümler artık ayrı ayrı gösteriliyor — tekrar gruplamak için \"Seçilmiş ayetler\"e tekrar dokunun veya \"Tüm çalışma sayfaları\"nı seçin.",
  "ayahRangeLoading": "Sayfalar yeniden düzenleniyor…",
  "answerCorrectMsg": "✓ Doğru",
- "answerWrongMsg": "✗ Tekrar deneyin"
+ "answerWrongMsg": "✗ Tekrar deneyin",
+ "listenWsPlaying": "Tilaveti durdur",
+ "listenWsLoading": "Yükleniyor...",
+ "listenWsNoAudio": "Ses mevcut değil"
 }

@@ -65,6 +65,12 @@ const ICON_GEAR='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" str
 const ICON_GLOBE='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/></svg>';
 const ICON_THEME='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36A5.5 5.5 0 0 1 12 3Z"/></svg>';
 const ICON_SPEAKER='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9v6h4l5 5V4L7 9H3Z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12"/></svg>';
+/* Small inline icon for act buttons, matching ICON_SPEAKER's style — used
+   in place of pictographic emoji (🔊/🔁), which render as small, blurry,
+   monochrome glyphs on systems/webviews without a bundled color-emoji
+   font, unlike this app's other icon buttons which already use SVG. */
+const ICON_SPEAKER_SM='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9v6h4l5 5V4L7 9H3Z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12"/></svg>';
+const ICON_REPEAT='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
 const ICON_CHEVRON='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 const ICON_BACK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
 const ICON_LIST='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>';
@@ -987,8 +993,8 @@ const blockHTMLs=W.map((w,wi)=>{
         <div class="lvl-legend"><span data-i18n="lvlLegendLabel">مستويات الأسئلة:</span> ${lvlLegend}</div>
       </header>
       <div class="verse-wrap">
-        <button class="act audio-play js-only" data-audio="${w.id}" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>
-        <button class="act repeat-toggle js-only" data-repeat="${w.id}" hidden data-i18n="repeatToggle">🔁 تكرار</button>
+        <button class="act audio-play js-only" data-audio="${w.id}" hidden>${ICON_SPEAKER_SM} <span class="act-label" data-i18n="listenWs">استماع للتلاوة</span></button>
+        <button class="act repeat-toggle js-only" data-repeat="${w.id}" hidden>${ICON_REPEAT} <span data-i18n="repeatToggle">تكرار</span></button>
         <div class="verse"><p>﴿ ${verseHTML(w)} ﴾</p></div>
       </div>
       <div class="progress js-only"><div class="pbar"><i data-pfill="${w.id}" style="width:0%"></i></div><b data-ptxt="${w.id}">0 / ${total}</b><b class="score" data-score="${w.id}"></b></div>
