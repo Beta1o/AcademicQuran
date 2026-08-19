@@ -1289,10 +1289,31 @@ function fillMergedChunkBody(det, slot){
     var headerH2Html=summaryH2?summaryH2.innerHTML:('<span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span>');
     var vpeek=det.querySelector(':scope > summary .vpeek');
     var verseSpans=vpeek?vpeek.innerHTML.replace(/^\s*﴿\s*/,'').replace(/\s*﴾\s*$/,''):'';
-    /* Same verse-wrap (audio + repeat buttons) and progress bar as a real
-       worksheet's body — omitting these earlier meant the audio/repeat
-       buttons and the answered/score readout silently never appeared on
-       any merged chunk, only on the untouched, default-size cards. */
+    /* Same structure as a real, un-merged worksheet's body (see build.js) —
+       lab-line/info header line, level-legend badges, audio + repeat
+       buttons, progress bar, footer — so a merged chunk looks and behaves
+       identically to a default-size one. The info line states this exact
+       chunk's own ayah range, not a stale "part N of TOTAL" count copied
+       from whichever original part happened to be used as a source —
+       merging changes the part count/numbering, so that count wouldn't be
+       meaningfully correct anymore. */
+    var first=ayaNums[0], last=ayaNums[ayaNums.length-1];
+    var infoText = first===last ? ('آيات مختارة · الآية '+first) : ('آيات مختارة · الآيات '+first+'-'+last);
+    /* Matches locHTML()'s exact format for a group part in build.js: "الآية
+       N من سورة X (السورة رقم N في المصحف)" — this was present on every
+       original part's own card but silently absent from a merged chunk's. */
+    var suraNo=det.dataset.surano||'';
+    var locText='الآية '+first+' من سورة '+(suraName||'')+(suraNo?' (السورة رقم '+suraNo+' في المصحف)':'');
+    var lvlCounts={};
+    var lvlFrag=document.createElement('div'); lvlFrag.innerHTML=secsHTML;
+    lvlFrag.querySelectorAll('.q[data-lvl]').forEach(function(q){
+      lvlCounts[q.dataset.lvl]=(lvlCounts[q.dataset.lvl]||0)+1;
+    });
+    var lvlLegendHTML=[1,2,3,4,5].map(function(i){
+      var n=lvlCounts[i];
+      if(!n) return '';
+      return '<span class="lvl lvl-'+i+'"><span data-i18n="lvl'+i+'">'+t('lvl'+i)+'</span> <span data-i18n-num="'+n+'">'+n+'</span></span>';
+    }).join('');
     slot.outerHTML=
       '<div class="ws">'+
         '<div class="ws-top">'+
@@ -1302,7 +1323,11 @@ function fillMergedChunkBody(det, slot){
         '</div>'+
         '<article class="sheet">'+
           '<header class="sheet-head">'+
+            '<div class="lab-line" data-i18n="brand">مختبر تحليل السور</div>'+
             '<h2>'+headerH2Html+'</h2>'+
+            '<div class="info">'+infoText+'</div>'+
+            '<div class="loc">📍 '+locText+'</div>'+
+            '<div class="lvl-legend"><span data-i18n="lvlLegendLabel">مستويات الأسئلة:</span> '+lvlLegendHTML+'</div>'+
           '</header>'+
           '<div class="verse-wrap">'+
             '<button class="act audio-play js-only" data-audio="'+id+'" hidden>'+ICON_SPEAKER_SM+' <span class="act-label" data-i18n="listenWs">استماع للتلاوة</span></button>'+
