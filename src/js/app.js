@@ -1262,16 +1262,20 @@ function fillMergedChunkBody(det, slot){
     chunk.forEach(function(c){ if(overlapping.indexOf(c.part)===-1) overlapping.push(c.part); });
     var secCount=Math.max.apply(null, overlapping.map(function(o){ return o.querySelectorAll(':scope .sec').length; }).concat([0]));
     var secsHTML='', qTotal=0;
+    /* Question numbers count up across ALL sections, 1..N, matching a real
+       worksheet (section 2 continues from wherever section 1 left off,
+       never restarting) — this used to reset to 1 at the start of every
+       section instead. */
     for(var i=0;i<secCount;i++){
-      var refSec=null, qHTML='', num=0;
+      var refSec=null, qHTML='';
       overlapping.forEach(function(o){
         var sec=o.querySelectorAll(':scope .sec')[i];
         if(!sec) return;
         if(!refSec) refSec=sec;
         sec.querySelectorAll(':scope .qlist > .q').forEach(function(q){
-          num++; qTotal++;
+          qTotal++;
           var clone=q.cloneNode(true);
-          var numEl=clone.querySelector('.num'); if(numEl) numEl.textContent=numEl.textContent.replace(/[0-9٠-٩]+/, String(num));
+          var numEl=clone.querySelector('.num'); if(numEl) numEl.textContent=numEl.textContent.replace(/[0-9٠-٩]+/, String(qTotal));
           qHTML+=clone.outerHTML;
         });
       });
@@ -1304,6 +1308,13 @@ function fillMergedChunkBody(det, slot){
        original part's own card but silently absent from a merged chunk's. */
     var suraNo=det.dataset.surano||'';
     var locText='الآية '+first+' من سورة '+(suraName||'')+(suraNo?' (السورة رقم '+suraNo+' في المصحف)':'');
+    /* Closing verse-snippet + encouragement message — arbitrary, uniquely
+       authored per worksheet (not derivable from the chunk's own ayat), so
+       rather than leave the footer empty (as this used to) it reuses an
+       overlapping original part's own footer verbatim, real authored
+       content either way. */
+    var srcFooter=overlapping[0].querySelector(':scope > .ws .sheet-foot');
+    var footerHTML=srcFooter?srcFooter.innerHTML:'';
     var lvlCounts={};
     var lvlFrag=document.createElement('div'); lvlFrag.innerHTML=secsHTML;
     lvlFrag.querySelectorAll('.q[data-lvl]').forEach(function(q){
@@ -1336,7 +1347,7 @@ function fillMergedChunkBody(det, slot){
           '</div>'+
           '<div class="progress js-only"><div class="pbar"><i data-pfill="'+id+'" style="width:0%"></i></div><b data-ptxt="'+id+'">0 / '+qTotal+'</b><b class="score" data-score="'+id+'"></b></div>'+
           secsHTML+
-          '<footer class="sheet-foot"></footer>'+
+          '<footer class="sheet-foot">'+footerHTML+'</footer>'+
         '</article>'+
         '<div class="ws-close"><button class="act" data-close="'+id+'" data-i18n="closeWsFull">▲ إغلاق الورقة</button></div>'+
       '</div>';
@@ -1835,12 +1846,31 @@ function buildMergedWsItemShell(chunk, sura){
      left every merged chunk's tagrow visibly missing a badge that its own
      un-merged siblings still show, an inconsistent layout at a glance. */
   var locTag='<span class="loc-tag">📍 <span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span> '+first+'</span>';
+  /* Question-count badge ("N سؤالًا") — otherwise present on every ORIGINAL
+     part's closed card but silently absent from a merged chunk's, since
+     the real total needs the source part(s)' body loaded (lazy, not done
+     yet at shell-build time). Approximated instead from each overlapping
+     original's OWN already-known total (visible on its own card without
+     any network call) — a part straddling a chunk boundary contributes
+     its full total to both neighbors, same accepted tradeoff as the
+     question list itself (see buildMergedWsItemShell's boundary note in
+     rebuildGroupForSizeImpl/rebuildStandaloneForSizeImpl above). */
+  /* Locale-rendered text is in Arabic-Indic digits (٠-٩, U+0660-0669) when
+     the active language is Arabic — regex \d only matches ASCII 0-9, so
+     stripping non-\d characters left nothing to parse and every merged
+     card silently showed "0 سؤالًا" regardless of language. */
+  var qCount=overlapping.reduce(function(sum,o){
+    var pm=o.querySelector(':scope > summary .prog-mini');
+    var digits=pm?pm.textContent.replace(/[٠-٩]/g,function(d){ return String(d.charCodeAt(0)-0x0660); }).replace(/[^\d]/g,''):'';
+    var n=parseInt(digits,10);
+    return sum+(isNaN(n)?0:n);
+  },0);
   det.innerHTML=
     '<summary class="card">'+
       '<div class="tagrow"><span class="tag" data-i18n="tagPart">جزء من سورة</span>'+locTag+'</div>'+
       '<h2><span data-i18n="surahWord">سورة</span> <span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span>'+rangeSuffix+'</h2>'+
       '<div class="vpeek">﴿ '+verseSpans+' ﴾</div>'+
-      '<div class="cmeta"><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
+      '<div class="cmeta"><span class="prog-mini"><span data-i18n-num="'+qCount+'">'+qCount+'</span> سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
     '</summary>'+
     '<div class="ws" data-lazy="1"></div>';
   return det;
