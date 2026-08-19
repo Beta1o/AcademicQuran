@@ -1323,14 +1323,14 @@ function fillMergedChunkBody(det, slot){
     var lvlLegendHTML=[1,2,3,4,5].map(function(i){
       var n=lvlCounts[i];
       if(!n) return '';
-      return '<span class="lvl lvl-'+i+'"><span data-i18n="lvl'+i+'">'+t('lvl'+i)+'</span> <span data-i18n-num="'+n+'">'+n+'</span></span>';
+      return '<span class="lvl lvl-'+i+'"><span data-i18n="lvl'+i+'">'+t('lvl'+i)+'</span> <span data-i18n-num="'+toArDigits(n)+'">'+n+'</span></span>';
     }).join('');
     slot.outerHTML=
       '<div class="ws">'+
         '<div class="ws-top">'+
           '<button class="act close" data-close="'+id+'" data-i18n="closeWs">▲ إغلاق</button><div class="spacer"></div>'+
           '<button class="act reset" data-reset="'+id+'" data-i18n="resetWs">تفريغ الإجابات</button>'+
-          '<button class="act print" data-print="'+id+'" data-i18n="printWs">🖨️ طباعة الورقة</button>'+
+          '<button class="act print" data-print="'+id+'">'+ICON_PRINT+' <span data-i18n="printWs">طباعة الورقة</span></button>'+
         '</div>'+
         '<article class="sheet">'+
           '<header class="sheet-head">'+
@@ -1794,10 +1794,17 @@ function rebuildGroupForSizeImpl(group, size){
   var audioBtn=group.querySelector(':scope > .group-audio-play');
   if(audioBtn) audioBtn.dataset.audioGroup=newEls.map(function(el){ return el.id.replace(/^w-/,''); }).join(',');
   var countBadge=group.querySelector(':scope > summary .ws-group-count');
-  if(countBadge) countBadge.dataset.i18nWord=String(chunks.length);
+  if(countBadge) countBadge.dataset.i18nWord=toArDigits(chunks.length);
   if(window.Locale) window.Locale.render(itemsWrap);
   if(window.Locale && countBadge) window.Locale.render(group);
   return Promise.resolve();
+}
+/* data-i18n-num (see render()'s Locale IIFE) expects its source text
+   already in Arabic-Indic digits — it only replaces characters found in
+   that range, so handing it plain ASCII silently does nothing and the
+   number never converts to the visitor's selected language's digit set. */
+function toArDigits(n){
+  return String(n).replace(/[0-9]/g,function(d){ return '٠١٢٣٤٥٦٧٨٩'[+d]; });
 }
 function buildMergedWsItemShell(chunk, sura){
   var ayaNums=chunk.map(function(c){ return c.aya; });
@@ -1808,6 +1815,13 @@ function buildMergedWsItemShell(chunk, sura){
   var det=document.createElement('details');
   det.className='ws-item';
   det.id='w-'+id;
+  /* --ac (the card's accent color, e.g. the print button's filled green
+     background) is set as an inline custom property on every ORIGINAL
+     item, never inherited by a synthetic shell that was never given one
+     — it silently resolved to nothing, leaving the print button (and any
+     other --ac-dependent styling) colorless only on merged chunks. */
+  var srcAc=overlapping[0].style.getPropertyValue('--ac');
+  if(srcAc) det.style.setProperty('--ac', srcAc);
   det.dataset.cat='ayah';
   det.dataset.surano=sura;
   det.dataset.ayano=String(first);
@@ -1870,7 +1884,7 @@ function buildMergedWsItemShell(chunk, sura){
       '<div class="tagrow"><span class="tag" data-i18n="tagPart">جزء من سورة</span>'+locTag+'</div>'+
       '<h2><span data-i18n="surahWord">سورة</span> <span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span>'+rangeSuffix+'</h2>'+
       '<div class="vpeek">﴿ '+verseSpans+' ﴾</div>'+
-      '<div class="cmeta"><span class="prog-mini"><span data-i18n-num="'+qCount+'">'+qCount+'</span> سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
+      '<div class="cmeta"><span class="prog-mini"><span data-i18n-num="'+toArDigits(qCount)+'">'+qCount+'</span> سؤالًا</span><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
     '</summary>'+
     '<div class="ws" data-lazy="1"></div>';
   return det;
@@ -1886,6 +1900,7 @@ function buildMergedWsItemShell(chunk, sura){
    client-side and has no access to those build-time constants. */
 var ICON_SPEAKER_SM='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9v6h4l5 5V4L7 9H3Z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12"/></svg>';
 var ICON_REPEAT='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
+var ICON_PRINT='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
 var _speakerIconHTML=null;
 function speakerIconHTML(){
   if(_speakerIconHTML===null){
@@ -1976,7 +1991,7 @@ function rebuildStandaloneForSizeImpl(item, size){
     var progMini=wrapper.querySelector(':scope > summary .prog-mini');
     if(progMini && itemProgMini) progMini.textContent=itemProgMini.textContent;
     var countBadge=wrapper.querySelector(':scope > summary .ws-group-count');
-    if(countBadge) countBadge.textContent=chunks.length+' جزءًا';
+    if(countBadge) countBadge.textContent=toArDigits(chunks.length)+' جزءًا';
     var audioBtn=wrapper.querySelector(':scope > .group-audio-play');
     if(audioBtn) audioBtn.dataset.audioGroup=newEls.map(function(el){ return el.id.replace(/^w-/,''); }).join(',');
     if(window.bindGroupAudio) bindGroupAudio(wrapper);

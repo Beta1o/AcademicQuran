@@ -71,6 +71,7 @@ const ICON_SPEAKER='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" 
    font, unlike this app's other icon buttons which already use SVG. */
 const ICON_SPEAKER_SM='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9v6h4l5 5V4L7 9H3Z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12"/></svg>';
 const ICON_REPEAT='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
+const ICON_PRINT='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
 const ICON_CHEVRON='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 const ICON_BACK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
 const ICON_LIST='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>';
@@ -982,7 +983,7 @@ const blockHTMLs=W.map((w,wi)=>{
       <button class="act close" data-close="${w.id}" data-i18n="closeWs">▲ إغلاق</button>
       <div class="spacer"></div>
       <button class="act reset" data-reset="${w.id}" data-i18n="resetWs">تفريغ الإجابات</button>
-      <button class="act print" data-print="${w.id}" data-i18n="printWs">🖨️ طباعة الورقة</button>
+      <button class="act print" data-print="${w.id}">${ICON_PRINT} <span data-i18n="printWs">طباعة الورقة</span></button>
     </div>
     <article class="sheet">
       <header class="sheet-head">
