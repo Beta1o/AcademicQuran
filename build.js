@@ -7,6 +7,43 @@ const R=p=>fs.readFileSync(path.join(__dirname,p),'utf8');
 const WS_DIR=path.join(__dirname,'src/data/worksheets');
 const W=fs.readdirSync(WS_DIR).filter(f=>f.endsWith('.json')).sort()
   .reduce((acc,f)=>acc.concat(JSON.parse(fs.readFileSync(path.join(WS_DIR,f),'utf8'))), []);
+/* Self-hosted fonts, base64-embedded directly into the single output file —
+   the app previously fetched them from fonts.googleapis.com/fonts.gstatic.com
+   on every fresh visit, meaning the page's own fonts/design depended on a
+   network round-trip that had nothing to do with actually using the app
+   (only audio genuinely needs the network). Subsetted to arabic/latin/
+   latin-ext only (the app's non-Latin, non-Arabic UI languages fall back to
+   the system font regardless, since these families don't cover those
+   scripts anyway), 17 unique files, ~460KB total before base64 overhead. */
+const FONTS_DIR=path.join(__dirname,'assets/fonts');
+const FONT_FACES=[
+  {family:'Amiri Quran', weight:400, file:'amiri-quran-400-arabic.woff2', unicode:'arabic'},
+  {family:'Amiri Quran', weight:400, file:'amiri-quran-400-latin.woff2', unicode:'latin'},
+  {family:'Baloo Bhaijaan 2', weight:'500 800', file:'baloo-bhaijaan2-500-arabic.woff2', unicode:'arabic'},
+  {family:'Baloo Bhaijaan 2', weight:'500 800', file:'baloo-bhaijaan2-500-latin-ext.woff2', unicode:'latin-ext'},
+  {family:'Baloo Bhaijaan 2', weight:'500 800', file:'baloo-bhaijaan2-500-latin.woff2', unicode:'latin'},
+  {family:'IBM Plex Sans Arabic', weight:400, file:'ibm-plex-arabic-400-arabic.woff2', unicode:'arabic'},
+  {family:'IBM Plex Sans Arabic', weight:400, file:'ibm-plex-arabic-400-latin-ext.woff2', unicode:'latin-ext'},
+  {family:'IBM Plex Sans Arabic', weight:400, file:'ibm-plex-arabic-400-latin.woff2', unicode:'latin'},
+  {family:'IBM Plex Sans Arabic', weight:500, file:'ibm-plex-arabic-500-arabic.woff2', unicode:'arabic'},
+  {family:'IBM Plex Sans Arabic', weight:500, file:'ibm-plex-arabic-500-latin-ext.woff2', unicode:'latin-ext'},
+  {family:'IBM Plex Sans Arabic', weight:500, file:'ibm-plex-arabic-500-latin.woff2', unicode:'latin'},
+  {family:'IBM Plex Sans Arabic', weight:600, file:'ibm-plex-arabic-600-arabic.woff2', unicode:'arabic'},
+  {family:'IBM Plex Sans Arabic', weight:600, file:'ibm-plex-arabic-600-latin-ext.woff2', unicode:'latin-ext'},
+  {family:'IBM Plex Sans Arabic', weight:600, file:'ibm-plex-arabic-600-latin.woff2', unicode:'latin'},
+  {family:'IBM Plex Sans Arabic', weight:700, file:'ibm-plex-arabic-700-arabic.woff2', unicode:'arabic'},
+  {family:'IBM Plex Sans Arabic', weight:700, file:'ibm-plex-arabic-700-latin-ext.woff2', unicode:'latin-ext'},
+  {family:'IBM Plex Sans Arabic', weight:700, file:'ibm-plex-arabic-700-latin.woff2', unicode:'latin'},
+];
+const UNICODE_RANGES={
+  arabic:'U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC',
+  latin:'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD',
+  'latin-ext':'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF',
+};
+const fontFaceCSS=FONT_FACES.map(f=>{
+  const b64=fs.readFileSync(path.join(FONTS_DIR,f.file)).toString('base64');
+  return `@font-face{font-family:'${f.family}';font-style:normal;font-weight:${f.weight};font-display:swap;src:url(data:font/woff2;base64,${b64}) format('woff2');unicode-range:${UNICODE_RANGES[f.unicode]};}`;
+}).join('\n');
 const css=R('src/css/main.css');
 const extraCSSFile=R('src/css/ui.css');
 const adminCss=R('src/css/admin.css');
@@ -910,7 +947,7 @@ const blockHTMLs=W.map((w,wi)=>{
       const qTplAttr = qm
         ? ` data-i18n-tpl="${tid(q.slice(0,qm.index)+'({})'+q.slice(qm.index+qm[0].length))}" data-i18n-word="${esc(qm[1])}"`
         : ` data-i18n-tpl="${tid(q)}"`;
-      return `<div class="q" data-lvl="${lvl}"><span class="num">${n}</span><div class="body"><div class="txt"><span class="qtxt"${qTplAttr}>${esc(q)}</span> <span class="lvl lvl-${lvl}" data-i18n="lvl${lvl}">${LEVELS[lvl-1]}</span></div>${field}<div class="hint" hidden></div></div></div>`;
+      return `<div class="q" data-lvl="${lvl}"><span class="num">${n}</span><div class="body"><div class="txt"><span class="qtxt"${qTplAttr}>${esc(q)}</span> <span class="lvl lvl-${lvl}" data-i18n="lvl${lvl}">${LEVELS[lvl-1]}</span></div>${field}<span class="q-feedback" hidden></span><div class="hint" hidden></div></div></div>`;
     }).join('\n');
     const secNum=['١','٢','٣'][si]||toAr(si+1);
     return `<section class="sec"><div class="sec-head"><span class="lens-badge" data-i18n-num="${secNum}">${secNum}</span><h3 data-i18n-tpl="${tid(s.t)}">${esc(s.t)}</h3><span class="rule"></span></div><div class="qlist">${items}</div></section>`;
@@ -1102,7 +1139,7 @@ try{
 <meta name="description" content="${DESC}">
 <meta name="robots" content="index, follow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; media-src 'self' https://everyayah.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; media-src 'self' https://everyayah.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 ${SITE_URL?`<link rel="canonical" href="${SITE_URL}/">`:''}
 <meta name="application-name" content="التحليل اللغوي المجهري">
 <meta property="og:title" content="التحليل اللغوي المجهري">
@@ -1118,21 +1155,13 @@ ${SITE_URL?`<meta property="og:url" content="${SITE_URL}/">`:''}
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="${favicon}">
 <link rel="icon" href="${favicon}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Loaded non-render-blocking (media="print" trick, swapped to "all" on
-     load): the page already stays fully hidden (visibility:hidden below)
-     until document.fonts.ready resolves, so there is no flash-of-unstyled
-     text risk to trade off here — only wasted render-blocking time from
-     loading it the normal blocking way. -->
-<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Baloo+Bhaijaan+2:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Baloo+Bhaijaan+2:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <script type="application/ld+json">${jsonLd}</script>
 <style>
 /* تمنع "الوميض": تبقى الصفحة مخفية حتى يُطبَّق السكربت اللغة والوضع الداكن/
    الفاتح المحفوظين بالكامل (آخر سطر في app.js يزيل هذا بوسم data-ready على
    <html>) — فلا يُعرض المحتوى الافتراضي (عربي/فاتح) للحظة قبل استبداله. */
 html:not([data-ready]) body{visibility:hidden}
+${fontFaceCSS}
 ${css}
 ${extraCSS}
 ${adminCss}

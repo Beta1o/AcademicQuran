@@ -49,10 +49,24 @@ function dynTest(kind,extra,orig,nrm){
   if(kind==='inverse') return true;
   return false;
 }
+/* Shows/hides the "✓ Correct" / "✗ Try again" feedback line under a graded
+   question. Text is (re)applied here rather than via a plain data-i18n
+   attribute — data-fb-state records which message is showing so a language
+   switch (Locale.render) can retranslate an already-graded answer without
+   needing it re-graded. */
+function setQFeedback(q, state){
+  var fb=q.querySelector('.q-feedback');
+  if(!fb) return;
+  if(!state){ fb.hidden=true; delete fb.dataset.fbState; return; }
+  fb.dataset.fbState=state;
+  fb.hidden=false;
+  fb.textContent=t(state==='ok'?'answerCorrectMsg':'answerWrongMsg');
+}
 function grade(el){
   var q=el.closest('.q'); if(!q) return;
   var v = el.type==='checkbox' ? (el.checked?'x':'') : el.value;
   q.classList.remove('ok','bad');
+  setQFeedback(q, null);
   var hint=q.querySelector('.hint'); if(hint){hint.hidden=true;}
   var btn=q.querySelector('.ansbtn'); if(btn){btn.remove();}
   if(!v || !v.trim()) return;
@@ -76,6 +90,7 @@ function grade(el){
   }
   if(ok===null){ if(el.dataset.show) revealBtn(q,el,t('revealModel')); return; }
   q.classList.add(ok?'ok':'bad');
+  setQFeedback(q, ok?'ok':'bad');
   if(!ok && el.dataset.show && showAnswerOnMistake()) revealBtn(q,el,t('revealCorrect'));
 }
 /* ---------- إعداد: هل يظهر زر «الإجابة الصحيحة» تلقائيًا بعد إجابة خاطئة؟ (يُضبط من صفحة المدير) ---------- */
@@ -153,6 +168,7 @@ function bindControls(root){
       page.querySelectorAll('[data-k]').forEach(function(el){
         if(el.type==='checkbox') el.checked=false; else el.value='';
         var q=el.closest('.q'); q.classList.remove('ok','bad');
+        setQFeedback(q, null);
         var btn=q.querySelector('.ansbtn'); if(btn) btn.remove();
         var h=q.querySelector('.hint'); if(h) h.hidden=true;
       });
@@ -983,6 +999,14 @@ var Locale = (function(){
       node.textContent = arabicScript ? node.dataset.arName : node.dataset.enName;
     });
     var lbl=document.getElementById('langBtnLabel'); if(lbl) lbl.textContent=NAMES[current]||NAMES[DEFAULT_LOCALE];
+    /* An already-graded answer's "✓ Correct"/"✗ Try again" feedback is set
+       as literal text by grade() (setQFeedback), not a data-i18n attribute
+       — so it wouldn't otherwise pick up a language switch until the
+       question was re-graded. data-fb-state records which message is
+       showing, retranslated here every render() pass. */
+    root.querySelectorAll('.q-feedback[data-fb-state]').forEach(function(fb){
+      fb.textContent=t(fb.dataset.fbState==='ok'?'answerCorrectMsg':'answerWrongMsg');
+    });
     /* Switching language can reflow the group card header (different text
        lengths/line wraps), which would leave the absolutely-positioned
        group audio button (see positionGroupAudioBtn) misaligned with its
@@ -1248,6 +1272,13 @@ function fillMergedChunkBody(det, slot){
     var id=det.id.replace(/^w-/,'');
     var nameEl=det.querySelector('[data-i18n-name]');
     var suraName=nameEl?nameEl.getAttribute('data-i18n-name'):'';
+    /* Reuses the shell's own <summary> h2 verbatim (surah name span + the
+       "— الآيات X-Y" range suffix, see buildMergedWsItemShell) instead of
+       rebuilding just the surah name — otherwise the OPENED worksheet's
+       own header would silently drop the range that its still-closed card
+       already showed. */
+    var summaryH2=det.querySelector(':scope > summary h2');
+    var headerH2Html=summaryH2?summaryH2.innerHTML:('<span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span>');
     var vpeek=det.querySelector(':scope > summary .vpeek');
     var verseSpans=vpeek?vpeek.innerHTML.replace(/^\s*﴿\s*/,'').replace(/\s*﴾\s*$/,''):'';
     /* Same verse-wrap (audio + repeat buttons) and progress bar as a real
@@ -1263,7 +1294,7 @@ function fillMergedChunkBody(det, slot){
         '</div>'+
         '<article class="sheet">'+
           '<header class="sheet-head">'+
-            '<h2><span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span></h2>'+
+            '<h2>'+headerH2Html+'</h2>'+
           '</header>'+
           '<div class="verse-wrap">'+
             '<button class="act audio-play js-only" data-audio="'+id+'" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>'+
@@ -1760,10 +1791,16 @@ function buildMergedWsItemShell(chunk, sura){
     var span=owner.querySelector('.aya-seg[data-aya="'+n+'"]');
     return span?span.outerHTML:'';
   }).filter(Boolean).join(' ');
+  /* Ayah-range suffix ("— الآيات 1-10" / "— الآية 7") matches the exact
+     format an ORIGINAL, un-merged part's own name carries (see nameHTML in
+     build.js) — omitting it (as this used to) left every merged card's
+     title showing only the surah name, with no way to tell which ayat it
+     actually covers. */
+  var rangeSuffix = first===last ? (' — الآية '+first) : (' — الآيات '+first+'-'+last);
   det.innerHTML=
     '<summary class="card">'+
       '<div class="tagrow"><span class="tag" data-i18n="tagPart">جزء من سورة</span></div>'+
-      '<h2><span data-i18n="surahWord">سورة</span> <span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span></h2>'+
+      '<h2><span data-i18n="surahWord">سورة</span> <span data-i18n-name="'+(suraName||'')+'">'+(suraName||'')+'</span>'+rangeSuffix+'</h2>'+
       '<div class="vpeek">﴿ '+verseSpans+' ﴾</div>'+
       '<div class="cmeta"><span class="go" data-i18n="openWs">افتح الورقة ▾</span></div>'+
     '</summary>'+

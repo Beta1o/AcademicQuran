@@ -207,5 +207,7 @@
   "t1qrff41": "Аль-Фаляк",
   "t1qrfbxw": "Ан-Нас"
  },
- "ayahRangeLoading": "Реорганизация листов…"
+ "ayahRangeLoading": "Реорганизация листов…",
+ "answerCorrectMsg": "✓ Верно",
+ "answerWrongMsg": "✗ Попробуйте снова"
 }

@@ -207,5 +207,7 @@
   "t1qrff41": "Al-Falaq",
   "t1qrfbxw": "An-Naas"
  },
- "ayahRangeLoading": "Dib-u-habaynta xaashiyada…"
+ "ayahRangeLoading": "Dib-u-habaynta xaashiyada…",
+ "answerCorrectMsg": "✓ Sax",
+ "answerWrongMsg": "✗ Mar kale isku day"
 }

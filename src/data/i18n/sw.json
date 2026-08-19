@@ -207,5 +207,7 @@
   "t1qrfbxw": "An-Nas"
  },
  "flatHint": "Sehemu sasa zinaonyeshwa tofauti — gusa tena \"Aya zilizochaguliwa\" au chagua \"Karatasi zote\" ili kuzikusanya tena.",
- "ayahRangeLoading": "Inapanga upya karatasi za kazi…"
+ "ayahRangeLoading": "Inapanga upya karatasi za kazi…",
+ "answerCorrectMsg": "✓ Sahihi",
+ "answerWrongMsg": "✗ Jaribu tena"
 }

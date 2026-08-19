@@ -16,6 +16,9 @@ html.js .js-only{display:flex}
 .q.bad .num{background:#c0392b;color:#fff}
 .q.bad .num::after{content:' ✗'}
 .q .ansbtn{margin-top:6px;background:none;border:1px solid #d9b44a;color:#8a6d1f;border-radius:8px;padding:3px 10px;font-size:.8rem;cursor:pointer;font-family:inherit}
+.q-feedback{display:block;margin-top:6px;font-size:.85rem;font-weight:700}
+.q.ok .q-feedback{color:#1E6E63}
+.q.bad .q-feedback{color:#c0392b}
 .progress .score{margin-inline-start:auto;color:#1E6E63}
 input.seg{letter-spacing:1px;font-weight:600}
 @media print{

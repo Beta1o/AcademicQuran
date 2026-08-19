@@ -207,5 +207,7 @@
   "t1qrff41": "火焰章",
   "t1qrfbxw": "忠诚章"
  },
- "ayahRangeLoading": "正在重新整理工作表…"
+ "ayahRangeLoading": "正在重新整理工作表…",
+ "answerCorrectMsg": "✓ 正确",
+ "answerWrongMsg": "✗ 请再试一次"
 }
