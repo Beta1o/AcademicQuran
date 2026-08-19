@@ -1146,7 +1146,7 @@ try{
 <meta name="description" content="${DESC}">
 <meta name="robots" content="index, follow">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; media-src 'self' https://everyayah.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self' https://everyayah.com; media-src 'self' https://everyayah.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 ${SITE_URL?`<link rel="canonical" href="${SITE_URL}/">`:''}
 <meta name="application-name" content="التحليل اللغوي المجهري">
 <meta property="og:title" content="التحليل اللغوي المجهري">
