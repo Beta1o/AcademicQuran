@@ -1229,7 +1229,7 @@ function fillMergedChunkBody(det, slot){
     var overlapping=[];
     chunk.forEach(function(c){ if(overlapping.indexOf(c.part)===-1) overlapping.push(c.part); });
     var secCount=Math.max.apply(null, overlapping.map(function(o){ return o.querySelectorAll(':scope .sec').length; }).concat([0]));
-    var secsHTML='';
+    var secsHTML='', qTotal=0;
     for(var i=0;i<secCount;i++){
       var refSec=null, qHTML='', num=0;
       overlapping.forEach(function(o){
@@ -1237,7 +1237,7 @@ function fillMergedChunkBody(det, slot){
         if(!sec) return;
         if(!refSec) refSec=sec;
         sec.querySelectorAll(':scope .qlist > .q').forEach(function(q){
-          num++;
+          num++; qTotal++;
           var clone=q.cloneNode(true);
           var numEl=clone.querySelector('.num'); if(numEl) numEl.textContent=numEl.textContent.replace(/[0-9٠-٩]+/, String(num));
           qHTML+=clone.outerHTML;
@@ -1250,6 +1250,10 @@ function fillMergedChunkBody(det, slot){
     var suraName=nameEl?nameEl.getAttribute('data-i18n-name'):'';
     var vpeek=det.querySelector(':scope > summary .vpeek');
     var verseSpans=vpeek?vpeek.innerHTML.replace(/^\s*﴿\s*/,'').replace(/\s*﴾\s*$/,''):'';
+    /* Same verse-wrap (audio + repeat buttons) and progress bar as a real
+       worksheet's body — omitting these earlier meant the audio/repeat
+       buttons and the answered/score readout silently never appeared on
+       any merged chunk, only on the untouched, default-size cards. */
     slot.outerHTML=
       '<div class="ws">'+
         '<div class="ws-top">'+
@@ -1263,8 +1267,10 @@ function fillMergedChunkBody(det, slot){
           '</header>'+
           '<div class="verse-wrap">'+
             '<button class="act audio-play js-only" data-audio="'+id+'" hidden data-i18n="listenWs">🔊 استماع للتلاوة</button>'+
+            '<button class="act repeat-toggle js-only" data-repeat="'+id+'" hidden data-i18n="repeatToggle">🔁 تكرار</button>'+
             '<div class="verse"><p>﴿ '+verseSpans+' ﴾</p></div>'+
           '</div>'+
+          '<div class="progress js-only"><div class="pbar"><i data-pfill="'+id+'" style="width:0%"></i></div><b data-ptxt="'+id+'">0 / '+qTotal+'</b><b class="score" data-score="'+id+'"></b></div>'+
           secsHTML+
           '<footer class="sheet-foot"></footer>'+
         '</article>'+
@@ -1274,6 +1280,7 @@ function fillMergedChunkBody(det, slot){
     if(body && window.Locale) Locale.render(body);
     if(body) window.bindSheet(body, det);
     if(body && window.applyLvlFilter) window.applyLvlFilter(body);
+    if(body && window.updateProg) window.updateProg(id);
     return true;
   });
 }
@@ -1649,6 +1656,14 @@ function rebuildGroupForSizeImpl(group, size){
       el.removeAttribute('id');
       holder.appendChild(el);
     });
+    /* The group's OWN "listen to whole surah" button and part-count badge
+       also need to change when the number/ids of its parts change — their
+       pristine values are captured once here, to restore exactly on
+       reverting to size 10. */
+    var origAudioBtn=group.querySelector(':scope > .group-audio-play');
+    if(origAudioBtn) group.dataset.origAudioGroup=origAudioBtn.dataset.audioGroup||'';
+    var origCountBadge=group.querySelector(':scope > summary .ws-group-count');
+    if(origCountBadge) group.dataset.origCountWord=origCountBadge.dataset.i18nWord||'';
   }
   var originals=[].slice.call(holder.children);
   if(size===10){
@@ -1666,7 +1681,12 @@ function rebuildGroupForSizeImpl(group, size){
       var clone=itemsWrap.children[i];
       window.bindSheet(clone.querySelector('.ws')||clone, clone);
     });
+    var audioBtn10=group.querySelector(':scope > .group-audio-play');
+    if(audioBtn10 && group.dataset.origAudioGroup!==undefined) audioBtn10.dataset.audioGroup=group.dataset.origAudioGroup;
+    var countBadge10=group.querySelector(':scope > summary .ws-group-count');
+    if(countBadge10 && group.dataset.origCountWord!==undefined) countBadge10.dataset.i18nWord=group.dataset.origCountWord;
     if(window.Locale) window.Locale.render(itemsWrap);
+    if(window.Locale && countBadge10) window.Locale.render(group);
     return Promise.resolve();
   }
   /* Flatten every original part's ayah list, in order, then re-cut it into
@@ -1691,7 +1711,17 @@ function rebuildGroupForSizeImpl(group, size){
   itemsWrap.innerHTML='';
   newEls.forEach(function(el){ itemsWrap.appendChild(el); });
   bindToggles(itemsWrap);
+  /* The group's own "listen to whole surah" button still pointed at the
+     ORIGINAL parts' ids — which no longer resolve via getElementById once
+     re-chunked (see the origid stashing above) — so clicking it silently
+     did nothing after any resize. Repointed at the new chunk ids instead.
+     The part-count badge is updated the same way. */
+  var audioBtn=group.querySelector(':scope > .group-audio-play');
+  if(audioBtn) audioBtn.dataset.audioGroup=newEls.map(function(el){ return el.id.replace(/^w-/,''); }).join(',');
+  var countBadge=group.querySelector(':scope > summary .ws-group-count');
+  if(countBadge) countBadge.dataset.i18nWord=String(chunks.length);
   if(window.Locale) window.Locale.render(itemsWrap);
+  if(window.Locale && countBadge) window.Locale.render(group);
   return Promise.resolve();
 }
 function buildMergedWsItemShell(chunk, sura){
@@ -1840,6 +1870,11 @@ function rebuildStandaloneForSizeImpl(item, size){
     var audioBtn=wrapper.querySelector(':scope > .group-audio-play');
     if(audioBtn) audioBtn.dataset.audioGroup=newEls.map(function(el){ return el.id.replace(/^w-/,''); }).join(',');
     if(window.bindGroupAudio) bindGroupAudio(wrapper);
+    /* bindGroupAudio only wires up the click handler — the button ships
+       hidden by default and nothing had ever un-hidden it for this
+       synthetic wrapper, so it silently never appeared regardless of the
+       audio setting. */
+    if(window.refreshAudioButtons) refreshAudioButtons(wrapper);
     if(window.Locale) window.Locale.render(wrapper);
     positionGroupAudioBtn(wrapper);
     return Promise.resolve();
